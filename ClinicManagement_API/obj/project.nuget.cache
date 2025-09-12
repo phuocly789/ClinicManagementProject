@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "7x0e9YlpExA=",
+  "dgSpecHash": "QnE9ZJHJwL0=",
   "success": true,
-  "projectFilePath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
+  "projectFilePath": "D:\\webdao\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\phuoc\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.6\\microsoft.aspnetcore.openapi.9.0.6.nupkg.sha512",
-    "C:\\Users\\phuoc\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+    "C:\\Users\\ntam7\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.6\\microsoft.aspnetcore.openapi.9.0.6.nupkg.sha512",
+    "C:\\Users\\ntam7\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
   ],
   "logs": []
 }
