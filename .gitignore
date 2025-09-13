@@ -1,11 +1,6 @@
 # Windows system files
 desktop.ini
-<<<<<<< HEAD
 
-# Build folders
-bin/
-obj/
-=======
 **/obj/
 **/bin/
->>>>>>> phuoc
+
