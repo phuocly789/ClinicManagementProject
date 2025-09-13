@@ -1,5 +1,12 @@
+using ClinicManagement_Infrastructure.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Đăng ký DbContext
+builder.Services.AddDbContext<SupabaseContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 
 // DI Repository
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
@@ -27,23 +34,20 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 
-
-
-
-
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//Sử dụng map controller
+builder.Services.AddControllers();
+//Swagger cấu hình có điền Authentication
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
 app.UseHttpsRedirection();
+
+
+//use middle ware controller
+app.MapControllers();
+//use swagger
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.Run();
