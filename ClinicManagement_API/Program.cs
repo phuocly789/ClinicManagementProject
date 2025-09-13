@@ -1,8 +1,13 @@
 using ClinicManagement_Infrastructure.Infrastructure.Data;
+<<<<<<< HEAD
+=======
+using ClinicManagement_Infrastructure.Repositories;
+>>>>>>> phuoc
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+<<<<<<< HEAD
 // Đăng ký DbContext
 builder.Services.AddDbContext<SupabaseContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -37,11 +42,38 @@ builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 //Sử dụng map controller
 builder.Services.AddControllers();
 //Swagger cấu hình có điền Authentication
+=======
+// Đăng ký DbContext với connection string từ appsettings.json
+builder.Services.AddDbContext<SupabaseContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("SupabaseConnection"))
+);
+
+// Đăng ký repository services
+builder.Services.AddRepositoryServices();
+
+// Đăng ký các dịch vụ khác (nếu có)
+builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddControllers();
+>>>>>>> phuoc
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+<<<<<<< HEAD
+=======
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+>>>>>>> phuoc
 app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
 
 //use middle ware controller
