@@ -1,3 +1,5 @@
+namespace ClinicManagement_Infrastructure.Repositories;
+
 public static class RepositoryServiceRegistration
 {
     public static IServiceCollection AddRepositoryServices(this IServiceCollection services)
@@ -26,7 +28,7 @@ public static class RepositoryServiceRegistration
         services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
         services.AddScoped<IPrescriptionDetailRepository, PrescriptionDetailRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
-
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }
 }

@@ -6,7 +6,7 @@ namespace ClinicManagement_API.Models;
 /// <summary>
 /// Auth: Stores user login data within a secure schema.
 /// </summary>
-public partial class User
+public partial class UserDTO
 {
     public int UserId { get; set; }
 

@@ -1,17 +1,35 @@
+using ClinicManagement_Infrastructure.Infrastructure.Data;
+using ClinicManagement_Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Đăng ký DbContext với connection string từ appsettings.json
+builder.Services.AddDbContext<SupabaseContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("SupabaseConnection"))
+);
+
+// Đăng ký repository services
+builder.Services.AddRepositoryServices();
+
+// Đăng ký các dịch vụ khác (nếu có)
+builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();

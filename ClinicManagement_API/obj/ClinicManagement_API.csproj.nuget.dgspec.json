@@ -1,38 +1,39 @@
 {
   "format": 1,
   "restore": {
-    "D:\\webdao\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {}
+    "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {}
   },
   "projects": {
-    "D:\\webdao\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {
+    "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\webdao\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
+        "projectUniqueName": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
         "projectName": "ClinicManagement_API",
-        "projectPath": "D:\\webdao\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
-        "packagesPath": "C:\\Users\\ntam7\\.nuget\\packages\\",
-        "outputPath": "D:\\webdao\\ClinicManagementProject\\ClinicManagement_API\\obj\\",
+        "projectPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
+        "packagesPath": "C:\\Users\\phuoc\\.nuget\\packages\\",
+        "outputPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ntam7\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\phuoc\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
+                "projectPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -45,7 +46,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -54,6 +55,10 @@
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[9.0.4, )"
             }
           },
           "imports": [
@@ -75,7 +80,101 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.205/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+        "projectName": "ClinicManagement_Infrastructure",
+        "projectPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\phuoc\\.nuget\\packages\\",
+        "outputPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\phuoc\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Microsoft.EntityFrameworkCore.Relational": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.205/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
