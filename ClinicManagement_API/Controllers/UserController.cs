@@ -2,30 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-<<<<<<< HEAD
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
-using Microsoft.AspNetCore.Mvc;
-
-=======
 using ClinicManagement_API.Models;
 using ClinicManagement_Infrastructure.Infrastructure.Data;
 using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 
-//using ClinicManagement_API.Models;
-
->>>>>>> phuoc
 namespace ClinicManagement_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
     {
-<<<<<<< HEAD
-
-    }
-}
-=======
         private readonly IUserService _userService;
 
         public UserController(IUserService userService)
@@ -43,8 +30,14 @@ namespace ClinicManagement_API.Controllers
                 Username = u.Username,
                 FullName = u.FullName,
                 Email = u.Email,
+                Phone = u.Phone,
+                Gender = u.Gender,
+                Address = u.Address,
+                DateOfBirth = u.DateOfBirth,
+                CreatedAt = u.CreatedAt,
+                IsActive = u.IsActive,
             });
-            return Ok(users);
+            return Ok(userDtos);
         }
 
         //GetByUsernameAsync
@@ -60,4 +53,3 @@ namespace ClinicManagement_API.Controllers
         }
     }
 }
->>>>>>> phuoc

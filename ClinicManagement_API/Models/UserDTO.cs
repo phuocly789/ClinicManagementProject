@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
 namespace ClinicManagement_API.Models;
-
-/// <summary>
-/// Auth: Stores user login data within a secure schema.
-/// </summary>
 public partial class UserDTO
 {
     public int UserId { get; set; }
@@ -15,4 +8,16 @@ public partial class UserDTO
     public string FullName { get; set; } = null!;
 
     public string Email { get; set; } = null!;
+
+    public string? Phone { get; set; }
+
+    public string? Gender { get; set; }
+
+    public string? Address { get; set; }
+
+    public DateOnly? DateOfBirth { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public bool? IsActive { get; set; }
 }
