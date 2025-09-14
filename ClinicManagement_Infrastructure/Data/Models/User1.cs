@@ -22,6 +22,7 @@ public partial class User1
     public string? Address { get; set; }
 
     public DateOnly? DateOfBirth { get; set; }
+    public bool MustChangePassword { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

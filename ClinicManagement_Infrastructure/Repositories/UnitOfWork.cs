@@ -1,12 +1,14 @@
 // unitofwork
 
 using ClinicManagement_Infrastructure.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Storage;
 
 public interface IUnitOfWork : IAsyncDisposable
 {
     IRepository<T> Repository<T>()
         where T : class;
     Task<int> SaveChangesAsync();
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }
 
 public class UnitOfWork : IUnitOfWork
@@ -31,6 +33,11 @@ public class UnitOfWork : IUnitOfWork
     }
 
     public Task<int> SaveChangesAsync() => _context.SaveChangesAsync();
+
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
+    {
+        return await _context.Database.BeginTransactionAsync();
+    }
 
     public async ValueTask DisposeAsync()
     {

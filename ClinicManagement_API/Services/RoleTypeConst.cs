@@ -1,9 +1,9 @@
-public static class RoleTypeConst
+public static class RoleNameConst
 {
-    public const int Admin = 1;
-    public const int Receptionist = 2;
-    public const int Doctor = 3;
-    public const int Nurse = 4;
-    public const int Technician = 5;
-    public const int Patient = 6;
+    public const string Admin = "Admin";
+    public const string Receptionist = "Receptionist";
+    public const string Doctor = "Doctor";
+    public const string Nurse = "Nurse";
+    public const string Technician = "Technician";
+    public const string Patient = "Patient";
 }
