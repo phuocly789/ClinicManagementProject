@@ -1,4 +1,5 @@
 namespace ClinicManagement_API.Models;
+
 public partial class UserDTO
 {
     public int UserId { get; set; }
