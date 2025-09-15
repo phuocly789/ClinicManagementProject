@@ -1,6 +1,7 @@
 // File: UserRegisterDto.cs
 
 using System.ComponentModel.DataAnnotations;
+using ClinicManagement_API.Models;
 
 namespace ClinicManagementSystem.Application.DTOs.Auth
 {
@@ -20,7 +21,7 @@ namespace ClinicManagementSystem.Application.DTOs.Auth
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-        public string? Gender { get; set; }
+        public Gender Gender { get; set; }
         public string? Address { get; set; }
         public string? MedicalHistory { get; set; }
     }

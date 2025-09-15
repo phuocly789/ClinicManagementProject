@@ -21,7 +21,7 @@ public class JwtAuthService
         _context = db;
     }
 
-    public string GenerateToken(User1 userLogin)
+    public string GenerateToken(User1 userLogin, List<string> roles)
     {
         // Khóa bí mật để ký token
         var key = Encoding.ASCII.GetBytes(_key);
@@ -30,12 +30,17 @@ public class JwtAuthService
         {
             new Claim("username", userLogin.Username), // Claim mặc định cho username
             new Claim("email", userLogin.Email), // Claim mặc định cho username
+            new Claim("fullname", userLogin.FullName), // Claim tùy chỉnh cho full name
             // new Claim(ClaimTypes.Role, userLogin.Role),                   // Claim mặc định cho Role
             new Claim(JwtRegisteredClaimNames.Sub, userLogin.Username), // Subject của token
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique ID của token
             new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()), // Thời gian tạo token
         };
         //Thêm  claim roles vào token
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
         // userLogin.Id//10034
         var lstRole = _context
             .UserRoles.Include(n => n.Role)

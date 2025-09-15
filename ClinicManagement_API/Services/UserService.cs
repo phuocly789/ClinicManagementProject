@@ -3,11 +3,12 @@
 
 using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
 using dotnet03WebApi_EbayProject.Helper;
+using Microsoft.EntityFrameworkCore;
 
 public interface IUserService : IServiceBase<User1>
 {
     Task<User1?> GetByUsernameAsync(string username);
-    Task<(bool Success, string Message)> Login(UserLoginDTO model);
+    Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model);
     // Task<(bool Success, string Message)> RegisterBuyer(UserBuyerRegister registerBuyer);
     // Task<(bool Success, string Message)> RegisterSeller(UserSellerRegister registerSeller);
 }
@@ -41,33 +42,55 @@ public class UserService : ServiceBase<User1>, IUserService
         return await _repository.SingleOrDefaultAsync(u => u.Username == username);
     }
 
-    public async Task<(bool Success, string Message)> Login(UserLoginDTO model)
+    public async Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model)
     {
-        if (string.IsNullOrWhiteSpace(model.EmailOrPhone))
-            return (false, MessageLogin.UserNameOrEmailRequired);
+        // Lấy repository cho User1
+        var userRepo = _uow.Repository<User1>();
 
-        if (string.IsNullOrWhiteSpace(model.Password))
-            return (false, MessageLogin.PasswordRequired);
+        // Ép repository thành IQueryable để dùng Include
+        var queryable = userRepo.Query();
 
-        try
-        {
-            var user = await _userRepository.SingleOrDefaultAsync(u =>
+        var user = await queryable
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .SingleOrDefaultAsync(u =>
                 u.Username == model.EmailOrPhone || u.Email == model.EmailOrPhone
             );
+        if (user == null)
+            return new ResponseValue<LoginResponseDTO>(
+                null,
+                StatusReponse.NotFound,
+                "User not found"
+            );
 
-            if (user == null)
-                return (false, MessageLogin.UserNotFound);
+        if (!PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
+            return new ResponseValue<LoginResponseDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Invalid password"
+            );
 
-            if (!PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
-                return (false, MessageLogin.InvalidCredentials);
+        // Kiểm tra role
+        var hasRole = user.UserRoles.Any(ur => ur.Role.RoleName == model.Role);
+        if (!hasRole)
+            return new ResponseValue<LoginResponseDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "User does not have the required role"
+            );
 
-            string token = _jwtAuthService.GenerateToken(user);
-            return (true, token);
-        }
-        catch
-        {
-            return (false, MessageLogin.LoginFailed);
-        }
+        // Tạo token với role được chọn
+        var token = _jwtAuthService.GenerateToken(user, new List<string> { model.Role });
+
+        return new ResponseValue<LoginResponseDTO>(
+            new LoginResponseDTO
+            {
+                Token = token,
+                Roles = new List<string> { model.Role },
+            },
+            StatusReponse.Success,
+            "Login successful"
+        );
     }
 
     // public async Task<(bool Success, string Message)> Register(UserRegisterDTO registerBuyer)
