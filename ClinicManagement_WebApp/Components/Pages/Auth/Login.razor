@@ -280,7 +280,7 @@ new RoleOption { Name = "Admin", Description = "Admin" }
             try
             {
                 // Thử đọc phản hồi lỗi từ API bằng lớp ErrorResponse mới
-                var errorContent = await response.Message.ReadFromJsonAsync<string>();
+                var errorContent = await response.Content.ReadFromJsonAsync<string>();
                 loginMessage = errorContent ?? "Có lỗi xảy ra. Vui lòng thử lại sau.";
             }
             catch
