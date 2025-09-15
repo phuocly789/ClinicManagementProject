@@ -15,6 +15,7 @@ public interface IRepository<T>
     Task DeleteAsync(int id);
     Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> predicate);
     Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate);
+    IQueryable<T> Query();
 }
 
 public class Repository<T> : IRepository<T>
@@ -57,4 +58,8 @@ public class Repository<T> : IRepository<T>
 
     public async Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate) =>
         await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
+           public IQueryable<T> Query()
+    {
+        return _context.Set<T>().AsQueryable();
+    }
 }

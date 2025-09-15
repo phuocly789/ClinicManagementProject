@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using ClinicManagement_Infrastructure.Infrastructure.Data;
 using ClinicManagement_Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Đăng ký DbContext với connection string từ appsettings.json
@@ -20,9 +22,17 @@ builder.Services.AddRepositoryServices();
 // Đăng ký các dịch vụ khác (nếu có)
 builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPatinetService, PatinetService>();
+builder.Services.AddScoped<IReceptionistService, ReceptionistService>();
 
 // Thêm dịch vụ controller
-builder.Services.AddControllers();
+builder
+    .Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // THÊM DÒNG NÀY VÀO
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 //jwt
 builder.Services.AddEndpointsApiExplorer();

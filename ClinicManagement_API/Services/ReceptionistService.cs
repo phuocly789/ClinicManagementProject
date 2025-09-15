@@ -64,7 +64,7 @@ public class ReceptionistService : IReceptionistService
                 Phone = patientDto.PhoneNumber,
                 Username = patientDto.PhoneNumber, // Dùng SĐT làm username
                 DateOfBirth = patientDto.DateOfBirth,
-                Gender = patientDto.Gender,
+                Gender = patientDto.Gender.ToString(),
                 Address = patientDto.Address,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(patientDto.PhoneNumber), // Mã hóa SĐT làm mật khẩu
                 MustChangePassword = true, // Bắt buộc đổi mật khẩu khi đăng nhập lần đầu
