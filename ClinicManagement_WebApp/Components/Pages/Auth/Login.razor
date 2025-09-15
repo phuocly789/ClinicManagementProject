@@ -1,0 +1,199 @@
+@page "/login"
+@layout EmptyLayout
+@inject IJSRuntime JSRuntime
+
+<!-- External CSS and FontAwesome for icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<style>
+    /* Floating label animation */
+    .form-floating-label {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-floating-label input {
+        padding-top: 1.5rem;
+        padding-bottom: 0.5rem;
+        height: calc(3.5rem + 2px);
+    }
+
+    .form-floating-label label {
+        position: absolute;
+        top: 50%;
+        left: 3.5rem; /* Adjust for input-group-text width */
+        transform: translateY(-50%);
+        transition: all 0.2s ease-out;
+        color: #6c757d;
+        pointer-events: none;
+        font-size: 1rem;
+    }
+
+    .form-floating-label input:focus ~ label,
+    .form-floating-label input:not(:placeholder-shown) ~ label {
+        top: 0;
+        transform: translateY(-50%);
+        font-size: 0.85rem;
+        color: #0d6efd;
+        background-color: #fff;
+        padding: 0 0.2rem;
+    }
+
+    /* Input group icon styling */
+    .input-group-text {
+        border-right: none;
+        border-left: none;
+        background-color: #f8f9fa;
+    }
+
+    .form-control {
+        border-left: none;
+    }
+
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-color: #0d6efd;
+    }
+
+    /* Eye icon styling */
+    .toggle-password {
+        cursor: pointer;
+        border-left: none;
+        transition: background-color 0.2s ease;
+    }
+
+    .toggle-password:hover {
+        background-color: #e9ecef;
+    }
+
+    /* Button hover animation */
+    .btn-primary {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Card shadow animation */
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Demo buttons */
+    .btn-outline-primary {
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #0d6efd;
+        color: #fff;
+    }
+</style>
+
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="card shadow-lg p-4 rounded-3" style="max-width: 450px; width: 100%;">
+        <div class="text-center mb-4">
+            <h1 class="text-primary h3 fw-bold">Hệ Thống Quản Lý Phòng Khám</h1>
+            <p class="text-muted">Vui lòng đăng nhập để tiếp tục</p>
+        </div>
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" />
+
+            <!-- Username -->
+            <div class="form-floating-label mb-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                    <InputText class="form-control" placeholder=" " id="username" @bind-Value="loginModel.Username" />
+                    <label for="username">Tên đăng nhập (email hoặc SĐT)</label>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="form-floating-label mb-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
+                    <InputText type="@passwordInputType" class="form-control" placeholder=" " id="password" @bind-Value="loginModel.Password" />
+                    <span class="input-group-text toggle-password" @onclick="TogglePasswordVisibility">
+                        <i class="@passwordIconClass"></i>
+                    </span>
+                    <label for="password">Mật khẩu</label>
+                </div>
+            </div>
+
+            <!-- Role Selection -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Chọn vai trò:</label>
+                <InputRadioGroup @bind-Value="loginModel.Role">
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        @foreach (var role in Roles)
+                        {
+                            <div class="form-check form-check-inline">
+                                <InputRadio class="form-check-input" Value="@role" id="@role" />
+                                <label class="form-check-label" for="@role">@role</label>
+                            </div>
+                        }
+                    </div>
+                </InputRadioGroup>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary w-100 py-2 mb-3">Đăng Nhập</button>
+        </EditForm>
+
+        <!-- Links -->
+        <div class="text-center mb-3">
+            <a href="#" class="text-primary text-decoration-none me-2">Quên mật khẩu?</a> |
+            <a href="#" class="text-primary text-decoration-none ms-2">Đăng ký tài khoản mới (Bệnh nhân)</a>
+        </div>
+
+        <!-- Demo Links -->
+        <div class="text-center">
+            <p class="text-secondary fw-semibold mb-2">Truy cập nhanh (Demo):</p>
+            <div class="d-flex justify-content-center flex-wrap gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="/patient_dashboard">Bệnh nhân</a>
+                <a class="btn btn-sm btn-outline-primary" href="/receptionist_dashboard">Lễ tân</a>
+                <a class="btn btn-sm btn-outline-primary" href="/doctor_dashboard">Bác sĩ</a>
+                <a class="btn btn-sm btn-outline-primary" href="/admin_dashboard">Admin</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string[] Roles = { "Bệnh nhân", "Lễ tân", "Bác sĩ", "Admin" };
+    private string passwordInputType = "password";
+    private string passwordIconClass = "fas fa-eye";
+
+    private async Task HandleLogin()
+    {
+        // TODO: Thêm logic gọi API / xử lý đăng nhập
+        Console.WriteLine($"Đăng nhập: {loginModel.Username} - {loginModel.Password} - Vai trò: {loginModel.Role}");
+        // Ví dụ: Điều hướng dựa trên vai trò
+        // NavigationManager.NavigateTo($"/{loginModel.Role.ToLower()}_dashboard");
+    }
+
+    private async Task TogglePasswordVisibility()
+    {
+        passwordInputType = passwordInputType == "password" ? "text" : "password";
+        passwordIconClass = passwordInputType == "password" ? "fas fa-eye" : "fas fa-eye-slash";
+        await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('password').type = '{passwordInputType}'");
+    }
+
+
+    public class LoginModel
+    {
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+        public string? Role { get; set; } = "Bệnh nhân"; // Vai trò mặc định
+    }
+}

@@ -1,0 +1,51 @@
+﻿<div class="sidebar">
+    @* <div class="top-row">
+        <a class="clinic-name" href="">Phòng Khám Phước Tâm</a>
+    </div> *@
+
+    <div class="user-profile">
+        <span class="avatar"></span>
+        <div class="user-details">
+            <span class="greeting">Xin chào,</span>
+            <span class="user-name">Nguyễn Văn A</span>
+        </div>
+    </div>
+
+    <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+    <nav class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-grid-1x2-fill" aria-hidden="true"></span> Bảng điều khiển
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="appointments">
+                    <span class="bi bi-calendar-check-fill" aria-hidden="true"></span> Quản lý Lịch hẹn
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="patients">
+                    <span class="bi bi-person-lines-fill" aria-hidden="true"></span> Hồ sơ Bệnh nhân
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="medicine-stock">
+                    <span class="bi bi-capsule-pill" aria-hidden="true"></span> Quản lý Thuốc
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="reports">
+                    <span class="bi bi-bar-chart-line-fill" aria-hidden="true"></span> Báo cáo & Thống kê
+                </NavLink>
+            </li>
+             <li class="nav-item nav-separator"></li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="settings">
+                    <span class="bi bi-gear-fill" aria-hidden="true"></span> Cài đặt
+                </NavLink>
+            </li>
+        </ul>
+    </nav>
+</div>
