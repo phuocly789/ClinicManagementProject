@@ -99,12 +99,6 @@ D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicMan
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets.build.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets.development.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets\msbuild.ClinicManagement_API.Microsoft.AspNetCore.StaticWebAssets.props
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets\msbuild.ClinicManagement_API.Microsoft.AspNetCore.StaticWebAssetEndpoints.props
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets\msbuild.build.ClinicManagement_API.props
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets\msbuild.buildMultiTargeting.ClinicManagement_API.props
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets\msbuild.buildTransitive.ClinicManagement_API.props
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets.pack.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\ClinicMa.54EE320C.Up2Date
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\ClinicManagement_API.dll
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\refint\ClinicManagement_API.dll
@@ -120,3 +114,8 @@ D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicMan
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\Microsoft.IdentityModel.Tokens.dll
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\System.IdentityModel.Tokens.Jwt.dll
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\rpswa.dswa.cache.json
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\rjimswa.dswa.cache.json
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_API\obj\Debug\net9.0\staticwebassets.build.json.cache

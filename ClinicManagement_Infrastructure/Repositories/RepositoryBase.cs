@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 public interface IRepository<T>
     where T : class
 {
+    IQueryable<T> GetAll();
     Task<IEnumerable<T>> GetAllAsync();
     Task<T?> GetByIdAsync(int id);
     Task AddAsync(T entity);
@@ -39,6 +40,11 @@ public class Repository<T> : IRepository<T>
         await _dbSet.AddAsync(entity);
     }
 
+    public IQueryable<T> GetAll()
+    {
+        return _context.Set<T>();
+    }
+
     public async Task Update(T entity)
     {
         _dbSet.Update(entity);
@@ -58,7 +64,8 @@ public class Repository<T> : IRepository<T>
 
     public async Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate) =>
         await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
-           public IQueryable<T> Query()
+
+    public IQueryable<T> Query()
     {
         return _context.Set<T>().AsQueryable();
     }

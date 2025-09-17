@@ -24,6 +24,7 @@ builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPatinetService, PatinetService>();
 builder.Services.AddScoped<IReceptionistService, ReceptionistService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // Thêm dịch vụ controller
 builder
