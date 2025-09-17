@@ -34,7 +34,6 @@ namespace ClinicManagement_API.Controllers
                 Gender = u.Gender,
                 Address = u.Address,
                 DateOfBirth = u.DateOfBirth,
-                CreatedAt = u.CreatedAt,
                 IsActive = u.IsActive,
             });
             return Ok(userDtos);
