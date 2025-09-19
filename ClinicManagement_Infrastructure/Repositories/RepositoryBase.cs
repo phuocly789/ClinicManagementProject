@@ -14,6 +14,7 @@ public interface IRepository<T>
     Task AddAsync(T entity);
     Task Update(T entity);
     Task DeleteAsync(int id);
+    Task DeleteAsync(T entity);
     Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> predicate);
     Task<IEnumerable<T>> WhereAsync(Expression<Func<T, bool>> predicate);
     IQueryable<T> Query();
@@ -57,6 +58,12 @@ public class Repository<T> : IRepository<T>
         {
             _dbSet.Remove(entity);
         }
+    }
+
+    public async Task DeleteAsync(T entity)
+    {
+        _dbSet.Remove(entity);
+        await Task.CompletedTask; // không cần await thật vì Remove là sync
     }
 
     public async Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> predicate) =>
