@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicManagementAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -81,7 +82,83 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
-        [HttpPut("{id}/toggle-active")]
+        [HttpPost("CreateUser")]
+        public async Task<ActionResult<ResponseValue<CreateUserResponse>>> CreateUser(
+            [FromBody] CreateUserRequest request
+        )
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var result = await _adminService.CreateUserAsync(request);
+            if (result.Status == StatusReponse.Success)
+            {
+                return Created("", result);
+            }
+            else if (result.Status == StatusReponse.BadRequest)
+            {
+                return BadRequest(result);
+            }
+            else if (result.Status == StatusReponse.Unauthorized)
+            {
+                return StatusCode(403, result);
+            }
+            return StatusCode(500, result);
+        }
+
+        [HttpPut("UpdateUser/{id}")]
+        public async Task<ActionResult<ResponseValue<UpdateUserResponse>>> UpdateUser(
+            int id,
+            [FromBody] UpdateUserRequest request
+        )
+        {
+            if (!ModelState.IsValid)
+            {
+                return new ActionResult<ResponseValue<UpdateUserResponse>>(
+                    new ResponseValue<UpdateUserResponse>(
+                        null,
+                        StatusReponse.BadRequest,
+                        "Dữ liệu đầu vào không hợp lệ"
+                    )
+                );
+            }
+            var result = await _adminService.UpdateUserAsync(id, request);
+            if (result.Status == StatusReponse.Success)
+            {
+                return Ok(result);
+            }
+            else if (result.Status == StatusReponse.NotFound)
+            {
+                return NotFound(result);
+            }
+            else if (result.Status == StatusReponse.BadRequest)
+            {
+                return BadRequest(result);
+            }
+            return StatusCode(500, result);
+        }
+
+        [HttpPut("ResetPassword/{id}")]
+        public async Task<ActionResult<ResponseValue<ResetPasswordResponse>>> ResetPassword(int id)
+        {
+            var result = await _adminService.ResetPasswordAsync(id);
+            if (result.Status == StatusReponse.Success)
+            {
+                return Ok(result);
+            }
+            else if (result.Status == StatusReponse.NotFound)
+            {
+                return NotFound(result);
+            }
+            else if (result.Status == StatusReponse.BadRequest)
+            {
+                return BadRequest(result);
+            }
+            return StatusCode(500, result);
+        }
+
+        [HttpPut("toggle-active/{id}")]
         public async Task<IActionResult> ToggleUserActive(
             int id,
             [FromBody] ToggleUserActiveRequest request
@@ -111,7 +188,7 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("User/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             try
