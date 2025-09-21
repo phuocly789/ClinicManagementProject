@@ -116,14 +116,8 @@ public class AdminService : IAdminService
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(x =>
-                    (
-                        x.User.FullName != null
-                        && x.User.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)
-                    )
-                    || (
-                        x.User.Email != null
-                        && x.User.Email.Contains(search, StringComparison.OrdinalIgnoreCase)
-                    )
+                    (x.User.FullName != null && EF.Functions.Like(x.User.FullName, $"%{search}%"))
+                    || (x.User.Email != null && EF.Functions.Like(x.User.Email, $"%{search}%"))
                 );
             }
 
