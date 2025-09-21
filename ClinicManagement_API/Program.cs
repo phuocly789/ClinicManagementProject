@@ -20,11 +20,17 @@ builder.Services.AddDbContext<SupabaseContext>(options =>
 builder.Services.AddRepositoryServices();
 
 // Đăng ký các dịch vụ khác (nếu có)
+builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPatinetService, PatinetService>();
 builder.Services.AddScoped<IReceptionistService, ReceptionistService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IMedicineService, MedicineService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<ISuplierService, SuplierService>();
+builder.Services.AddScoped<IReportsService, ReportsService>();
 
 // Thêm dịch vụ controller
 builder
