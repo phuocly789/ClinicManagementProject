@@ -31,6 +31,8 @@ builder.Services.AddScoped<IMedicineService, MedicineService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.AddScoped<ISuplierService, SuplierService>();
 builder.Services.AddScoped<IReportsService, ReportsService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+
 
 // Thêm dịch vụ controller
 builder

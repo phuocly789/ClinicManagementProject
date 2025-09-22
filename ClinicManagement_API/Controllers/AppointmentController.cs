@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -11,18 +12,39 @@ namespace ClinicManagement_API.Controllers
     [ApiController]
     public class AppointmentController : ControllerBase
     {
-        private readonly IServiceBase<Appointment> _appointmentRepository;
+        private readonly IAppointmentService _appointmentService;
 
-        public AppointmentController(IServiceBase<Appointment> appointmentRepository)
+        public AppointmentController(IAppointmentService appointmentService)
         {
-            _appointmentRepository = appointmentRepository;
+            _appointmentService = appointmentService;
         }
 
-        [HttpGet("GetAllAppointments")]
-        public async Task<ActionResult> GetAllAppointments()
+        [HttpGet("GetMySchedule")]
+        public async Task<ResponseValue<List<AppointmentMyScheduleDto>>> GetMySchedule(
+            int staffId,
+            [FromQuery] DateOnly? date = null
+        )
         {
-            var appointments = await _appointmentRepository.GetAllAsync();
-            return Ok(appointments);
+            try
+            {
+                var appointments = await _appointmentService.GetAppointmentsByStaffIdAnddDateAsync(
+                    staffId,
+                    date
+                );
+                return new ResponseValue<List<AppointmentMyScheduleDto>>(
+                    appointments,
+                    StatusReponse.Success,
+                    "Lấy dữ liệu thành công"
+                );
+            }
+            catch (Exception ex)
+            {
+                return new ResponseValue<List<AppointmentMyScheduleDto>>(
+                    null,
+                    StatusReponse.Error,
+                    ex.Message
+                );
+            }
         }
     }
 }
