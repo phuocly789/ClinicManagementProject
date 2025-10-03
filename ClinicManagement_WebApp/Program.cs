@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
-using ClinicManagement_WebApp.Data;
+using ClinicManagement_WebApp.Components;
+// using ClinicManagement_WebApp.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -10,6 +11,9 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
+//di httpServices
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -29,5 +33,9 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+app.UseAntiforgery();
+
+app.MapStaticAssets();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();
