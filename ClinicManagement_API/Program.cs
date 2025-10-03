@@ -33,7 +33,7 @@ builder.Services.AddScoped<ISuplierService, SuplierService>();
 builder.Services.AddScoped<IReportsService, ReportsService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<ITechnicianService, TechnicianService>();
-
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
 
 // Thêm dịch vụ controller
 builder
