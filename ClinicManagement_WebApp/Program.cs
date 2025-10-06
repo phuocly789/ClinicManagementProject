@@ -1,19 +1,18 @@
-using Blazored.LocalStorage;
-using ClinicManagement_WebApp.Components;
-// using ClinicManagement_WebApp.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddBlazoredLocalStorage();
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-
-//di httpServices
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(
+    "ClinicManagement_API",
+    client =>
+    {
+        client.BaseAddress = new Uri("http://localhost:5066/api/"); // thay bằng API backend của bạn
+    }
+);
 
 var app = builder.Build();
 
@@ -21,21 +20,14 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();

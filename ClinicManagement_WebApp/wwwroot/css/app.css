@@ -1,0 +1,453 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    color: #333;
+    line-height: 1.6;
+    background-color: #f4f7f6;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px 30px 0 30px;
+    width: calc(100vw - 300px);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.stats-cards {
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+    margin-top: 0;
+}
+
+.stat-card .number {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #e9ecef;
+}
+
+button {
+    padding: 8px 15px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    margin-right: 5px;
+}
+
+.btn-primary {
+    background-color: #007bff;
+}
+
+.btn-success {
+    background-color: #28a745;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+    /* Để chữ đọc được trên nền vàng */
+}
+
+.notification {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+/* Style cho ô tìm kiếm */
+.header div {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.form-control {
+    width: 200px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+/* Style cho phân trang */
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.page-size {
+    width: 80px;
+}
+
+/* Toast styles */
+.toast {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: fixed !important;
+    top: 50px !important;
+    /* Tăng top để kiểm tra */
+    right: 20px !important;
+    z-index: 3000 !important;
+    /* Tăng z-index để tránh bị che */
+}
+
+.toast.success {
+    background-color: #28a745;
+}
+
+.toast.error {
+    background-color: #dc3545;
+}
+
+.toast.warning {
+    background-color: #ffc107;
+}
+
+.toast.info {
+    background-color: #17a2b8;
+}
+
+.toast-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 1000 !important;
+}
+
+.modal {
+    background-color: #fff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    width: 700px !important;
+    max-width: 90% !important;
+    /* max-height: 80vh !important;
+     */
+    margin: auto;
+    margin-top: 20px;
+    position: relative;
+    overflow-y: auto !important;
+    z-index: 1001;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto;
+}
+
+.modal-header {
+    padding: 15px 20px !important;
+    border-bottom: 1px solid #ddd !important;
+}
+
+.modal-header h3 {
+    margin: 0 !important;
+    font-size: 1.5em !important;
+}
+
+.modal-body {
+    padding: 20px !important;
+}
+
+.modal-footer {
+    padding: 15px 20px !important;
+    border-top: 1px solid #ddd !important;
+    text-align: right !important;
+}
+
+.btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+.btn-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+.btn-primary {
+    background-color: #007bff !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+.btn-warning {
+    background-color: #ffc107 !important;
+    color: black !important;
+    padding: 8px 16px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+/* Toast styles */
+.toast {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    min-width: 200px !important;
+    max-width: 300px !important;
+    padding: 10px !important;
+    border-radius: 4px !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    z-index: 2000 !important;
+    animation: slideIn 0.3s ease !important;
+}
+
+.toast.success {
+    background-color: #28a745 !important;
+}
+
+.toast.error {
+    background-color: #dc3545 !important;
+}
+
+.toast.warning {
+    background-color: #ffc107 !important;
+}
+
+.toast.info {
+    background-color: #17a2b8 !important;
+}
+
+.toast-content {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.toast-close {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 1.2em !important;
+    cursor: pointer !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 15px !important;
+}
+
+.form-group label {
+    display: block !important;
+    margin-bottom: 5px !important;
+    font-weight: bold !important;
+}
+
+.form-control {
+    width: 100% !important;
+    padding: 8px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    box-sizing: border-box !important;
+}
+
+.form-control:focus {
+    outline: none !important;
+    border-color: #007bff !important;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3) !important;
+}
+
+.validation-message {
+    color: #dc3545 !important;
+    font-size: 0.875em !important;
+    margin-top: 5px !important;
+}
+
+/* Pagination styles */
+.pagination {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-top: 20px !important;
+    justify-content: center !important;
+}
+
+.page-size {
+    width: 80px !important;
+}
+
+/* Header styles */
+.header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 20px !important;
+}
+
+.header div {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    /* Giữ cột đều nhau */
+}
+
+thead,
+tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+tbody {
+    display: block;
+    max-height: 473px;
+    /* chiều cao vùng hiển thị */
+    overflow-y: auto;
+    /* cuộn dọc */
+    width: 101.3%;
+}
+
+th,
+td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    word-wrap: break-word;
+    /* tránh text tràn */
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    /* giữ header cố định */
+    z-index: 2;
+}
+
+/* Thẻ card giữ nguyên */
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+
+/* Thêm các style từ trang gốc nếu cần mở rộng, nhưng ưu tiên khớp với mẫu */

@@ -1,0 +1,111 @@
+@page "/admin/dashboard"
+@layout MainLayout // Giả sử bạn có MainLayout.razor với layout chung, nếu không thì tạo riêng
+
+<div class="main-content">
+    <header class="header">
+        <h1>Tổng Quan Hệ Thống</h1>
+        <button class="btn-primary" style="float: right;">Thêm Thuốc Mới</button>
+    </header>
+
+    <section class="stats-cards card">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Lượt khám hôm nay</h3>
+                <p class="number">45</p>
+            </div>
+            <div class="stat-card">
+                <h3>Doanh thu hôm nay</h3>
+                <p class="number">15.200.000 VNĐ</p>
+            </div>
+            <div class="stat-card">
+                <h3>Bệnh nhân mới</h3>
+                <p class="number">8</p>
+            </div>
+            <div class="stat-card">
+                <h3>Bác sĩ đang làm việc</h3>
+                <p class="number">5</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Quản Lý Danh Mục Thuốc</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã Thuốc</th>
+                    <th>Tên Thuốc</th>
+                    <th>Đơn Vị</th>
+                    <th>Giá Bán</th>
+                    <th>Tồn Kho</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var medicine in Medicines)
+                {
+                    <tr>
+                        <td>@medicine.Code</td>
+                        <td>@medicine.Name</td>
+                        <td>@medicine.Unit</td>
+                        <td>@medicine.Price</td>
+                        <td>@medicine.Stock</td>
+                        <td>
+                            <button class="btn-warning" @onclick="() => EditMedicine(medicine.Code)">Sửa</button>
+                            <button class="btn-danger" @onclick="() => DeleteMedicine(medicine.Code)">Xóa</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+
+    <section id="notifications" class="card notification" style="display: none;">
+        <h2>Thông Báo</h2>
+        <p id="notification-message"></p>
+    </section>
+</div>
+
+@code {
+    // Dữ liệu tĩnh (hard-coded) để bạn tự kết nối API sau
+    private List<Medicine> Medicines { get; set; } = new List<Medicine>
+    {
+        new Medicine { Code = "PARA500", Name = "Paracetamol 500mg", Unit = "Viên", Price = "1.000 VNĐ", Stock = 1500 },
+        new Medicine { Code = "AMOX250", Name = "Amoxicillin 250mg", Unit = "Viên", Price = "2.500 VNĐ", Stock = 870 }
+    };
+
+    private class Medicine
+    {
+        public string Code { get; set; }
+        public string Name { get; set; }
+        public string Unit { get; set; }
+        public string Price { get; set; }
+        public int Stock { get; set; }
+    }
+
+    // Các phương thức placeholder để xử lý sự kiện (bạn tự implement logic kết nối API)
+    private void AddNewMedicine()
+    {
+        // TODO: Kết nối API để thêm thuốc mới
+        ShowNotification("Thêm thuốc mới được kích hoạt.");
+    }
+
+    private void EditMedicine(string code)
+    {
+        // TODO: Kết nối API để sửa thuốc
+        ShowNotification($"Sửa thuốc: {code}");
+    }
+
+    private void DeleteMedicine(string code)
+    {
+        // TODO: Kết nối API để xóa thuốc
+        ShowNotification($"Xóa thuốc: {code}");
+    }
+
+    private void ShowNotification(string message)
+    {
+        // Có thể tích hợp với JS hoặc state để hiển thị (ở đây giả định qua code, nhưng trong Blazor thực tế dùng StateHasChanged hoặc JSInterop)
+        Console.WriteLine(message);
+        // Để hiển thị thực tế, thêm logic JSInterop nếu cần
+    }
+}

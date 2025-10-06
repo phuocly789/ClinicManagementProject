@@ -1,1 +1,6 @@
-{}
+{
+  "dotnet.server.useOmnisharp": false,
+  "dotnet.server.backgroundAnalysis": "projectAndSolution",
+  "dotnet.server.documentAnalysisScope": "full",
+  "dotnet.restoreOnSolutionLoad": true
+}
