@@ -1,4 +1,5 @@
 @page "/admin/medicines"
+@using System.Text.Json
 @layout MainLayout
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JSRuntime
@@ -91,14 +92,14 @@
     <table>
         <thead>
             <tr>
-                <th>Mã Thuốc</th>
-                <th>Tên Thuốc</th>
-                <th>Loại Thuốc</th>
-                <th>Đơn Vị Tính</th>
-                <th>Giá Bán</th>
-                <th>Tồn Kho</th>
+                <th style="width: 120px;">Mã Thuốc</th>
+                <th style="width: 200px;">Tên Thuốc</th>
+                <th style="width: 135px;">Loại Thuốc</th>
+                <th style="width: 135px;">Đơn Vị Tính</th>
+                <th style="width: 135px;">Giá Bán</th>
+                <th style="width: 135px;">Tồn Kho</th>
                 <th>Mô Tả</th>
-                <th>Hành Động</th>
+                <th style="width: 135px;">Hành Động</th>
             </tr>
         </thead>
         <tbody>
@@ -120,9 +121,18 @@
                         <td>@medicine.Price.ToString("N0") VNĐ</td>
                         <td>@medicine.StockQuantity</td>
                         <td>@medicine.Description</td>
-                        <td>
-                            <button class="btn-warning" @onclick="() => EditMedicine(medicine)">Sửa</button>
-                            <button class="btn-danger" @onclick="() => ShowDeleteConfirm(medicine.MedicineId)">Xóa</button>
+                        <td >
+                                <button class="btn btn-sm " title="Sửa thông tin" @onclick="() => EditMedicine(medicine)">
+                                    <lord-icon src="https://cdn.lordicon.com/vwzukuhn.json" trigger="hover"
+                                        style="width:30px;height:30px">
+                                    </lord-icon>
+                                </button>   
+                                <button class="btn btn-sm" title="Xóa người dùng"
+                                    @onclick="() => ShowDeleteConfirm(medicine.MedicineId)">
+                                    <lord-icon src="https://cdn.lordicon.com/sxhqklqh.json" trigger="hover"
+                                        style="width:30px;height:30px">
+                                    </lord-icon>
+                                </button>
                         </td>
                     </tr>
                 }
@@ -170,14 +180,15 @@
     private readonly TimeSpan debounceDelay = TimeSpan.FromMilliseconds(500);
     private List<string> MedicineTypes { get; set; } = new List<string>
     {
-        "Thuốc giảm đau",
-        "Thuốc kháng sinh",
-        "Thuốc bổ",
-        "Thuốc chống viêm",
-        "Thuốc hạ sốt",
-        "Thuốc kháng histamin",
-        "Thuốc trị ho",
-        "Thuốc tiêu hóa"
+        "Tiểu đường",
+        "Huyết áp",
+        "Hô hấp",
+        "Kháng dị ứng",
+        "Mỡ máu",
+        "Da liễu",
+        "Giảm đau, hạ sốt",
+        "Kháng sinh",
+        "Dạ dày",
     };
     protected override async Task OnInitializedAsync()
     {
@@ -345,7 +356,7 @@
         {
             if (isEditMode)
             {
-                Console.WriteLine($"Updating medicine ID: {newMedicine.MedicineId}");
+                Console.WriteLine($"Sending update request for MedicineId: {newMedicine.MedicineId}, Data: {JsonSerializer.Serialize(newMedicine)}");
                 var response = await _httpClient.PutAsJsonAsync($"Medicine/UpdateMedicineAsync/{newMedicine.MedicineId}", newMedicine);
                 if (response.IsSuccessStatusCode)
                 {
@@ -355,6 +366,7 @@
                         var existingMedicine = Medicines.FirstOrDefault(m => m.MedicineId == newMedicine.MedicineId);
                         if (existingMedicine != null)
                         {
+                            existingMedicine.MedicineId = updatedMedicine.Content.MedicineId;
                             existingMedicine.MedicineName = updatedMedicine.Content.MedicineName;
                             existingMedicine.MedicineType = updatedMedicine.Content.MedicineType;
                             existingMedicine.Unit = updatedMedicine.Content.Unit;
@@ -363,6 +375,9 @@
                             existingMedicine.Description = updatedMedicine.Content.Description;
                         }
                         ShowToast($"Đã cập nhật thuốc: {newMedicine.MedicineId}", "success");
+                        showForm = false;
+    newMedicine = new MedicineDTO();
+
                     }
                     else
                     {
@@ -371,7 +386,17 @@
                 }
                 else
                 {
-                    ShowToast("Cập nhật thuốc thất bại.", "error");
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Error Response: {errorContent}");
+                    try
+                    {
+                        var error = await response.Content.ReadFromJsonAsync<ResponseValue<object>>();
+                        ShowToast($"Cập nhật thuốc thất bại: {error?.Message ?? "Lỗi không xác định"}", "error");
+                    }
+                    catch
+                    {
+                        ShowToast($"Cập nhật thuốc thất bại: {errorContent}", "error");
+                    }
                 }
             }
             else
@@ -385,6 +410,9 @@
                     {
                         Medicines.Add(addedMedicine.Content);
                         ShowToast($"Đã thêm thuốc: {newMedicine.MedicineName}", "success");
+                        showForm = false;
+    newMedicine = new MedicineDTO();
+
                     }
                     else
                     {
@@ -402,8 +430,7 @@
         {
             ShowToast($"Lỗi khi xử lý thuốc: {ex.Message}", "error");
         }
-        showForm = false;
-        newMedicine = new MedicineDTO();
+        
         StateHasChanged();
     }
 

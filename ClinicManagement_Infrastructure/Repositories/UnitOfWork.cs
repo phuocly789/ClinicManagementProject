@@ -9,6 +9,7 @@ public interface IUnitOfWork : IAsyncDisposable
         where T : class;
     Task<int> SaveChangesAsync();
     Task<IDbContextTransaction> BeginTransactionAsync();
+    SupabaseContext GetDbContext();
 }
 
 public class UnitOfWork : IUnitOfWork
@@ -43,4 +44,6 @@ public class UnitOfWork : IUnitOfWork
     {
         await _context.DisposeAsync();
     }
+
+    public SupabaseContext GetDbContext() => _context;
 }
