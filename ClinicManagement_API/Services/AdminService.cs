@@ -8,7 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IAdminService
 {
-    Task<PagedResult<UserDTO>> GetAllUsersAsync(string role, string search, int page, int pageSize);
+    Task<ResponseValue<PagedResult<UserDTO>>> GetAllUsersAsync(
+        string role,
+        string search,
+        int page,
+        int pageSize
+    );
     Task<ResponseValue<CreateUserResponse>> CreateUserAsync(CreateUserRequest request);
     Task<ResponseValue<UpdateUserResponse>> UpdateUserAsync(int userId, UpdateUserRequest request);
     Task<ResponseValue<ResetPasswordResponse>> ResetPasswordAsync(int userId);
@@ -45,7 +50,7 @@ public class AdminService : IAdminService
         _logger = logger;
     }
 
-    public async Task<PagedResult<UserDTO>> GetAllUsersAsync(
+    public async Task<ResponseValue<PagedResult<UserDTO>>> GetAllUsersAsync(
         string role,
         string search,
         int page,
@@ -54,33 +59,15 @@ public class AdminService : IAdminService
     {
         try
         {
-            // Validate inputs
             if (page < 1)
             {
-                _logger.LogWarning("Số trang không hợp lệ: {Page}. Đặt mặc định là 1.", page);
                 page = 1;
             }
             if (pageSize < 1)
             {
-                _logger.LogWarning(
-                    "Kích thước trang không hợp lệ: {PageSize}. Đặt mặc định là 10.",
-                    pageSize
-                );
                 pageSize = 10;
             }
 
-            // Check if role exists (if provided)
-            if (!string.IsNullOrEmpty(role))
-            {
-                bool roleExists = await _roleRepository.RoleExistsAsync(role);
-                if (!roleExists)
-                {
-                    _logger.LogWarning("Vai trò '{Role}' không tồn tại.", role);
-                    throw new ArgumentException($"Vai trò '{role}' không tồn tại.");
-                }
-            }
-
-            // Fetch users with pagination
             var query = _userRepository
                 .GetAll()
                 .AsNoTracking()
@@ -101,18 +88,25 @@ public class AdminService : IAdminService
                         .GetAll()
                         .Where(ms => ms.StaffId == u.UserId)
                         .FirstOrDefault(),
-                    Patient = _patientRepository
-                        .GetAll()
-                        .Where(p => p.PatientId == u.UserId)
-                        .FirstOrDefault(),
                 });
 
-            // Apply filters only if provided
+            // Log chi tiết để debug
+            var tempQuery = await query.ToListAsync();
+            foreach (var x in tempQuery)
+            {
+                _logger.LogInformation(
+                    "UserId: {UserId}, Username: {Username}, MedicalStaff: {MedicalStaff}, StaffType: {StaffType}",
+                    x.User.UserId,
+                    x.User.Username,
+                    x.MedicalStaff != null ? "Found" : "Not Found",
+                    x.MedicalStaff?.StaffType ?? "null"
+                );
+            }
+
             if (!string.IsNullOrEmpty(role))
             {
                 query = query.Where(x => x.Roles.Contains(role));
             }
-
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(x =>
@@ -121,12 +115,11 @@ public class AdminService : IAdminService
                 );
             }
 
-            // Get total count
             var totalItems = await query.CountAsync();
 
-            // Fetch users with pagination
             var users = await query
-                .OrderBy(x => x.User.UserId)
+                .OrderByDescending(x => x.User.IsActive)
+                .ThenBy(x => x.User.UserId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(x => new UserDTO
@@ -143,30 +136,36 @@ public class AdminService : IAdminService
                     Roles = x.Roles.Any() ? x.Roles : new List<string>(),
                     Specialty = x.MedicalStaff != null ? x.MedicalStaff.Specialty : null,
                     LicenseNumber = x.MedicalStaff != null ? x.MedicalStaff.LicenseNumber : null,
+                    Bio = x.MedicalStaff != null ? x.MedicalStaff.Bio : null,
+                    StaffType = x.MedicalStaff != null ? x.MedicalStaff.StaffType : null,
                 })
                 .ToListAsync();
+
             _logger.LogInformation(
-                "Lấy được {Count} người dùng cho trang {Page} với kích thước trang {PageSize}, vai trò: {Role}, tìm kiếm: {Search}",
+                "Fetched {Count} users for page {Page}, role: {Role}, search: {Search}",
                 users.Count,
                 page,
-                pageSize,
                 role ?? "none",
                 search ?? "none"
             );
 
-            return new PagedResult<UserDTO>
-            {
-                TotalItems = totalItems,
-                Page = page,
-                PageSize = pageSize,
-                Items = users,
-            };
+            return new ResponseValue<PagedResult<UserDTO>>(
+                new PagedResult<UserDTO>
+                {
+                    TotalItems = totalItems,
+                    Page = page,
+                    PageSize = pageSize,
+                    Items = users,
+                },
+                StatusReponse.Success,
+                "Lấy danh sách người dùng thành công."
+            );
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Lỗi khi lấy danh sách người dùng với vai trò: {Role}, tìm kiếm: {Search}, trang: {Page}, kích thước trang: {PageSize}",
+                "Error fetching users: role={Role}, search={Search}, page={Page}, pageSize={PageSize}",
                 role ?? "none",
                 search ?? "none",
                 page,
@@ -189,6 +188,14 @@ public class AdminService : IAdminService
                 null,
                 StatusReponse.BadRequest,
                 "Email hoặc số điện thoại đã tồn tại."
+            );
+        }
+        if (await _userRepository.GetAll().AnyAsync(u => u.Username == request.Username))
+        {
+            return new ResponseValue<CreateUserResponse>(
+                null,
+                StatusReponse.BadRequest,
+                "Username đã tồn tại."
             );
         }
         if (!await _roleRepository.GetAll().AnyAsync(r => r.RoleId == request.RoleId))
@@ -512,6 +519,7 @@ public class AdminService : IAdminService
             }
             //delete user
             await _userRepository.DeleteAsync(userId);
+            await _uow.SaveChangesAsync();
             _logger.LogInformation("Xóa người dùng thành công với userId: {UserId}", userId);
         }
         catch (Exception ex)

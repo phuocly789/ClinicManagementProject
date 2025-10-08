@@ -228,11 +228,16 @@ button {
     opacity: 1 !important;
     visibility: visible !important;
     height: auto;
+    max-height: 700px;
 }
 
 .modal-header {
     padding: 15px 20px !important;
     border-bottom: 1px solid #ddd !important;
+    position: sticky;
+    top: 0;
+    background-color: white !important;
+    z-index: 10;
 }
 
 .modal-header h3 {
@@ -399,27 +404,21 @@ button {
     align-items: center !important;
 }
 
+/* Container để xử lý cuộn */
+.table-container {
+    max-height: 600px;
+    /* Chiều cao tối đa của vùng hiển thị */
+    overflow-y: auto;
+    /* Tạo thanh cuộn dọc khi nội dung vượt quá */
+    border: 1px solid #ddd;
+    /* Thêm viền cho đẹp mắt */
+    border-radius: 5px;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    /* Giữ cột đều nhau */
-}
-
-thead,
-tbody tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-}
-
-tbody {
-    display: block;
-    max-height: 473px;
-    /* chiều cao vùng hiển thị */
-    overflow-y: auto;
-    /* cuộn dọc */
-    width: 101.3%;
 }
 
 th,
@@ -428,16 +427,33 @@ td {
     text-align: left;
     border-bottom: 1px solid #ddd;
     word-wrap: break-word;
-    /* tránh text tràn */
+    /* Tránh text tràn */
 }
 
+/* Phần quan trọng để giữ header cố định */
 th {
     background-color: #f8f9fa;
     font-weight: bold;
     position: sticky;
+    /* Đây là "phép màu" */
     top: 0;
-    /* giữ header cố định */
+    /* Dính vào đỉnh của container cuộn */
     z-index: 2;
+    /* Đảm bảo header luôn ở trên */
+}
+
+/* Hiệu ứng hover bây giờ sẽ hoạt động hoàn hảo! */
+tbody tr:hover {
+    background-color: #e3e3e3;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+/* Hover cho button trong table */
+button:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
 }
 
 /* Thẻ card giữ nguyên */

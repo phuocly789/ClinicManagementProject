@@ -1,5 +1,5 @@
 public class ToggleUserActiveRequest
 {
-    public bool Active { get; set; }
+    public bool? Active { get; set; }
 }
 

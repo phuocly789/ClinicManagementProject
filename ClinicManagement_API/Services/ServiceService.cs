@@ -4,7 +4,11 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IServiceService
 {
-    Task<PagedResult<ServiceDTO>> GetAllServicesAsync(string search, int page, int pageSize);
+    Task<ResponseValue<PagedResult<ServiceDTO>>> GetAllServicesAsync(
+        string search,
+        int page,
+        int pageSize
+    );
     Task<ResponseValue<ServiceDTO>> GetServiceByIdAsync(int serviceId);
     Task<ResponseValue<ServiceDTO>> CreateServiceAsync(ServiceDTO request);
     Task<ResponseValue<ServiceDTO>> UpdateServiceAsync(int serviceId, ServiceDTO request);
@@ -29,7 +33,7 @@ public class ServiceService : IServiceService
         _serviceRepository = serviceRepository;
     }
 
-    public async Task<PagedResult<ServiceDTO>> GetAllServicesAsync(
+    public async Task<ResponseValue<PagedResult<ServiceDTO>>> GetAllServicesAsync(
         string search,
         int page = 1,
         int pageSize = 10
@@ -62,13 +66,17 @@ public class ServiceService : IServiceService
                     Description = s.Description,
                 })
                 .ToListAsync();
-            return new PagedResult<ServiceDTO>
-            {
-                TotalItems = totalItems,
-                Page = page,
-                PageSize = pageSize,
-                Items = services,
-            };
+            return new ResponseValue<PagedResult<ServiceDTO>>(
+                new PagedResult<ServiceDTO>
+                {
+                    TotalItems = totalItems,
+                    Page = page,
+                    PageSize = pageSize,
+                    Items = services,
+                },
+                StatusReponse.Success,
+                "Lấy danh sách dịch vụ thành công."
+            );
         }
         catch (Exception ex)
         {

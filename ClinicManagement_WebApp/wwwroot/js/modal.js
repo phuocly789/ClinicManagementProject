@@ -4,3 +4,4 @@ window.focusModal = function () {
         modal.focus();
     }
 };
+

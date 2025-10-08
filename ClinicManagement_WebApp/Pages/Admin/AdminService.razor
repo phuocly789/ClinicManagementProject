@@ -1,15 +1,15 @@
-@page "/admin/medicines"
+@page "/admin/services"
 @layout MainLayout
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JSRuntime
-<PageTitle>Quản Lý Thuốc</PageTitle>
-<Loading IsLoading="@isLoading" />
+<PageTitle>Quản Lý dịch vụ</PageTitle>
+
 <div class="main-content">
     <header class="header">
-        <h1>Quản Lý Danh Mục Thuốc</h1>
+        <h1>Quản Lý Danh Mục dịch vụ</h1>
         <div>
-            <input type="text" class="form-control" placeholder="Tìm kiếm thuốc..." @bind="searchQuery" @oninput="OnSearchInput" />
-            <button style="width: 400px;" class="btn-primary" @onclick="ShowAddMedicineForm">Thêm Thuốc Mới</button>
+            <input type="text" class="form-control" placeholder="Tìm kiếm dịch vụ..." @bind="searchQuery" @oninput="OnSearchInput" />
+            <button style="width: 400px;" class="btn-primary" @onclick="ShowAddMedicineForm">Thêm dịch vụ Mới</button>
         </div>
     </header>
 
@@ -20,26 +20,26 @@
         ToastType="@toastType"
         OnClose="@HideToast" />
 
-    <!-- Modal form thêm/sửa thuốc -->
+    @* <!-- Modal form thêm/sửa dịch vụ -->
     @if (showForm)
     {
         <div class="modal-overlay">
             <div class="modal">
                 <div class="modal-header">
-                    <h3>@(isEditMode ? "Sửa Thuốc" : "Thêm Thuốc Mới")</h3>
+                    <h3>@(isEditMode ? "Sửa dịch vụ" : "Thêm dịch vụ Mới")</h3>
                 </div>
                 <div class="modal-body">
                     <EditForm Model="@newMedicine" OnValidSubmit="@HandleFormSubmit">
                         <DataAnnotationsValidator />
                         <div class="form-group">
-                            <label>Tên Thuốc:</label>
+                            <label>Tên dịch vụ:</label>
                             <InputText class="form-control" @bind-Value="newMedicine.MedicineName" />
                             <ValidationMessage For="@(() => newMedicine.MedicineName)" />
                         </div>
                         <div class="form-group">
-                            <label>Loại Thuốc:</label>
+                            <label>Loại dịch vụ:</label>
                             <InputSelect class="form-control" @bind-Value="newMedicine.MedicineType">
-                                <option value="">-- Chọn loại thuốc --</option>
+                                <option value="">-- Chọn loại dịch vụ --</option>
                                 @foreach (var type in MedicineTypes)
                                 {
                                     <option value="@type">@type</option>
@@ -74,7 +74,7 @@
                 </div>
             </div>
         </div>
-    }
+    } *@
 
     <!-- Modal xác nhận xóa -->
     <NotificationModal 
@@ -85,51 +85,46 @@
         OnConfirm="@ConfirmDelete"
         OnCancel="@CancelModal" />
 
-    <!-- Danh sách thuốc -->
-        
-        <div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th>Mã Thuốc</th>
-                <th>Tên Thuốc</th>
-                <th>Loại Thuốc</th>
-                <th>Đơn Vị Tính</th>
-                <th>Giá Bán</th>
-                <th>Tồn Kho</th>
-                <th>Mô Tả</th>
-                <th>Hành Động</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Medicines.Count == 0 || isLoading)
-            {
+    <!-- Danh sách dịch vụ -->   
+    <div class="table-container">
+        <table>
+            <thead>
                 <tr>
-                    <td colspan="8">Không tìm thấy thuốc nào.</td>
+                    <th>Mã dịch vụ</th>
+                    <th>Tên dịch vụ</th>
+                    <th>Loại dịch vụ</th>
+                    <th>Giá</th>
+                    <th>Mô tả</th>
+                    <th>Hành Động</th>
                 </tr>
-            }
-            else
-            {
-                @foreach (var medicine in Medicines)
+            </thead>
+            <tbody>
+            @if (Services.Count == 0)
                 {
                     <tr>
-                        <td>@medicine.MedicineId</td>
-                        <td>@medicine.MedicineName</td>
-                        <td>@medicine.MedicineType</td>
-                        <td>@medicine.Unit</td>
-                        <td>@medicine.Price.ToString("N0") VNĐ</td>
-                        <td>@medicine.StockQuantity</td>
-                        <td>@medicine.Description</td>
-                        <td>
-                            <button class="btn-warning" @onclick="() => EditMedicine(medicine)">Sửa</button>
-                            <button class="btn-danger" @onclick="() => ShowDeleteConfirm(medicine.MedicineId)">Xóa</button>
-                        </td>
+                        <td colspan="8">Không tìm thấy dịch vụ nào.</td>
                     </tr>
                 }
-            }
-        </tbody>
-    </table>
-</div>
+                else
+                {
+                    @foreach (var service in Services)
+                    {
+                        <tr>
+                            <td>@("service"+service.ServiceId)</td>
+                            <td>@service.ServiceName</td>
+                            <td>@service.ServiceType</td>
+                            <td>@service.Price.ToString("N0") VNĐ</td>
+                            <td>@service.Description</td>
+                            <td>
+                                <button class="btn-warning">Sửa</button> 
+                                <button class="btn-danger" @onclick="() => ShowDeleteConfirm(service.ServiceId)">Xóa</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>     
 
         <!-- Phân trang -->
         @if (totalPages > 1)
@@ -149,11 +144,10 @@
 
 @code {
     private HttpClient _httpClient;
-    private List<MedicineDTO> Medicines { get; set; } = new List<MedicineDTO>();
-    private MedicineDTO newMedicine = new MedicineDTO();
+    private List<ServiceVM> Services { get; set; } = new List<ServiceVM>();
+    @* private MedicineDTO newMedicine = new MedicineDTO(); *@
     private bool showForm = false;
     private bool isEditMode = false;
-    private bool isLoading = false;
     private bool showModal = false;
     private string modalTitle = "";
     private string modalMessage = "";
@@ -168,46 +162,34 @@
     private string toastType = "info";
     private DateTime lastSearchTime = DateTime.MinValue;
     private readonly TimeSpan debounceDelay = TimeSpan.FromMilliseconds(500);
-    private List<string> MedicineTypes { get; set; } = new List<string>
-    {
-        "Thuốc giảm đau",
-        "Thuốc kháng sinh",
-        "Thuốc bổ",
-        "Thuốc chống viêm",
-        "Thuốc hạ sốt",
-        "Thuốc kháng histamin",
-        "Thuốc trị ho",
-        "Thuốc tiêu hóa"
-    };
+   
     protected override async Task OnInitializedAsync()
     {
         _httpClient = HttpClientFactory.CreateClient("ClinicManagement_API");
-        await LoadMedicines();
+        await LoadUsers();
     }
 
-    private async Task LoadMedicines()
+    private async Task LoadUsers()
     {
         try
         {
-            isLoading = true;
-            StateHasChanged();
-            var query = $"Medicine/GetAllMedicinesAsync?page={currentPage}&pageSize={pageSize}";
+            var query = $"Service/GetAllServicesAsync?page={currentPage}&pageSize={pageSize}";
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 query += $"&search={Uri.EscapeDataString(searchQuery)}";
             }
             Console.WriteLine($"Calling API: {query}");
-            var response = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<MedicineDTO>>>(query);
+            var response = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<ServiceVM>>>(query);
             Console.WriteLine($"API Response Status: {response?.Status}, Items: {response?.Content?.Items?.Count}, Message: {response?.Message}");
             if (response?.Status == StatusReponse.Success && response.Content?.Items != null)
             {
-                Medicines = response.Content.Items.ToList();
+                Services = response.Content.Items.ToList();
                 totalItems = response.Content.TotalItems;
                 totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
             }
             else
             {
-                ShowToast($"Không thể tải danh sách thuốc: {response?.Message ?? "Lỗi không xác định"}", "error");
+                ShowToast($"Không thể tải danh sách dịch vụ: {response?.Message ?? "Lỗi không xác định"}", "error");
             }
         }
         catch (Exception ex)
@@ -215,11 +197,7 @@
             Console.WriteLine($"API Error: {ex.Message}");
             ShowToast($"Lỗi khi gọi API: {ex.Message}", "error");
         }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        StateHasChanged();
     }
 
     private async Task OnSearchInput(ChangeEventArgs e)
@@ -231,7 +209,7 @@
         }
         lastSearchTime = DateTime.Now;
         currentPage = 1;
-        await LoadMedicines();
+        await LoadUsers();
     }
 
     private async Task PreviousPage()
@@ -239,7 +217,7 @@
         if (currentPage > 1)
         {
             currentPage--;
-            await LoadMedicines();
+            await LoadUsers();
         }
     }
 
@@ -248,7 +226,7 @@
         if (currentPage < totalPages)
         {
             currentPage++;
-            await LoadMedicines();
+    await LoadUsers();
         }
     }
 
@@ -256,13 +234,13 @@
     {
         pageSize = int.Parse(e.Value?.ToString() ?? "10");
         currentPage = 1;
-        await LoadMedicines();
+        await LoadUsers();
     }
 
     private void ShowAddMedicineForm()
     {
         Console.WriteLine("ShowAddMedicineForm called");
-        newMedicine = new MedicineDTO();
+        @* newMedicine = new MedicineDTO(); *@
         showForm = true;
         isEditMode = false;
         showToast = false;
@@ -272,7 +250,7 @@
     private void EditMedicine(MedicineDTO medicine)
     {
         Console.WriteLine($"EditMedicine called for ID: {medicine.MedicineId}");
-        newMedicine = new MedicineDTO
+        @* newMedicine = new MedicineDTO
         {
             MedicineId = medicine.MedicineId,
             MedicineName = medicine.MedicineName,
@@ -281,7 +259,7 @@
             Price = medicine.Price,
             StockQuantity = medicine.StockQuantity,
             Description = medicine.Description
-        };
+        }; *@
         showForm = true;
         isEditMode = true;
         showToast = false;
@@ -293,7 +271,7 @@
         Console.WriteLine($"ShowDeleteConfirm called for ID: {medicineId}");
         medicineToDelete = medicineId;
         modalTitle = "Xác nhận xóa";
-        modalMessage = $"Bạn có chắc muốn xóa thuốc với mã {medicineId}?";
+        modalMessage = $"Bạn có chắc muốn xóa dịch vụ với mã {medicineId}?";
         showModal = true;
         StateHasChanged();
     }
@@ -302,33 +280,27 @@
     {
         try
         {
-            isLoading = true;
-            StateHasChanged();
             Console.WriteLine($"Deleting medicine ID: {medicineToDelete}");
-            var response = await _httpClient.DeleteAsync($"Medicine/DeleteMedicineAsync/{medicineToDelete}");
+            var response = await _httpClient.DeleteAsync($"Users/DeleteUserAsync/{medicineToDelete}");
             if (response.IsSuccessStatusCode)
             {
-                Medicines.RemoveAll(m => m.MedicineId == medicineToDelete);
-                ShowToast($"Đã xóa thuốc: {medicineToDelete}", "success");
-                await LoadMedicines();
+                Services.RemoveAll(s => s.ServiceId == medicineToDelete);
+                ShowToast($"Đã xóa dịch vụ: {medicineToDelete}", "success");
+                await LoadUsers();
             }
             else
             {
                 var error = await response.Content.ReadFromJsonAsync<dynamic>();
-                ShowToast($"Xóa thuốc thất bại: {error?.message ?? "Lỗi không xác định"}", "error");
+                ShowToast($"Xóa dịch vụ thất bại: {error?.message ?? "Lỗi không xác định"}", "error");
             }
         }
         catch (Exception ex)
         {
-            ShowToast($"Lỗi khi xóa thuốc: {ex.Message}", "error");
+            ShowToast($"Lỗi khi xóa dịch vụ: {ex.Message}", "error");
         }
-        finally
-        {
-            isLoading = false;
-            showModal = false;
-            medicineToDelete = 0;
-            StateHasChanged();
-        }
+        showModal = false;
+        medicineToDelete = 0;
+        StateHasChanged();
     }
 
     private void CancelModal()
@@ -339,7 +311,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleFormSubmit()
+    @* private async Task HandleFormSubmit()
     {
         try
         {
@@ -362,16 +334,16 @@
                             existingMedicine.StockQuantity = updatedMedicine.Content.StockQuantity;
                             existingMedicine.Description = updatedMedicine.Content.Description;
                         }
-                        ShowToast($"Đã cập nhật thuốc: {newMedicine.MedicineId}", "success");
+                        ShowToast($"Đã cập nhật dịch vụ: {newMedicine.MedicineId}", "success");
                     }
                     else
                     {
-                        ShowToast($"Cập nhật thuốc thất bại: {updatedMedicine?.Message ?? "Lỗi không xác định"}", "error");
+                        ShowToast($"Cập nhật dịch vụ thất bại: {updatedMedicine?.Message ?? "Lỗi không xác định"}", "error");
                     }
                 }
                 else
                 {
-                    ShowToast("Cập nhật thuốc thất bại.", "error");
+                    ShowToast("Cập nhật dịch vụ thất bại.", "error");
                 }
             }
             else
@@ -384,37 +356,37 @@
                     if (addedMedicine?.Status == StatusReponse.Success && addedMedicine.Content != null)
                     {
                         Medicines.Add(addedMedicine.Content);
-                        ShowToast($"Đã thêm thuốc: {newMedicine.MedicineName}", "success");
+                        ShowToast($"Đã thêm dịch vụ: {newMedicine.MedicineName}", "success");
                     }
                     else
                     {
-                        ShowToast($"Thêm thuốc thất bại: {addedMedicine?.Message ?? "Lỗi không xác định"}", "error");
+                        ShowToast($"Thêm dịch vụ thất bại: {addedMedicine?.Message ?? "Lỗi không xác định"}", "error");
                     }
                 }
                 else
                 {
-                    ShowToast("Thêm thuốc thất bại.", "error");
+                    ShowToast("Thêm dịch vụ thất bại.", "error");
                 }
             }
             await LoadMedicines();
         }
         catch (Exception ex)
         {
-            ShowToast($"Lỗi khi xử lý thuốc: {ex.Message}", "error");
+            ShowToast($"Lỗi khi xử lý dịch vụ: {ex.Message}", "error");
         }
         showForm = false;
         newMedicine = new MedicineDTO();
         StateHasChanged();
-    }
+    } *@
 
-    private void CancelForm()
+    @* private void CancelForm()
     {
         Console.WriteLine("CancelForm called");
         showForm = false;
         newMedicine = new MedicineDTO();
         showToast = false;
         StateHasChanged();
-    }
+    } *@
 
     private void ShowToast(string message, string type)
     {
