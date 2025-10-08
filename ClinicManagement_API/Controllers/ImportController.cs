@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class ImportController : ControllerBase
@@ -24,14 +24,73 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpGet("GetAllImportBillsAsync")]
-        public async Task<ResponseValue<PagedResult<ImportDTO>>> GetAllImportBillsAsync()
+        public async Task<
+            ActionResult<ResponseValue<PagedResult<ImportDTO>>>
+        > GetAllImportBillsAsync(
+            [FromQuery] int? supplierId = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10
+        )
         {
-            var result = await _importService.GetAllImportBillsAsync();
-            return new ResponseValue<PagedResult<ImportDTO>>(
-                result.Content,
-                StatusReponse.Success,
-                "Lấy danh sách nhập hàng thành công."
-            );
+            try
+            {
+                var result = await _importService.GetAllImportBillsAsync(
+                    supplierId,
+                    startDate,
+                    endDate,
+                    page,
+                    pageSize
+                );
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy danh sách nhập hàng.");
+                return StatusCode(
+                    500,
+                    new ResponseValue<PagedResult<ImportDTO>>
+                    {
+                        Status = StatusReponse.Error,
+                        Message = "Đã xảy ra lỗi khi lấy danh sách nhập hàng: " + ex.Message,
+                    }
+                );
+            }
+        }
+
+        [HttpGet("GenerateImportReport")]
+        public async Task<ActionResult<ResponseValue<ImportReportDTO>>> GenerateImportReport(
+            [FromQuery] int? supplierId = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10
+        )
+        {
+            try
+            {
+                var result = await _importService.GenerateImportReportAsync(
+                    supplierId,
+                    startDate,
+                    endDate,
+                    page,
+                    pageSize
+                );
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo báo cáo nhập hàng.");
+                return StatusCode(
+                    500,
+                    new ResponseValue<ImportReportDTO>
+                    {
+                        Status = StatusReponse.Error,
+                        Message = "Đã xảy ra lỗi khi tạo báo cáo nhập hàng: " + ex.Message,
+                    }
+                );
+            }
         }
 
         [HttpPost("CreateImportBillAsync")]

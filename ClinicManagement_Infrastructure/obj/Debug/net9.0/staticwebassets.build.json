@@ -1,12 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "/NG7trvRZu9ONKDu/vu93SNZ/2xckgfU2oF6AsfGk2M=",
-  "Source": "ClinicManagement_Infrastructure",
-  "BasePath": "_content/ClinicManagement_Infrastructure",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": [],
-  "Endpoints": []
-}
+{"Version":1,"Hash":"/NG7trvRZu9ONKDu/vu93SNZ/2xckgfU2oF6AsfGk2M=","Source":"ClinicManagement_Infrastructure","BasePath":"_content/ClinicManagement_Infrastructure","Mode":"Default","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

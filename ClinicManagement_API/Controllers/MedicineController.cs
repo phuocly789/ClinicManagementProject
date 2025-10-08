@@ -152,7 +152,7 @@ namespace ClinicManagement_API.Controllers
             }
             return StatusCode(500, result);
         }
-
+        
         [HttpDelete("DeleteMedicineAsync/{id}")]
         public async Task<IActionResult> DeleteMedicineAsync(int id)
         {
