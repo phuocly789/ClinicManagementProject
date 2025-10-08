@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
@@ -26,7 +26,7 @@ namespace ClinicManagement_API.Controllers
 
         // [Authorize(Roles = "Admin")]
         [HttpGet("GetAllUsersAsync")]
-        public async Task<IActionResult> GetAllUsersAsync(
+        public async Task<ActionResult<ResponseValue<PagedResult<UserDTO>>>> GetAllUsersAsync(
             [FromQuery] string role = null,
             [FromQuery] string search = null,
             [FromQuery] int page = 1,
@@ -43,19 +43,7 @@ namespace ClinicManagement_API.Controllers
                     pageSize
                 );
                 var result = await _adminService.GetAllUsersAsync(role, search, page, pageSize);
-                return Ok(
-                    new
-                    {
-                        success = true,
-                        data = new
-                        {
-                            result.TotalItems,
-                            result.Page,
-                            result.PageSize,
-                            users = result.Items,
-                        },
-                    }
-                );
+                return Ok(result);
             }
             catch (ArgumentException ex)
             {

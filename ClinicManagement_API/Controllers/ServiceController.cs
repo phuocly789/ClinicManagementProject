@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class ServiceController : ControllerBase
@@ -24,7 +24,7 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpGet("GetAllServicesAsync")]
-        public async Task<IActionResult> GetAllServicesAsync(
+        public async Task<ActionResult<ResponseValue<PagedResult<ServiceDTO>>>> GetAllServicesAsync(
             [FromQuery] string search = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10
@@ -33,19 +33,7 @@ namespace ClinicManagement_API.Controllers
             try
             {
                 var result = await _serviceService.GetAllServicesAsync(search, page, pageSize);
-                return Ok(
-                    new
-                    {
-                        success = true,
-                        data = new
-                        {
-                            result.TotalItems,
-                            result.Page,
-                            result.PageSize,
-                            services = result.Items,
-                        },
-                    }
-                );
+                return Ok(result);
             }
             catch (ArgumentException ex)
             {

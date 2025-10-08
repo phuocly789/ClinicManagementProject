@@ -11,5 +11,7 @@ public class UserDTO
     public bool? IsActive { get; set; }
     public List<string> Roles { get; set; }
     public string Specialty { get; set; }
+    public string? Bio { get; set; }
+    public string? StaffType { get; set; }
     public string LicenseNumber { get; set; }
 }
