@@ -163,7 +163,7 @@
         OnCancel="@CancelModal" />
     <!-- Danh sách người dùng -->
     <div class="table-container">
-        <table>
+        <table class="table table-striped">
             <thead>
                 <tr>
                     <th style="width: 150px;">Mã Người Dùng</th>
@@ -199,11 +199,11 @@
                                 <td>
                                     @if (user.IsActive??true)
                                     {
-                                        <span class="status-active">Kích hoạt</span>
+                                        <span class="status status-active">Kích hoạt</span>
                                     }
                                     else
                                     {
-                                        <span class="status-inactive">Vô hiệu hóa</span>
+                                        <span class="status status-inactive">Vô hiệu hóa</span>
                                     }
                                 </td>
                             }
