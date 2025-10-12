@@ -1,4 +1,7 @@
+using ClinicManagement_Infrastructure.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using NpgsqlTypes;
 
 public interface IReportsService
 {
@@ -10,6 +13,13 @@ public interface IReportsService
         DateTime? startDate = null,
         DateTime? endDate = null
     );
+    Task<ResponseValue<PagedResult<DetailedInvoiceDTO>>> GetDetailedRevenueReportAsync(
+        int page = 1,
+        int pageSize = 10,
+        string search = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null
+    );
 }
 
 public class ReportsService : IReportsService
@@ -17,16 +27,19 @@ public class ReportsService : IReportsService
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly ILogger<ReportsService> _logger;
+    private readonly SupabaseContext _context;
 
     public ReportsService(
         IAppointmentRepository appointmentRepository,
         IInvoiceRepository invoiceRepository,
-        ILogger<ReportsService> logger
+        ILogger<ReportsService> logger,
+        SupabaseContext context
     )
     {
         _appointmentRepository = appointmentRepository;
         _invoiceRepository = invoiceRepository;
         _logger = logger;
+        _context = context;
     }
 
     public async Task<ResponseValue<VisitReportDTO>> GetVisitStatisticsAsync(
@@ -150,4 +163,161 @@ public class ReportsService : IReportsService
             );
         }
     }
+
+    public async Task<ResponseValue<PagedResult<DetailedInvoiceDTO>>> GetDetailedRevenueReportAsync(
+        int page = 1,
+        int pageSize = 10,
+        string search = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null
+    )
+    {
+        try
+        {
+            // Validate dates
+            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+            {
+                return new ResponseValue<PagedResult<DetailedInvoiceDTO>>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc."
+                );
+            }
+
+            // Default date range
+            var fromDate = startDate ?? DateTime.UtcNow.AddMonths(-1);
+            var toDate = endDate ?? DateTime.UtcNow.AddDays(1).AddTicks(-1); // Bao gồm cuối ngày
+
+            int? searchId = null;
+            if (int.TryParse(search, out int parsedId))
+            {
+                searchId = parsedId;
+            }
+
+            // Truy vấn LINQ
+            var query =
+                from i in _context.Invoices
+                join id in _context.InvoiceDetails on i.InvoiceId equals id.InvoiceId
+                join u in _context.Users1 on i.PatientId equals u.UserId into users
+                from u in users.DefaultIfEmpty()
+                join a in _context.Appointments
+                    on i.AppointmentId equals a.AppointmentId
+                    into appointments
+                from a in appointments.DefaultIfEmpty()
+                join s in _context.Services on id.ServiceId equals s.ServiceId into services
+                from s in services.DefaultIfEmpty()
+                join m in _context.Medicines on id.MedicineId equals m.MedicineId into medicines
+                from m in medicines.DefaultIfEmpty()
+                where
+                    i.Status == "Paid"
+                    && i.InvoiceDate >= fromDate
+                    && i.InvoiceDate <= toDate
+                    && (
+                        string.IsNullOrEmpty(search)
+                        || u.FullName.Contains(search)
+                        || (searchId.HasValue && i.InvoiceId == searchId.Value)
+                    )
+                select new RawInvoiceDetailDTO
+                {
+                    InvoiceId = i.InvoiceId,
+                    InvoiceDate = i.InvoiceDate,
+                    TotalAmount = i.TotalAmount,
+                    PatientName = u != null ? u.FullName : null,
+                    AppointmentDate = a != null ? (DateOnly)a.AppointmentDate : null,
+
+                    ServiceId = id.ServiceId,
+                    ServiceName = s != null ? s.ServiceName : null,
+                    MedicineId = id.MedicineId,
+                    MedicineName = m != null ? m.MedicineName : null,
+                    Quantity = id.Quantity,
+                    UnitPrice = id.UnitPrice,
+                    SubTotal = id.SubTotal,
+                };
+
+            // Nhóm dữ liệu theo InvoiceId và áp dụng phân trang
+            var groupedInvoices = await query
+                .GroupBy(r => r.InvoiceId)
+                .Select(g => new DetailedInvoiceDTO
+                {
+                    InvoiceId = g.Key,
+                    InvoiceDate = g.First().InvoiceDate,
+                    TotalAmount = g.First().TotalAmount,
+                    PatientName = g.First().PatientName,
+                    AppointmentDate = g.First().AppointmentDate,
+                    Details = g.Select(item => new DetailedInvoiceItemDTO
+                        {
+                            ServiceId = item.ServiceId,
+                            ServiceName = item.ServiceName,
+                            MedicineId = item.MedicineId,
+                            MedicineName = item.MedicineName,
+                            Quantity = item.Quantity,
+                            UnitPrice = item.UnitPrice,
+                            SubTotal = item.SubTotal,
+                        })
+                        .ToList(),
+                })
+                .OrderByDescending(i => i.InvoiceDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Tính tổng số items
+            var totalItemsQuery =
+                from i in _context.Invoices
+                join id in _context.InvoiceDetails on i.InvoiceId equals id.InvoiceId
+                join u in _context.Users1 on i.PatientId equals u.UserId into users
+                from u in users.DefaultIfEmpty()
+                where
+                    i.Status == "Paid"
+                    && i.InvoiceDate >= fromDate
+                    && i.InvoiceDate <= toDate
+                    && (
+                        string.IsNullOrEmpty(search)
+                        || u.FullName.Contains(search)
+                        || (searchId.HasValue && i.InvoiceId == searchId.Value)
+                    )
+                select i.InvoiceId;
+
+            var totalItems = await totalItemsQuery.Distinct().CountAsync();
+
+            var pagedResult = new PagedResult<DetailedInvoiceDTO>
+            {
+                Items = groupedInvoices,
+                TotalItems = totalItems,
+                Page = page,
+                PageSize = pageSize,
+            };
+
+            return new ResponseValue<PagedResult<DetailedInvoiceDTO>>(
+                pagedResult,
+                StatusReponse.Success,
+                "Lấy báo cáo doanh thu chi tiết thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy báo cáo doanh thu chi tiết");
+            return new ResponseValue<PagedResult<DetailedInvoiceDTO>>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy báo cáo doanh thu chi tiết: " + ex.Message
+            );
+        }
+    }
+}
+
+public class RawInvoiceDetailDTO
+{
+    public int InvoiceId { get; set; }
+    public DateTime? InvoiceDate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string? PatientName { get; set; }
+    public DateOnly? AppointmentDate { get; set; }
+    public int? ServiceId { get; set; }
+    public string? ServiceName { get; set; }
+    public int? MedicineId { get; set; }
+    public string? MedicineName { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal SubTotal { get; set; }
 }

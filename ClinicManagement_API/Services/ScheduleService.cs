@@ -11,6 +11,10 @@ public interface IScheduleService
         int scheduleId,
         UpdateScheduleRequestDTO request
     );
+    Task<ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>> GetAllSchedulesAsync(
+     
+    );
+    Task<ResponseValue<bool>> DeleteScheduleAsync(int scheduleId);
 }
 
 public class ScheduleService : IScheduleService
@@ -64,9 +68,9 @@ public class ScheduleService : IScheduleService
                     "Start time must be before end time."
                 );
             }
-            bool isDoctor = await _medicalStaffRepository
+            bool isNotPatient = await _medicalStaffRepository
                 .GetAll()
-                .AnyAsync(ms => ms.StaffId == request.StaffId && ms.StaffType == "Doctor");
+                .AnyAsync(ms => ms.StaffId == request.StaffId && ms.StaffType != "Patient");
             bool hasOverlappingSchedule = await _staffScheduleRepository
                 .GetAll()
                 .AnyAsync(s =>
@@ -79,12 +83,12 @@ public class ScheduleService : IScheduleService
                 );
 
             //
-            if (!isDoctor)
+            if (!isNotPatient)
             {
                 return new ResponseValue<CreateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "StaffId does not correspond to a valid doctor."
+                    "StaffId Là Bệnh nhân, Không thể thêm lịch."
                 );
             }
             if (hasOverlappingSchedule)
@@ -187,15 +191,15 @@ public class ScheduleService : IScheduleService
             }
 
             // Kiểm tra StaffId có phải bác sĩ
-            bool isDoctor = await _medicalStaffRepository
+            bool isNotPatient = await _medicalStaffRepository
                 .GetAll()
-                .AnyAsync(ms => ms.StaffId == schedule.StaffId && ms.StaffType == "Doctor");
-            if (!isDoctor)
+                .AnyAsync(ms => ms.StaffId == schedule.StaffId && ms.StaffType != "Patient");
+            if (!isNotPatient)
             {
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "StaffId does not correspond to a valid doctor."
+                    "StaffId does correspond to a valid Patient."
                 );
             }
 
@@ -253,6 +257,92 @@ public class ScheduleService : IScheduleService
                 StatusReponse.Error,
                 $"An error occurred: {ex.Message}"
             );
+        }
+    }
+
+    public async Task<
+        ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>
+    > GetAllSchedulesAsync()
+    {
+        try
+        {
+           
+            var query =
+                from schedule in _staffScheduleRepository.GetAll()
+                join user in _userRepository.GetAll()
+                    on schedule.StaffId equals user.UserId
+                    into staffUsers
+                from user in staffUsers.DefaultIfEmpty()
+                select new { schedule, user };
+
+            var totalItems = await query.CountAsync();
+
+            var schedules = await query
+                .OrderBy(q => q.schedule.ScheduleId)
+                .Select(q => new ScheduleForMedicalStaffResponse
+                {
+                    StaffId = q.schedule.StaffId,
+                    StaffName = q.user != null ? q.user.FullName : "(Không xác định)",
+                    Role = q.user.UserRoles.Select(r => r.Role.RoleName).FirstOrDefault(),
+
+                    WorkDate = q.schedule.WorkDate.ToString("yyyy-MM-dd"),
+                    StartTime = q.schedule.StartTime.ToString("HH:mm:ss"),
+                    EndTime = q.schedule.EndTime.ToString("HH:mm:ss"),
+                    IsAvailable = q.schedule.IsAvailable,
+                })
+                .ToListAsync();
+
+            return new ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>(
+                new PagedResult<ScheduleForMedicalStaffResponse>
+                {
+                    TotalItems = totalItems,
+                    Page = 0,
+                    PageSize = 0,
+                    Items = schedules,
+                },
+                StatusReponse.Success,
+                "Lấy danh sách lịch thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetAllSchedulesAsync");
+            return new ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>(
+                null,
+                StatusReponse.Error,
+                "An error occurred while processing your request." + ex.Message
+            );
+        }
+    }
+
+    public async Task<ResponseValue<bool>> DeleteScheduleAsync(int scheduleId)
+    {
+        try
+        {
+            var schedule = await _staffScheduleRepository.GetByIdAsync(scheduleId);
+            if (schedule == null)
+            {
+                return new ResponseValue<bool>(
+                    false,
+                    StatusReponse.NotFound,
+                    "Schedule not found."
+                );
+            }
+            using var transaction = await _uow.BeginTransactionAsync();
+            await _staffScheduleRepository.DeleteAsync(schedule);
+            await transaction.CommitAsync();
+            await _uow.SaveChangesAsync();
+
+            return new ResponseValue<bool>(
+                true,
+                StatusReponse.Success,
+                "Schedule deleted successfully."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DeleteScheduleAsync");
+            return new ResponseValue<bool>(false, StatusReponse.Error, ex.Message);
         }
     }
 }

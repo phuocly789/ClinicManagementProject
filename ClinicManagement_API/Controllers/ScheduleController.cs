@@ -24,6 +24,37 @@ namespace ClinicManagement_API.Controllers
             _logger = logger;
         }
 
+        [HttpGet("GetAllSchedulesAsync")]
+        public async Task<
+            ActionResult<ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>>
+        > GetAllSchedulesAsync()
+        {
+            try
+            {
+                var result = await _scheduleService.GetAllSchedulesAsync();
+                return result.Status switch
+                {
+                    StatusReponse.Success => Ok(result),
+                    StatusReponse.BadRequest => BadRequest(result),
+                    StatusReponse.Unauthorized => StatusCode(403, result),
+                    StatusReponse.NotFound => NotFound(result),
+                    _ => StatusCode(500, result),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetAllSchedulesAsync");
+                return StatusCode(
+                    500,
+                    new ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>(
+                        null,
+                        StatusReponse.Error,
+                        "An error occurred while processing your request."
+                    )
+                );
+            }
+        }
+
         [HttpPost("CreateScheduleAsync")]
         public async Task<
             ActionResult<ResponseValue<CreateScheduleRequestDTO>>
@@ -115,6 +146,36 @@ namespace ClinicManagement_API.Controllers
                     500,
                     new ResponseValue<CreateScheduleRequestDTO>(
                         null,
+                        StatusReponse.Error,
+                        "An error occurred while processing your request."
+                    )
+                );
+            }
+        }
+
+        [HttpDelete("DeleteScheduleAsync/{scheduleId}")]
+        public async Task<ActionResult<ResponseValue<bool>>> DeleteScheduleAsync(int scheduleId)
+        {
+            try
+            {
+                var result = await _scheduleService.DeleteScheduleAsync(scheduleId);
+
+                return result.Status switch
+                {
+                    StatusReponse.Success => Ok(result),
+                    StatusReponse.BadRequest => BadRequest(result),
+                    StatusReponse.Unauthorized => StatusCode(403, result),
+                    StatusReponse.NotFound => NotFound(result),
+                    _ => StatusCode(500, result),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in DeleteScheduleAsync");
+                return StatusCode(
+                    500,
+                    new ResponseValue<bool>(
+                        false,
                         StatusReponse.Error,
                         "An error occurred while processing your request."
                     )

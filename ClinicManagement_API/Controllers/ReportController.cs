@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     // [Authorize(Roles = "Admin")] // Chỉ Admin có quyền truy cập
@@ -51,6 +51,43 @@ namespace ClinicManagement_API.Controllers
         )
         {
             var result = await _reportService.GetRevenueStatisticsAsync(startDate, endDate);
+            if (result.Status == StatusReponse.Success)
+            {
+                return Ok(new { success = true, data = result.Content });
+            }
+            else if (result.Status == StatusReponse.BadRequest)
+            {
+                return BadRequest(new { success = false, message = result.Message });
+            }
+            else if (result.Status == StatusReponse.Unauthorized)
+            {
+                return StatusCode(403, new { success = false, message = result.Message });
+            }
+            return StatusCode(500, new { success = false, message = result.Message });
+        }
+
+        [HttpGet("GetDetailedRevenueReportAsync")]
+        public async Task<
+            ActionResult<ResponseValue<PagedResult<DetailedInvoiceDTO>>>
+        > GetDetailedRevenueReportAsync(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string search = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null
+        )
+        {
+            var result = await _reportService.GetDetailedRevenueReportAsync(
+                page,
+                pageSize,
+                search,
+                startDate,
+                endDate
+            );
+            if (result.Status == StatusReponse.Success)
+            {
+                return Ok(result);
+            }
             if (result.Status == StatusReponse.Success)
             {
                 return Ok(new { success = true, data = result.Content });

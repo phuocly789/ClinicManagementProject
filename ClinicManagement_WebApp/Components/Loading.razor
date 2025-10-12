@@ -1,12 +1,10 @@
-@* Component hiển thị spinner khi đang tải dữ liệu *@
 @if (IsLoading)
 {
     <div class="loading-overlay">
-        <div class="spinner"></div>
-        <p>Đang tải...</p>
+        <div class="spinner-gradient"></div>
+        <p class="loading-text">Đang tải dữ liệu...</p>
     </div>
 }
-  
 
 @code {
     [Parameter]

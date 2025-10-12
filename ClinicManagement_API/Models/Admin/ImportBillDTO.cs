@@ -17,6 +17,15 @@ public class ImportCreateDTO
     public List<ImportDetailDTO> Details { get; set; } = new List<ImportDetailDTO>();
 }
 
+public class ImportUpdateDTO
+{
+    public int ImportId { get; set; }
+    public int SupplierId { get; set; }
+    public string Notes { get; set; }
+    public int CreatedBy { get; set; }
+    public List<ImportDetailDTO> Details { get; set; } = new();
+}
+
 public class ImportDetailDTO
 {
     public int MedicineId { get; set; }
