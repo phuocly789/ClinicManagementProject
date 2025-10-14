@@ -26,7 +26,7 @@ public partial class Appointment
     public DateTime? CreatedAt { get; set; }
 
     public int? CreatedBy { get; set; }
-    public string? Note { get; set; }
+    public string? Notes { get; set; }
 
     public virtual User? CreatedByNavigation { get; set; }
 
