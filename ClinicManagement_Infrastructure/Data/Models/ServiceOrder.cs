@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class ServiceOrder
 {
@@ -21,7 +21,7 @@ public partial class ServiceOrder
 
     public virtual Appointment? Appointment { get; set; }
 
-    public virtual User1? AssignedStaff { get; set; }
+    public virtual User? AssignedStaff { get; set; }
 
     public virtual Service? Service { get; set; }
 }

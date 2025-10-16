@@ -1,4 +1,4 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 
 public interface IQueueService
 {
@@ -6,6 +6,7 @@ public interface IQueueService
     Task<ResponseValue<QueueDTO>> AddToQueueAsync(QueueCreateDTO request);
     Task<ResponseValue<QueueDTO>> QueueUpdateStatusAsync(int queueId, QueueStatusUpdateDTO request);
 }
+
 public class QueueService : IQueueService
 {
     private readonly IQueueRepository _queueRepository;
@@ -76,6 +77,7 @@ public class QueueService : IQueueService
                 QueueDate = today,
                 QueueTime = new TimeOnly(now.Hour, now.Minute, now.Second),
                 Status = "Waiting",
+                // CreatedBy = request.CreatedBy,
             };
 
             await _queueRepository.AddAsync(queue);
@@ -87,11 +89,12 @@ public class QueueService : IQueueService
                 {
                     QueueId = queue.QueueId,
                     QueueNumber = queue.QueueNumber,
+                    AppoinmentId = queue.AppointmentId,
                     PatientId = queue.PatientId,
                     RoomId = queue.RoomId,
                     QueueDate = queue.QueueDate,
                     QueueTime = queue.QueueTime,
-                    Status = queue.Status
+                    Status = queue.Status,
                 },
                 StatusReponse.Success,
                 "Tạo hàng chờ thành công."
@@ -113,7 +116,10 @@ public class QueueService : IQueueService
         }
     }
 
-    public async Task<ResponseValue<QueueDTO>> QueueUpdateStatusAsync(int queueId, QueueStatusUpdateDTO request)
+    public async Task<ResponseValue<QueueDTO>> QueueUpdateStatusAsync(
+        int queueId,
+        QueueStatusUpdateDTO request
+    )
     {
         try
         {

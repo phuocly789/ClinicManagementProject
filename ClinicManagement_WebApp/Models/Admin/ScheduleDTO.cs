@@ -17,6 +17,7 @@ public class UpdateScheduleRequestDTO
 
 public class ScheduleForMedicalStaffResponse
 {
+    public int ScheduleId { get; set; }
     public int? StaffId { get; set; }
     public string StaffName { get; set; }
     public string Role { get; set; }

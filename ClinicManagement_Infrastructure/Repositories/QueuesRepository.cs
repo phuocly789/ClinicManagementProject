@@ -1,7 +1,9 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 public interface IQueueRepository : IRepository<Queue>
 {
     Task<List<QueueDto>> GetQueuesAsync(int roomId, DateOnly date);
@@ -18,7 +20,7 @@ public class QueueRepository : Repository<Queue>, IQueueRepository
         return await _context.Queues
             .Where(q => q.RoomId == roomId && q.QueueDate == date)
             .Join(
-                _context.Users1,
+                _context.Users,
                 q => q.PatientId,
                 u => u.UserId,
                 (q, u) => new { Queue = q, User = u }

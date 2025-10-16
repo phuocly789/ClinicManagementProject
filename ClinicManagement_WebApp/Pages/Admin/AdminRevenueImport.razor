@@ -41,7 +41,7 @@
     </div>
 
     <!-- Bảng danh sách hóa đơn -->
-    <div class="table-container">
+    <div class="table-container" style="max-height: 65vh;">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -50,6 +50,7 @@
                     <th style="width: 220px;">Bệnh Nhân</th>
                     <th style="width: 180px;">Tổng Cộng</th>
                     <th style="width: 150px;">Ngày Cuộc Hẹn</th>
+                    <th style="width: 110px;">Trạng Thái</th>
                     <th style="width: 110px;">Hành Động</th>
                 </tr>
             </thead>
@@ -68,6 +69,20 @@
                             <td>@item.PatientName</td>
                             <td>@item.TotalAmount.ToString("N0") VNĐ</td>
                             <td>@(item.AppointmentDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                            <td>
+                                @if (item.Status == "Paid")
+                                {
+                                    <span class="status status-active">Thành Công</span>
+                                }
+                                else if(item.Status == "Pending")
+                                {
+                                    <span class="status status-pending">Chờ Thanh Toán</span>
+                                }
+                                else
+                                {
+                                    <span class="status status-inactive">Đã Hủy</span>
+                                }
+                            </td>
                             <td class="text-center">
                                 <button class="btn btn-sm" title="Xem chi tiết" @onclick="() => ViewInvoiceDetails(item)">
                                     <lord-icon src="https://cdn.lordicon.com/knitbwfa.json" trigger="hover"
@@ -117,7 +132,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var d in currentDetail.Details)
+                            @foreach (DetailedInvoiceItemDTO d in currentDetail.Details)
                             {
                                 <tr>
                                     <td>@(d.ServiceId.HasValue ? "Dịch vụ" : "Thuốc")</td>

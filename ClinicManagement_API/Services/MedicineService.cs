@@ -1,4 +1,4 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 public interface IMedicineService
@@ -13,6 +13,9 @@ public interface IMedicineService
     Task<ResponseValue<MedicineDTO>> UpdateMedicineAsync(int medicineId, MedicineDTO request);
 
     Task DeleteMedicineAsync(int medicineId);
+
+    //for dashboard
+    Task<List<LowStockMedicineDTO>> GetLowStockMedicinesAsync(int threshold);
 }
 
 public class MedicineService : IMedicineService
@@ -316,5 +319,22 @@ public class MedicineService : IMedicineService
             _logger.LogError(ex, "Lỗi khi xóa dịch vụ với serviceId: {ServiceId}", medicineId);
             throw;
         }
+    }
+
+    //for dashboard
+    public async Task<List<LowStockMedicineDTO>> GetLowStockMedicinesAsync(int threshold)
+    {
+        return await _medicineRepository
+            .GetAll()
+            .Where(m => m.StockQuantity < threshold)
+            .OrderBy(m => m.StockQuantity)
+            .Select(m => new LowStockMedicineDTO
+            {
+                MedicineId = m.MedicineId,
+                MedicineName = m.MedicineName,
+                StockQuantity = m.StockQuantity,
+                Unit = m.Unit,
+            })
+            .ToListAsync();
     }
 }

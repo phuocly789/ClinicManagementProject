@@ -1,5 +1,5 @@
 using System.Transactions;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 public interface IScheduleService
@@ -11,9 +11,7 @@ public interface IScheduleService
         int scheduleId,
         UpdateScheduleRequestDTO request
     );
-    Task<ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>> GetAllSchedulesAsync(
-     
-    );
+    Task<ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>> GetAllSchedulesAsync();
     Task<ResponseValue<bool>> DeleteScheduleAsync(int scheduleId);
 }
 
@@ -266,7 +264,6 @@ public class ScheduleService : IScheduleService
     {
         try
         {
-           
             var query =
                 from schedule in _staffScheduleRepository.GetAll()
                 join user in _userRepository.GetAll()
@@ -281,6 +278,7 @@ public class ScheduleService : IScheduleService
                 .OrderBy(q => q.schedule.ScheduleId)
                 .Select(q => new ScheduleForMedicalStaffResponse
                 {
+                    ScheduleId = q.schedule.ScheduleId,
                     StaffId = q.schedule.StaffId,
                     StaffName = q.user != null ? q.user.FullName : "(Không xác định)",
                     Role = q.user.UserRoles.Select(r => r.Role.RoleName).FirstOrDefault(),

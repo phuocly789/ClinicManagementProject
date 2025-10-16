@@ -1,6 +1,6 @@
 // Biến global để lưu calendar instance
 let currentCalendar = null;
-
+let dotNetHelper = null;
 // Hàm kiểm tra FullCalendar đã load chưa
 function isFullCalendarLoaded() {
     const loaded = typeof FullCalendar !== 'undefined' && FullCalendar.Calendar !== 'undefined';
@@ -58,7 +58,7 @@ window.renderScheduleCalendar = (data) => {
 
         // Xử lý events undefined hoặc rỗng
         let events = (data && data.events) ? data.events : [];
-
+    dotNetHelper = (data && data.dotNetHelper) ? data.dotNetHelper : null;
 
         console.log('Processed events array length:', events.length);
 
@@ -106,7 +106,7 @@ window.renderScheduleCalendar = (data) => {
                     <div class="fc-event-time-custom">
                         <i class="bi bi-clock"></i> ${timeText}
                     </div>
-                </div>
+                </div>  
             `;
                     return { html: customHtml };
                 }
@@ -114,13 +114,17 @@ window.renderScheduleCalendar = (data) => {
                 // Mặc định cho các view khác
                 return true;
             },
-            eventClick: (info) => {
-                const e = info.event;
-                console.log('Event clicked:', e);
-                if (e.start && e.end) {
-                    alert(`👤 ${e.title}\n📅 ${e.start.toLocaleString('vi-VN')} - ${e.end.toLocaleString('vi-VN')}`);
+         eventClick: function(info) {
+                console.log('Event clicked, ID:', info.event.id);
+
+                // Logic đúng: Kiểm tra xem dotNetHelper có tồn tại không
+                if (dotNetHelper) {
+                    // Tên biến đúng, và chuyển ID sang string để đảm bảo an toàn
+                    dotNetHelper.invokeMethodAsync('HandleEventClick', info.event.id.toString())
+                        .catch(err => console.error("Error invoking C# method 'HandleEventClick'", err));
                 } else {
-                    alert(`👤 ${e.title}\n📅 Thời gian không hợp lệ`);
+                    console.error('DotNet helper not available. Cannot call C#.');
+                    alert('Lỗi kết nối, không thể xem chi tiết.');
                 }
             },
             eventDidMount: (info) => {

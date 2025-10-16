@@ -2,7 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using ClinicManagement_Infrastructure.Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data;
+// using ClinicManagement_Infrastructure.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;

@@ -152,7 +152,7 @@ namespace ClinicManagement_API.Controllers
             }
             return StatusCode(500, result);
         }
-        
+
         [HttpDelete("DeleteMedicineAsync/{id}")]
         public async Task<IActionResult> DeleteMedicineAsync(int id)
         {
@@ -174,6 +174,30 @@ namespace ClinicManagement_API.Controllers
                         success = false,
                         message = "Đã xảy ra lỗi khi xóa thuốc. Vui lòng thử lại sau.",
                     }
+                );
+            }
+        }
+
+        [HttpGet("Inventory-Warnings")]
+        public async Task<ResponseValue<List<LowStockMedicineDTO>>> GetLowStockMedicinesAsync(
+            [FromQuery] int threshold = 20
+        )
+        {
+            try
+            {
+                var result = await _medicineService.GetLowStockMedicinesAsync(threshold);
+                return new ResponseValue<List<LowStockMedicineDTO>>(
+                    result,
+                    StatusReponse.Success,
+                    "Lấy danh sách thuốc thành công."
+                );
+            }
+            catch (Exception ex)
+            {
+                return new ResponseValue<List<LowStockMedicineDTO>>(
+                    null,
+                    StatusReponse.Error,
+                    "Đã xảy ra lỗi khi lấy danh sách thuốc: " + ex.Message
                 );
             }
         }

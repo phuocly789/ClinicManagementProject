@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using ClinicManagement_Infrastructure.Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data;
 using ClinicManagement_Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -148,9 +148,6 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapControllers();
-
-//use middle ware controller
 app.MapControllers();
 
 //use swagger

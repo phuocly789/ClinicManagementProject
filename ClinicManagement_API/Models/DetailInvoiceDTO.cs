@@ -6,6 +6,7 @@ public class DetailedInvoiceDTO
     public string PatientName { get; set; }
     public DateOnly? AppointmentDate { get; set; }
     public List<DetailedInvoiceItemDTO> Details { get; set; } = new(); // Chi tiết dịch vụ/thuốc
+    public string Status { get; set; }
 }
 
 public class DetailedInvoiceItemDTO

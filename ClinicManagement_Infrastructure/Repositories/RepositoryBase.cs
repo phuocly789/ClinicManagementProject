@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
-using ClinicManagement_Infrastructure.Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 // using dotnet03_Ebay.Infrastructure.Models.EbayContext;

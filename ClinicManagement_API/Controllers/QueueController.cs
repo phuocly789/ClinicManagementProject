@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Receptionist")]
+    // [Authorize(Roles = "Receptionist")]
     [ApiController]
     [Route("api/[controller]")]
     public class QueueController : ControllerBase

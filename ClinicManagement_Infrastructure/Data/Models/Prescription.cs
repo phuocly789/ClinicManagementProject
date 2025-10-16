@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class Prescription
 {
@@ -23,5 +23,5 @@ public partial class Prescription
 
     public virtual MedicalRecord? Record { get; set; }
 
-    public virtual User1? Staff { get; set; }
+    public virtual User? Staff { get; set; }
 }

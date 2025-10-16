@@ -1,5 +1,5 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 public interface IServiceOrderRepository : IRepository<ServiceOrder>
@@ -9,7 +9,7 @@ public interface IServiceOrderRepository : IRepository<ServiceOrder>
     Task<List<ServiceOrder>> GetCompletedServiceOrdersAsync(int appointmentId);
     Task<List<Service>> GetServicesByIdsAsync(List<int?> serviceIds);
     Task<List<ServiceOrder>> GetAssignedServiceOrdersAsync(int staffId, DateTime? date);
-    Task<List<User1>> GetUsersByIdsAsync(List<int?> userIds);
+    Task<List<User>> GetUsersByIdsAsync(List<int?> userIds);
 }
 
 public class ServiceOrderRepository : Repository<ServiceOrder>, IServiceOrderRepository
@@ -52,8 +52,8 @@ public class ServiceOrderRepository : Repository<ServiceOrder>, IServiceOrderRep
         return await query.ToListAsync();
     }
 
-    public async Task<List<User1>> GetUsersByIdsAsync(List<int?> userIds)
+    public async Task<List<User>> GetUsersByIdsAsync(List<int?> userIds)
     {
-        return await _context.Users1.Where(u => userIds.Contains(u.UserId)).ToListAsync();
+        return await _context.Users.Where(u => userIds.Contains(u.UserId)).ToListAsync();
     }
 }

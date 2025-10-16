@@ -1,5 +1,5 @@
 using ClinicManagement_API.Models;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using ClinicManagementSystem.Application.DTOs.Auth;
 
 public interface IPatinetService
@@ -61,7 +61,7 @@ public class PatinetService : IPatinetService
             }
 
             // Tạo User mới
-            var user = new User1
+            var user = new User
             {
                 FullName = registerDto.FullName,
                 Email = registerDto.Email,

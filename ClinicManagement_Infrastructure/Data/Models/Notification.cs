@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class Notification
 {
@@ -21,5 +21,5 @@ public partial class Notification
 
     public virtual Appointment? Appointment { get; set; }
 
-    public virtual User1? User { get; set; }
+    public virtual User? User { get; set; }
 }

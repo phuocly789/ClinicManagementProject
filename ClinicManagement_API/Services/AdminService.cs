@@ -1,5 +1,5 @@
 using ClinicManagement_API.Models;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using ClinicManagementAPI.Models;
 using dotnet03WebApi_EbayProject.Helper;
 using Microsoft.AspNetCore.Identity;
@@ -224,7 +224,7 @@ public class AdminService : IAdminService
         try
         {
             //tạo user mới
-            var user = new User1
+            var user = new User
             {
                 Username = request.Username,
                 PasswordHash = hashedPassword,

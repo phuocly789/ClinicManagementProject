@@ -1,4 +1,4 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using NpgsqlTypes;
@@ -17,6 +17,10 @@ public interface IReportsService
         int page = 1,
         int pageSize = 10,
         string search = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null
+    );
+    Task<DashboardStatisticsDTO> GetDashBoardStaticAsync(
         DateTime? startDate = null,
         DateTime? endDate = null
     );
@@ -198,7 +202,7 @@ public class ReportsService : IReportsService
             var query =
                 from i in _context.Invoices
                 join id in _context.InvoiceDetails on i.InvoiceId equals id.InvoiceId
-                join u in _context.Users1 on i.PatientId equals u.UserId into users
+                join u in _context.Users on i.PatientId equals u.UserId into users
                 from u in users.DefaultIfEmpty()
                 join a in _context.Appointments
                     on i.AppointmentId equals a.AppointmentId
@@ -209,8 +213,7 @@ public class ReportsService : IReportsService
                 join m in _context.Medicines on id.MedicineId equals m.MedicineId into medicines
                 from m in medicines.DefaultIfEmpty()
                 where
-                    i.Status == "Paid"
-                    && i.InvoiceDate >= fromDate
+                    i.InvoiceDate >= fromDate
                     && i.InvoiceDate <= toDate
                     && (
                         string.IsNullOrEmpty(search)
@@ -232,6 +235,7 @@ public class ReportsService : IReportsService
                     Quantity = id.Quantity,
                     UnitPrice = id.UnitPrice,
                     SubTotal = id.SubTotal,
+                    Status = id.Invoice.Status,
                 };
 
             // Nhóm dữ liệu theo InvoiceId và áp dụng phân trang
@@ -244,6 +248,7 @@ public class ReportsService : IReportsService
                     TotalAmount = g.First().TotalAmount,
                     PatientName = g.First().PatientName,
                     AppointmentDate = g.First().AppointmentDate,
+                    Status = g.First().Status,
                     Details = g.Select(item => new DetailedInvoiceItemDTO
                         {
                             ServiceId = item.ServiceId,
@@ -265,7 +270,7 @@ public class ReportsService : IReportsService
             var totalItemsQuery =
                 from i in _context.Invoices
                 join id in _context.InvoiceDetails on i.InvoiceId equals id.InvoiceId
-                join u in _context.Users1 on i.PatientId equals u.UserId into users
+                join u in _context.Users on i.PatientId equals u.UserId into users
                 from u in users.DefaultIfEmpty()
                 where
                     i.Status == "Paid"
@@ -304,6 +309,50 @@ public class ReportsService : IReportsService
             );
         }
     }
+
+    public async Task<DashboardStatisticsDTO> GetDashBoardStaticAsync(
+        DateTime? startDate = null,
+        DateTime? endDate = null
+    )
+    {
+        // Nếu không truyền vào thì mặc định lấy 1 tháng gần nhất
+        var fromDate = startDate ?? DateTime.UtcNow.AddDays(-6);
+        var toDate = endDate ?? DateTime.UtcNow;
+
+        // Chuyển về DateOnly để so sánh đúng kiểu trong DB
+        var fromDateOnly = DateOnly.FromDateTime(fromDate.Date);
+        var toDateOnly = DateOnly.FromDateTime(toDate.Date);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Tổng số lịch hẹn hôm nay
+        var totalAppointments = await _appointmentRepository
+            .GetAll()
+            .CountAsync(a => a.AppointmentDate == today);
+
+        // Số lịch hẹn đã khám trong khoảng thời gian
+        var completedAppointments = await _appointmentRepository
+            .GetAll()
+            .CountAsync(a =>
+                a.AppointmentDate >= fromDateOnly
+                && a.AppointmentDate <= toDateOnly
+                && a.Status == "Đã khám"
+            );
+
+        // Số hóa đơn đang pending trong khoảng
+        var pendingInvoicesCount = await _invoiceRepository
+            .GetAll()
+            .CountAsync(i => i.InvoiceDate.HasValue && i.Status == "Pending");
+
+        // Kết quả trả về
+        var statistics = new DashboardStatisticsDTO
+        {
+            TotalAppointmentsToday = totalAppointments,
+            CompletedAppointmentsToday = completedAppointments,
+            PendingInvoicesCount = pendingInvoicesCount,
+        };
+
+        return statistics;
+    }
 }
 
 public class RawInvoiceDetailDTO
@@ -320,4 +369,5 @@ public class RawInvoiceDetailDTO
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal SubTotal { get; set; }
+    public string Status { get; set; }
 }

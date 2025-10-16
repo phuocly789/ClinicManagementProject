@@ -1,5 +1,5 @@
-// using ClinicManagement_Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data;
+
+using ClinicManagement_Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;

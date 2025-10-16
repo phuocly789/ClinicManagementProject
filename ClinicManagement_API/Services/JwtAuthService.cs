@@ -1,8 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using ClinicManagement_Infrastructure.Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -21,7 +21,7 @@ public class JwtAuthService
         _context = db;
     }
 
-    public string GenerateToken(User1 userLogin, List<string> roles)
+    public string GenerateToken(User userLogin, List<string> roles)
     {
         // Khóa bí mật để ký token
         var key = Encoding.ASCII.GetBytes(_key);

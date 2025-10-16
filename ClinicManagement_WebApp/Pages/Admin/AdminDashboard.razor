@@ -1,111 +1,196 @@
 @page "/admin/dashboard"
-@layout MainLayout // Giả sử bạn có MainLayout.razor với layout chung, nếu không thì tạo riêng
+@layout MainLayout
+@inject IHttpClientFactory HttpClientFactory
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Dashboard</PageTitle>
+
+<Loading IsLoading="@isLoading" />
 
 <div class="main-content">
     <header class="header">
-        <h1>Tổng Quan Hệ Thống</h1>
-        <button class="btn-primary" style="float: right;">Thêm Thuốc Mới</button>
+        <h1>Dashboard Tổng Quan</h1>
+        <div class="date-range-picker">
+            <label for="startDate">Từ ngày:</label>
+            <InputDate id="startDate" class="form-control" @bind-Value="startDate" />
+            <label for="endDate">Đến ngày:</label>
+            <InputDate id="endDate" class="form-control" @bind-Value="endDate" />
+            <button class="btn-primary" style="width: 400px;" @onclick="LoadRevenueChartData" disabled="@isLoading">Xem
+                báo cáo</button>
+        </div>
     </header>
 
-    <section class="stats-cards card">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Lượt khám hôm nay</h3>
-                <p class="number">45</p>
+    <div class="stat-cards-container">
+        <StatCard Title="Doanh Thu(VND)" Value="@(totalRevenue.ToString("N0") + " VND")" Icon="fa-solid fa-sack-dollar"
+            Color="primary" />
+        <StatCard Title="Đã Khám" Value="@stats?.CompletedAppointmentsToday.ToString("N0")"
+            Icon="fa-solid fa-user-check" Color="success" />
+        <StatCard Title="Hóa Đơn Chờ" Value="@stats?.PendingInvoicesCount.ToString("N0")"
+            Icon="fa-solid fa-file-invoice-dollar" Color="danger" />
+        <StatCard Title="Lịch Hẹn Hôm Nay" Value="@stats?.TotalAppointmentsToday.ToString("N0")"
+            Icon="fa-solid fa-calendar-check" Color="info" />
+    </div>
+
+    <div class="dashboard-row">
+        <div class=" chart-container card">
+            <div class="card-header">
+                <h3>Biểu Đồ Doanh Thu</h3>
             </div>
-            <div class="stat-card">
-                <h3>Doanh thu hôm nay</h3>
-                <p class="number">15.200.000 VNĐ</p>
-            </div>
-            <div class="stat-card">
-                <h3>Bệnh nhân mới</h3>
-                <p class="number">8</p>
-            </div>
-            <div class="stat-card">
-                <h3>Bác sĩ đang làm việc</h3>
-                <p class="number">5</p>
+            <div class="card-body">
+                <canvas id="revenueChart"></canvas>
             </div>
         </div>
-    </section>
 
-    <section class="card">
-        <h2>Quản Lý Danh Mục Thuốc</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Mã Thuốc</th>
-                    <th>Tên Thuốc</th>
-                    <th>Đơn Vị</th>
-                    <th>Giá Bán</th>
-                    <th>Tồn Kho</th>
-                    <th>Hành Động</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var medicine in Medicines)
+        <div class="inventory-warnings-container card">
+            <div class="card-header">
+                <h3>Cảnh Báo Tồn Kho (Dưới 200)</h3>
+            </div>
+            <div class="card-body">
+                @if (lowStockMedicines == null)
                 {
-                    <tr>
-                        <td>@medicine.Code</td>
-                        <td>@medicine.Name</td>
-                        <td>@medicine.Unit</td>
-                        <td>@medicine.Price</td>
-                        <td>@medicine.Stock</td>
-                        <td>
-                            <button class="btn-warning" @onclick="() => EditMedicine(medicine.Code)">Sửa</button>
-                            <button class="btn-danger" @onclick="() => DeleteMedicine(medicine.Code)">Xóa</button>
-                        </td>
-                    </tr>
+                    <p>Đang tải...</p>
                 }
-            </tbody>
-        </table>
-    </section>
-
-    <section id="notifications" class="card notification" style="display: none;">
-        <h2>Thông Báo</h2>
-        <p id="notification-message"></p>
-    </section>
+                else if (!lowStockMedicines.Any())
+                {
+                    <p>Không có cảnh báo tồn kho.</p>
+                }
+                else
+                {
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tên Thuốc</th>
+                                <th class="text-end">Số Lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var med in lowStockMedicines)
+                            {
+                                <tr>
+                                    <td>@med.MedicineName</td>
+                                    <td class="text-end text-danger fw-bold">@med.StockQuantity @med.Unit</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
-    // Dữ liệu tĩnh (hard-coded) để bạn tự kết nối API sau
-    private List<Medicine> Medicines { get; set; } = new List<Medicine>
-    {
-        new Medicine { Code = "PARA500", Name = "Paracetamol 500mg", Unit = "Viên", Price = "1.000 VNĐ", Stock = 1500 },
-        new Medicine { Code = "AMOX250", Name = "Amoxicillin 250mg", Unit = "Viên", Price = "2.500 VNĐ", Stock = 870 }
-    };
+    private HttpClient _httpClient;
+    private bool isLoading = true;
 
-    private class Medicine
+    // Data for UI
+    private DashboardStatisticsDTO stats;
+    private Decimal totalRevenue = 0;
+    private List<LowStockMedicineDTO> lowStockMedicines;
+    private DateTime? startDate = DateTime.Now.AddDays(-6);
+    private DateTime? endDate = DateTime.Now;
+
+    protected override async Task OnInitializedAsync()
     {
-        public string Code { get; set; }
-        public string Name { get; set; }
-        public string Unit { get; set; }
-        public string Price { get; set; }
-        public int Stock { get; set; }
+        _httpClient = HttpClientFactory.CreateClient("ClinicManagement_API");
+        await LoadInitialData();
     }
 
-    // Các phương thức placeholder để xử lý sự kiện (bạn tự implement logic kết nối API)
-    private void AddNewMedicine()
+    private async Task LoadInitialData()
     {
-        // TODO: Kết nối API để thêm thuốc mới
-        ShowNotification("Thêm thuốc mới được kích hoạt.");
+        isLoading = true;
+
+        var statsTask = LoadStatistics();
+        var inventoryTask = LoadInventoryWarnings();
+
+        await Task.WhenAll(statsTask, inventoryTask);
+
+        isLoading = false;
+        StateHasChanged();
     }
 
-    private void EditMedicine(string code)
+    private async Task LoadStatistics()
     {
-        // TODO: Kết nối API để sửa thuốc
-        ShowNotification($"Sửa thuốc: {code}");
+        try
+        {
+            string from = startDate?.ToString("MM-dd-yyyy");
+            string to = endDate?.ToString("MM-dd-yyyy");
+            var response = await
+            _httpClient.GetFromJsonAsync<ResponseValue<DashboardStatisticsDTO>>($"Reports/GetDashBoardStaticAsync?startDate={from}&endDate={to}");
+            Console.WriteLine($"API Response Status: {response?.Status}");
+            Console.WriteLine($"API Response Content: {System.Text.Json.JsonSerializer.Serialize(response?.Content)}");
+            if (response?.Status == StatusReponse.Success)
+            {
+                stats = response.Content;
+                Console.WriteLine(response);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi tải thống kê: {ex.Message}");
+        }
     }
 
-    private void DeleteMedicine(string code)
+    private async Task LoadInventoryWarnings()
     {
-        // TODO: Kết nối API để xóa thuốc
-        ShowNotification($"Xóa thuốc: {code}");
+        try
+        {
+            var response = await
+            _httpClient.GetFromJsonAsync<ResponseValue<List<LowStockMedicineDTO>>>("Medicine/Inventory-Warnings?threshold=200");
+            if (response?.Status == StatusReponse.Success)
+            {
+                lowStockMedicines = response.Content;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi tải cảnh báo tồn kho: {ex.Message}");
+        }
     }
 
-    private void ShowNotification(string message)
+    private async Task LoadRevenueChartData()
     {
-        // Có thể tích hợp với JS hoặc state để hiển thị (ở đây giả định qua code, nhưng trong Blazor thực tế dùng StateHasChanged hoặc JSInterop)
-        Console.WriteLine(message);
-        // Để hiển thị thực tế, thêm logic JSInterop nếu cần
+        try
+        {
+            isLoading = true;
+
+            string from = startDate?.ToString("yyyy-MM-dd");
+            string to = endDate?.ToString("yyyy-MM-dd");
+            var apiUrl = $"Reports/GetRevenueStatistics?startDate={from}&endDate={to}";
+            Console.WriteLine($"Calling API: {apiUrl}");
+
+            var response = await _httpClient.GetFromJsonAsync<ResponseValue<RevenueReportDTO>>(apiUrl);
+            Console.WriteLine($"API Response Status: {response?.Status}");
+            Console.WriteLine($"API Response Content: {System.Text.Json.JsonSerializer.Serialize(response?.Content)}");
+
+            if (response?.Status == StatusReponse.Success && response.Content?.ByDate != null)
+            {
+                var labels = response.Content.ByDate.Select(d => d.Date).ToArray();
+                var data = response.Content.ByDate.Select(d => d.Revenue).ToArray();
+                Console.WriteLine($"Labels: {string.Join(", ", labels)}");
+                Console.WriteLine($"Data: {string.Join(", ", data)}");
+                totalRevenue = response.Content.TotalRevenue;
+                await JSRuntime.InvokeVoidAsync("updateChart", "revenueChart", labels, data);
+                isLoading = false;
+                StateHasChanged();
+            }
+            else
+            {
+                Console.WriteLine("No data or invalid response from API.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi tải dữ liệu biểu đồ: {ex.Message}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initializeChart", "revenueChart");
+            await LoadRevenueChartData();
+        }
     }
 }

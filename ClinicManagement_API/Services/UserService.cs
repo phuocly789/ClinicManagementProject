@@ -1,19 +1,19 @@
 // using ClinicManagement_API.Models;
 // using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
 
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using dotnet03WebApi_EbayProject.Helper;
 using Microsoft.EntityFrameworkCore;
 
-public interface IUserService : IServiceBase<User1>
+public interface IUserService : IServiceBase<User>
 {
-    Task<User1?> GetByUsernameAsync(string username);
+    Task<User?> GetByUsernameAsync(string username);
     Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model);
     // Task<(bool Success, string Message)> RegisterBuyer(UserBuyerRegister registerBuyer);
     // Task<(bool Success, string Message)> RegisterSeller(UserSellerRegister registerSeller);
 }
 
-public class UserService : ServiceBase<User1>, IUserService
+public class UserService : ServiceBase<User>, IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUserRoleRepository _userRoleRepository;
@@ -37,7 +37,7 @@ public class UserService : ServiceBase<User1>, IUserService
     //các crud cơ bản đã có trong ServiceBase
     //
     //nghiệp vụ đặc thù của User2 nếu có thì viết thêm ở đây
-    public async Task<User1?> GetByUsernameAsync(string username)
+    public async Task<User?> GetByUsernameAsync(string username)
     {
         return await _repository.SingleOrDefaultAsync(u => u.Username == username);
     }
@@ -45,7 +45,7 @@ public class UserService : ServiceBase<User1>, IUserService
     public async Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model)
     {
         // Lấy repository cho User1
-        var userRepo = _uow.Repository<User1>();
+        var userRepo = _uow.Repository<User>();
 
         // Ép repository thành IQueryable để dùng Include
         var queryable = userRepo.Query();

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Doctor")]
+    // [Authorize(Roles = "Doctor")]
     [Route("api/[controller]")]
     [ApiController]
     public class DoctorController : ControllerBase
@@ -151,6 +151,30 @@ namespace ClinicManagement_API.Controllers
                 return BadRequest(result);
             }
             return Ok(result);
+        }
+
+        [HttpGet("GetTodaysAppointmentsAsync")]
+        public async Task<ResponseValue<List<TodaysAppointmentDTO>>> GetTodaysAppointmentsAsync(
+            [FromQuery] DateOnly date
+        )
+        {
+            try
+            {
+                var appointments = await _doctorService.GetTodaysAppointmentsAsync(date);
+                return new ResponseValue<List<TodaysAppointmentDTO>>(
+                    appointments,
+                    StatusReponse.Success,
+                    "Lấy dữ liệu thành công"
+                );
+            }
+            catch (Exception ex)
+            {
+                return new ResponseValue<List<TodaysAppointmentDTO>>(
+                    null,
+                    StatusReponse.Error,
+                    ex.Message
+                );
+            }
         }
     }
 }

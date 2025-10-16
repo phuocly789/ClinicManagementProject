@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class Appointment
 {
@@ -26,9 +26,10 @@ public partial class Appointment
     public DateTime? CreatedAt { get; set; }
 
     public int? CreatedBy { get; set; }
-    public string? Note { get; set; }
 
-    public virtual User1? CreatedByNavigation { get; set; }
+    public string? Notes { get; set; }
+
+    public virtual User? CreatedByNavigation { get; set; }
 
     public virtual ICollection<Diagnosis> Diagnoses { get; set; } = new List<Diagnosis>();
 
@@ -36,7 +37,7 @@ public partial class Appointment
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-    public virtual User1? Patient { get; set; }
+    public virtual User? Patient { get; set; }
 
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 
@@ -48,5 +49,5 @@ public partial class Appointment
 
     public virtual ICollection<ServiceOrder> ServiceOrders { get; set; } = new List<ServiceOrder>();
 
-    public virtual User1? Staff { get; set; }
+    public virtual User? Staff { get; set; }
 }
