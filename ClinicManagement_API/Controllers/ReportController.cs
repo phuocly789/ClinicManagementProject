@@ -53,7 +53,11 @@ namespace ClinicManagement_API.Controllers
             var result = await _reportService.GetRevenueStatisticsAsync(startDate, endDate);
             if (result.Status == StatusReponse.Success)
             {
-                return Ok(new { success = true, data = result.Content });
+                return new ResponseValue<RevenueReportDTO>(
+                    result.Content,
+                    StatusReponse.Success,
+                    "Lấy thống kê doanh thu thành công."
+                );
             }
             else if (result.Status == StatusReponse.BadRequest)
             {
@@ -101,6 +105,26 @@ namespace ClinicManagement_API.Controllers
                 return StatusCode(403, new { success = false, message = result.Message });
             }
             return StatusCode(500, new { success = false, message = result.Message });
+        }
+
+        [HttpGet("GetDashBoardStaticAsync")]
+        public async Task<
+            ActionResult<ResponseValue<DashboardStatisticsDTO>>
+        > GetDashBoardStaticAsync(DateTime? startDate = null, DateTime? endDate = null)
+        {
+            try
+            {
+                var result = await _reportService.GetDashBoardStaticAsync(startDate, endDate);
+                return new ResponseValue<DashboardStatisticsDTO>(
+                    result,
+                    StatusReponse.Success,
+                    "Lấy thống kê thành công."
+                );
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
         }
     }
 }

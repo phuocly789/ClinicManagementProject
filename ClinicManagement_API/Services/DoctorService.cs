@@ -21,6 +21,7 @@ public interface IDoctorService
         int appointmentId,
         int currentStaffId
     );
+    Task<List<TodaysAppointmentDTO>> GetTodaysAppointmentsAsync(DateOnly date);
 }
 
 public class DoctorService : IDoctorService
@@ -409,5 +410,25 @@ public class DoctorService : IDoctorService
             StatusReponse.Success,
             "Fetched completed service orders successfully"
         );
+    }
+
+    //for dashboard
+    public async Task<List<TodaysAppointmentDTO>> GetTodaysAppointmentsAsync(DateOnly date)
+    {
+        return await _appointmentRepository
+            .GetAll()
+            .Where(a => a.AppointmentDate == date)
+            .Include(a => a.Patient)
+            .Include(a => a.Staff)
+            .OrderBy(a => a.AppointmentTime)
+            .Select(a => new TodaysAppointmentDTO
+            {
+                AppointmentId = a.AppointmentId,
+                AppointmentTime = a.AppointmentTime,
+                PatientName = a.Patient.FullName,
+                DoctorName = a.Staff.FullName,
+                Status = a.Status,
+            })
+            .ToListAsync();
     }
 }

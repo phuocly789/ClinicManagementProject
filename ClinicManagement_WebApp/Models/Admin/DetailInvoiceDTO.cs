@@ -6,6 +6,7 @@ public class DetailedInvoiceDTO
     public string PatientName { get; set; }
     public DateTime? AppointmentDate { get; set; }
     public List<DetailedInvoiceItemDTO> Details { get; set; } = new();
+    public string Status { get; set; }
 }
 
 public class DetailedInvoiceItemDTO

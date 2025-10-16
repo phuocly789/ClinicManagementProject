@@ -73,6 +73,8 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
             .AsNoTracking()
             .ToListAsync();
     }
+
+  
 }
 
 public class AppointmentMyScheduleDto

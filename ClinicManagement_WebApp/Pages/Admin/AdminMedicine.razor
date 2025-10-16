@@ -142,19 +142,14 @@
 </div>
 
         <!-- Phân trang -->
-        @if (totalPages > 1)
-        {
-            <div class="pagination">
-                <button class="btn-primary" disabled="@(currentPage <= 1)" @onclick="PreviousPage">Trước</button>
-                <span>Trang @currentPage / @totalPages</span>
-                <button class="btn-primary" disabled="@(currentPage >= totalPages)" @onclick="NextPage">Tiếp</button>
-                @* <select class="form-control page-size" @bind="pageSize" @onchange="ChangePageSize()">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                </select> *@
-            </div>
-        }
+      @if (totalPages > 1)
+    {
+        <div class="pagination">
+            <button class="btn btn-primary" disabled="@(currentPage <= 1)" @onclick="PreviousPage">Trước</button>
+            <span>Trang @currentPage / @totalPages</span>
+            <button class="btn btn-primary" disabled="@(currentPage >= totalPages)" @onclick="NextPage">Tiếp</button>
+        </div>
+    }
 </div>
 
 @code {

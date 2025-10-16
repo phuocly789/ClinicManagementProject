@@ -2,7 +2,10 @@
 @layout MainLayout
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 @using System.Globalization
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
 
 <PageTitle>Quản Lý Lịch Làm Việc</PageTitle>
 
@@ -49,14 +52,26 @@
                 <div class="modal-body">
                     <EditForm Model="@scheduleForm" OnValidSubmit="@HandleFormSubmit">
                         <DataAnnotationsValidator />
-                        <div class="form-group">
-                            <label>Nhân viên (ID):</label>
-                            <InputNumber class="form-control" @bind-Value="scheduleForm.StaffId" />
+                       <div class="form-group">
+                            <label>Nhân viên:</label>
+                            <InputSelect class="form-control" @bind-Value="scheduleForm.StaffId">
+                                <option value="">-- Chọn nhân viên --</option>
+                                @foreach (var schedule in Schedules.Where(s => s.Role != "Admin" && s.Role != "Patient"))
+                                {
+                                    <option value="@schedule.StaffId">@schedule.StaffName (@schedule.Role)</option>
+                                }
+                            </InputSelect>
                             <ValidationMessage For="@(() => scheduleForm.StaffId)" />
+
                         </div>
+
                         <div class="form-group">
                             <label>Ngày làm:</label>
-                            <InputDate class="form-control" @bind-Value="scheduleForm.WorkDate" />
+                          <InputDate class="form-control"
+                                    @bind-Value="scheduleForm.WorkDate"
+                                    min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <ValidationMessage For="@(() => scheduleForm.WorkDate)" />
+
                         </div>
                         <div class="form-group">
                             <label>Giờ bắt đầu:</label>
@@ -81,24 +96,95 @@
     }
 </div>
 
+@* form detail *@
+@if (showDetailsModal && selectedSchedule != null)
+{
+    <div class="modal-overlay" @onclick="HideDetailsModal">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Chi tiết Lịch làm việc</h3>
+                <button class="close-button bg-secondary border-0" @onclick="HideDetailsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-row">
+                    <span class="info-label">Nhân viên:</span>
+                    <span class="info-value">@selectedSchedule.StaffName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Chức vụ:</span>
+                    <span class="info-value">@selectedSchedule.Role</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ngày làm:</span>
+                    <span class="info-value">@DateTime.Parse(selectedSchedule.WorkDate).ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Thời gian:</span>
+                    <span class="info-value">@selectedSchedule.StartTime - @selectedSchedule.EndTime</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span class="info-value">@(selectedSchedule.IsAvailable ? "Có mặt" : "Vắng")</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="HideDetailsModal">Đóng</button>
+                <button class="btn btn-warning" @onclick="() => EditScheduleFromModal(selectedSchedule)">Sửa</button>
+                <button class="btn btn-danger" @onclick="() => ShowDeleteConfirmFromModal(selectedSchedule)">Xóa</button>
+            </div>
+        </div>
+    </div>
+}
+<NotificationModal IsVisible="@showModal" Title="@modalTitle" Message="@modalMessage" ShowConfirmButton="true"
+    OnConfirm="@ConfirmAction" OnCancel="@CancelModal" />
 @code {
-    private HttpClient _httpClient;
+    private HttpClient _httpClient = null!;
+    private DotNetObjectReference<AdminSchedule>? objRef;
+
+    // --- State Variables ---
     private List<ScheduleForMedicalStaffResponse> Schedules = new();
-    private bool showForm = false;
-    private bool isLoading = false;
-    private string searchQuery = "";
+    private bool isLoading = true;
+    private bool _isRendered = false;
+
+    // --- Toast Notification State ---
     private bool showToast = false;
     private string toastMessage = "";
     private string toastType = "info";
+
+    // --- Add/Edit Form State ---
+    private bool showForm = false;
     private int editingScheduleId = 0;
-    private CreateScheduleRequestDTO scheduleForm = new();
-    private FilterModel filter = new() { StartDate = DateTime.Today.AddDays(-30), EndDate = DateTime.Today.AddDays(1) };
-    private bool _isRendered = false;
-    private class FilterModel
+    private ScheduleFormModel scheduleForm = new();
+
+    // --- Details Modal State ---
+    private bool showDetailsModal = false;
+    private ScheduleForMedicalStaffResponse? selectedSchedule;
+
+    // --- Confirmation Modal State ---
+    private bool showModal = false;
+    private string modalTitle = "";
+    private string modalMessage = "";
+    private int scheduleToDeleteId;
+
+    // --- DTO for Form Binding ---
+    public class ScheduleFormModel
     {
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        [Required(ErrorMessage = "ID nhân viên là bắt buộc.")]
+        [Range(1, int.MaxValue, ErrorMessage = "ID nhân viên không hợp lệ.")]
+        public int? StaffId { get; set; }
+
+        public DateTime WorkDate { get; set; } = DateTime.Today;
+
+        [Required(ErrorMessage = "Giờ bắt đầu là bắt buộc.")]
+        [RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "Định dạng giờ là HH:mm:ss.")]
+        public string StartTime { get; set; } = "08:00:00";
+
+        [Required(ErrorMessage = "Giờ kết thúc là bắt buộc.")]
+        [RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "Định dạng giờ là HH:mm:ss.")]
+        public string EndTime { get; set; } = "17:00:00";
+        public bool IsAvailable { get; set; } = true;
     }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,6 +196,7 @@
     {
         if (firstRender)
         {
+            objRef = DotNetObjectReference.Create(this);
             _isRendered = true;
             await RenderCalendar();
         }
@@ -117,52 +204,87 @@
 
     private async Task LoadSchedules()
     {
+        isLoading = true;
         try
         {
-            isLoading = true;
-            var query = "Schedule/GetAllSchedulesAsync";
-
-            Console.WriteLine($"Sending request to: {_httpClient.BaseAddress}{query}");
-            var response = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>>(query);
+            var response = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<ScheduleForMedicalStaffResponse>>>("Schedule/GetAllSchedulesAsync");
             if (response?.Status == StatusReponse.Success && response.Content != null)
             {
                 Schedules = response.Content.Items ?? new List<ScheduleForMedicalStaffResponse>();
-                Console.WriteLine($"Loaded {Schedules.Count} schedules: {System.Text.Json.JsonSerializer.Serialize(Schedules)}");
-                await InvokeAsync(StateHasChanged);
-                if (_isRendered) await RenderCalendar(); // Chỉ gọi sau khi render
+                if (_isRendered) await RenderCalendar();
             }
             else
             {
-                ShowToast($"Không tải được lịch: {response?.Message ?? "Response không hợp lệ"}", "error");
-                Schedules = new List<ScheduleForMedicalStaffResponse>();
-                if (_isRendered) await RenderCalendar();
+                ShowToast($"Không tải được lịch: {response?.Message ?? "Lỗi không xác định"}", "error");
             }
         }
         catch (Exception ex)
         {
-            ShowToast($"Lỗi tải lịch: {ex.Message}", "error");
-            Console.WriteLine($"LoadSchedules error: {ex}");
+            ShowToast($"Lỗi khi tải lịch: {ex.Message}", "error");
         }
         finally
         {
             isLoading = false;
-            await InvokeAsync(StateHasChanged);
+            StateHasChanged();
+        }
+    }
+
+    private async Task RenderCalendar()
+    {
+        if (!_isRendered) return;
+        try
+        {
+            var events = Schedules.Select(s =>
+            {
+                string role;
+                var color = GetRoleColor(s, out role);
+                var start = $"{s.WorkDate}T{s.StartTime}";
+                var end = $"{s.WorkDate}T{s.EndTime}";
+                return new
+                {
+                    id = s.ScheduleId,
+                    title = $"{s.StaffName} ({role})<br>{s.StartTime[..5]} - {s.EndTime[..5]}",
+                    start,
+                    end,
+                    backgroundColor = color,
+                    borderColor = color,
+                };
+            }).ToArray();
+
+            await JSRuntime.InvokeVoidAsync("renderScheduleCalendar", new { events = events, dotNetHelper = objRef });
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi hiển thị lịch: {ex.Message}", "error");
         }
     }
 
     private async Task HandleFormSubmit()
     {
+        isLoading = true;
         try
         {
-            isLoading = true;
+            // Tạo một DTO riêng để gửi đi với định dạng string cho WorkDate
+            var requestDto = new
+            {
+                scheduleForm.StaffId,
+                WorkDate = scheduleForm.WorkDate.ToString("yyyy-MM-dd"),
+                scheduleForm.StartTime,
+                scheduleForm.EndTime,
+                scheduleForm.IsAvailable
+            };
+
             HttpResponseMessage resp;
             if (editingScheduleId == 0)
-                resp = await _httpClient.PostAsJsonAsync("Schedule/CreateScheduleAsync", scheduleForm);
+            {
+                resp = await _httpClient.PostAsJsonAsync("Schedule/CreateScheduleAsync", requestDto);
+            }
             else
-                resp = await _httpClient.PutAsJsonAsync($"Schedule/UpdateScheduleAsync/{editingScheduleId}", scheduleForm);
+            {
+                resp = await _httpClient.PutAsJsonAsync($"Schedule/UpdateScheduleAsync/{editingScheduleId}", requestDto);
+            }
 
-            var result = await resp.Content.ReadFromJsonAsync<ResponseValue<object>>();
-            if (result?.Status == StatusReponse.Success)
+            if (resp.IsSuccessStatusCode)
             {
                 ShowToast(editingScheduleId == 0 ? "Thêm thành công!" : "Cập nhật thành công!", "success");
                 showForm = false;
@@ -170,7 +292,14 @@
             }
             else
             {
-                ShowToast(result?.Message ?? "Lỗi khi lưu lịch", "error");
+                var responseText = await resp.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<ResponseValue<object>>(responseText, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                ShowToast($"Lưu thất bại: {result?.Message ?? "Lỗi không xác định"}", "error");
+
             }
         }
         catch (Exception ex)
@@ -182,74 +311,102 @@
             isLoading = false;
         }
     }
+    
+    // --- JSInvokable & Modal Logic ---
 
-    private void EditSchedule(ScheduleForMedicalStaffResponse s)
+    [JSInvokable]
+    public async Task HandleEventClick(string scheduleIdStr)
     {
-        if (s == null) return;
-        editingScheduleId = s.StaffId ?? 0;
-        scheduleForm = new CreateScheduleRequestDTO
+        if (int.TryParse(scheduleIdStr, out int scheduleId))
         {
-            StaffId = s.StaffId,
-            WorkDate = s.WorkDate,
-            StartTime = s.StartTime,
-            EndTime = s.EndTime,
-            IsAvailable = s.IsAvailable
+            var schedule = Schedules.FirstOrDefault(s => s.ScheduleId == scheduleId);
+            if (schedule != null)
+            {
+                // Dùng InvokeAsync để đảm bảo cập nhật UI an toàn từ lệnh gọi của JS
+                await InvokeAsync(() =>
+                {
+                    selectedSchedule = schedule;
+                    showDetailsModal = true;
+                    StateHasChanged();
+                });
+            }
+        }
+    }
+
+    private void ShowAddForm()
+    {
+        editingScheduleId = 0;
+        scheduleForm = new ScheduleFormModel();
+        showForm = true;
+    }
+
+    private void EditScheduleFromModal(ScheduleForMedicalStaffResponse schedule)
+    {
+        HideDetailsModal();
+        editingScheduleId = schedule.ScheduleId; // SỬA LẠI: Dùng ScheduleId
+        scheduleForm = new ScheduleFormModel
+        {
+            StaffId = schedule.StaffId,
+            WorkDate = DateTime.Parse(schedule.WorkDate), // SỬA LẠI: Chuyển string sang DateTime
+            StartTime = schedule.StartTime,
+            EndTime = schedule.EndTime,
+            IsAvailable = schedule.IsAvailable
         };
         showForm = true;
     }
 
+    private void ShowDeleteConfirmFromModal(ScheduleForMedicalStaffResponse schedule)
+    {
+        HideDetailsModal();
+        scheduleToDeleteId = schedule.ScheduleId;
+        modalTitle = "Xác nhận xóa";
+        modalMessage = $"Bạn có chắc muốn xóa lịch làm việc của {schedule.StaffName} vào ngày {DateTime.Parse(schedule.WorkDate):dd/MM/yyyy}?";
+        showModal = true;
+
+        StateHasChanged();
+    }
+
+    private async Task ConfirmAction()
+    {
+        if (scheduleToDeleteId != 0)
+        {
+            await DeleteSchedule(scheduleToDeleteId);
+        }
+        CancelModal();
+    }
+
     private async Task DeleteSchedule(int id)
     {
-        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Xóa lịch #{id}?")) return;
+        isLoading = true;
         try
         {
             var resp = await _httpClient.DeleteAsync($"Schedule/DeleteScheduleAsync/{id}");
-            var result = await resp.Content.ReadFromJsonAsync<ResponseValue<bool>>();
-            if (result?.Status == StatusReponse.Success)
+            if (resp.IsSuccessStatusCode)
             {
-                ShowToast("Xóa thành công!", "success");
-                await LoadSchedules();
+                ShowToast($"Xóa thành công lịch #{id}", "success");
+                await LoadSchedules(); // Tải lại danh sách
             }
             else
             {
-                ShowToast(result?.Message ?? "Xóa thất bại", "error");
+                ShowToast("Xóa thất bại", "error");
             }
         }
         catch (Exception ex)
         {
             ShowToast($"Lỗi khi xóa: {ex.Message}", "error");
         }
-    }
-
-    private async Task OnSearchInput(ChangeEventArgs e)
-    {
-        searchQuery = e.Value?.ToString() ?? "";
-        await LoadSchedules();
-    }
-
-    private async Task ApplyFilter()
-    {
-        await LoadSchedules();
-    }
-
-    private async Task ExportToCsv()
-    {
-        var csv = "Mã,Làm Việc,Nhân Viên,Giờ Bắt Đầu,Giờ Kết Thúc,Trạng Thái\n";
-        foreach (var s in Schedules)
-            csv += $"{s.StaffId},{s.WorkDate},{s.StaffName},{s.StartTime},{s.EndTime},{(s.IsAvailable ? "Có" : "Không")}\n";
-        await JSRuntime.InvokeVoidAsync("downloadCsv", "Schedules.csv", csv);
-        ShowToast("Xuất CSV thành công!", "success");
-    }
-
-    private void ShowAddForm()
-    {
-        scheduleForm = new();
-        editingScheduleId = 0;
-        showForm = true;
+        finally
+        {
+            isLoading = false;
+            scheduleToDeleteId = 0;
+        }
     }
 
     private void CancelForm() => showForm = false;
+    private void HideDetailsModal() => showDetailsModal = false;
+    private void CancelModal() => showModal = false;
 
+    // --- Toast & Color Helpers ---
     private void ShowToast(string message, string type)
     {
         toastMessage = message;
@@ -264,127 +421,34 @@
         return Task.CompletedTask;
     }
 
-    private async Task RenderCalendar()
-    {
-    
-        if (Schedules == null || !Schedules.Any())
-        {
-            Console.WriteLine("No schedules to render.");
-            await JSRuntime.InvokeVoidAsync("renderScheduleCalendar", new object[] { });
-            return;
-        }
-
-        try
-        {
-            Console.WriteLine("");
-            Console.WriteLine("");
-            var isFullCalendarLoaded = await JSRuntime.InvokeAsync<bool>("isFullCalendarLoaded");
-            if (!isFullCalendarLoaded)
-            {
-                ShowToast("Lịch chưa sẵn sàng, đang thử lại...", "warning");
-                await Task.Delay(500);
-                await RenderCalendar();
-                return;
-            }
-
-            var events = Schedules.Select(s =>
-            {
-                string role;
-                var color = GetRoleColor(s, out role);
-                var start = ValidateDateTime(s.WorkDate, s.StartTime);
-                var end = ValidateDateTime(s.WorkDate, s.EndTime);
-                var eventObj = new
-                {
-                    id = s.StaffId,
-                    title = $"{s.StaffName} ({role})<br>{DateTime.Parse(start).ToString("HH:mm")} - {DateTime.Parse(end).ToString("HH:mm")}",
-                    start = start,
-                    end = end,
-                    backgroundColor = color,
-                    borderColor = color,
-                    textColor = "#ffffff"
-                };
-                Console.WriteLine($"Event created: {System.Text.Json.JsonSerializer.Serialize(eventObj)}");
-                return eventObj;
-            }).ToArray();
-
-            if (events == null || events.Length == 0)
-            {
-                Console.WriteLine("No valid events to render after validation.");
-                await JSRuntime.InvokeVoidAsync("renderScheduleCalendar", new {Events= new object[0] });
-                return;
-            }
-
-            Console.WriteLine($"Rendering {events.Length} events: {System.Text.Json.JsonSerializer.Serialize(events)}");
-            await JSRuntime.InvokeVoidAsync("renderScheduleCalendar", new {Events = events});
-            Console.WriteLine("Calendar rendered successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error rendering calendar: {ex.Message}");
-            ShowToast($"Lỗi hiển thị lịch: {ex.Message}", "error");
-        }
-  
-    }
-
     private string GetRoleColor(ScheduleForMedicalStaffResponse schedule, out string role)
     {
+        // ... hàm này giữ nguyên
         role = schedule?.Role ?? "Khác";
-        if (string.IsNullOrEmpty(role))
-        {
-            role = "Khác";
-            return "#6c757d";
-        }
-
-        var roleLower = role.ToLowerInvariant();
-        if (roleLower == "admin")
-        {
-            role = "Admin";
-            return "#007bff";
-        }
-        if (roleLower == "doctor" || roleLower == "bác sĩ")
-        {
-            role = "Doctor";
-            return "#28a745";
-        }
-        if (roleLower == "nurse" || roleLower == "y tá")
-        {
-            role = "Nurse";
-            return "#ffc107";
-        }
-        if (roleLower == "patient" || roleLower == "bệnh nhân")
-        {
-            role = "Patient";
-            return "#dc3545";
-        }
-        role = "Khác";
-        return "#6c757d";
+        return role.ToLowerInvariant() switch {
+            "admin" => "#007bff",
+            "doctor" or "bác sĩ" => "#28a745",
+            "nurse" or "y tá" => "#ffc107",
+            "patient" or "bệnh nhân" => "#dc3545",
+            _ => "#6c757d",
+        };
     }
-
-    private string ValidateDateTime(string date, string time)
+    private async Task ExportToCsv()
     {
-        if (string.IsNullOrWhiteSpace(date) || string.IsNullOrWhiteSpace(time))
+        var csv = "Mã Lịch,Mã Nhân Viên,Tên Nhân Viên,Ngày Làm,Giờ Bắt Đầu,Giờ Kết Thúc,Trạng Thái\n";
+        foreach (var s in Schedules)
+            csv += $"{s.ScheduleId},{s.StaffId},{s.StaffName},{s.WorkDate},{s.StartTime},{s.EndTime},{(s.IsAvailable ? "Có mặt" : "Vắng")}\n";
+        
+        await JSRuntime.InvokeVoidAsync("downloadCsv", "Schedules_All.csv", csv);
+        ShowToast("Xuất CSV thành công!", "success");
+    }
+    
+    // Dọn dẹp "cầu nối"
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
         {
-            Console.WriteLine($"Invalid date or time: date={date}, time={time}");
-            return null;
+            objRef.Dispose();
         }
-
-        date = date.Trim();
-        time = time.Trim().Replace("\u200B", "").Replace("\uFEFF", "");
-
-        if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
-        {
-            Console.WriteLine($"Invalid date format: {date}");
-            return null;
-        }
-
-        if (!TimeSpan.TryParse(time, out var parsedTime))
-        {
-            Console.WriteLine($"Invalid time format: {time}");
-            return null;
-        }
-
-        var fullDateTime = parsedDate + parsedTime;
-        Console.WriteLine($"Validated datetime: {fullDateTime:yyyy-MM-ddTHH:mm:ss}");
-        return fullDateTime.ToString("yyyy-MM-ddTHH:mm:ss");
     }
 }
