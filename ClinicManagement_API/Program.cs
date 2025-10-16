@@ -34,6 +34,7 @@ builder.Services.AddScoped<IReportsService, ReportsService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<ITechnicianService, TechnicianService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IQueueService, QueueService>();
 
 // Thêm dịch vụ controller
 builder
@@ -147,9 +148,6 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapControllers();
-
-//use middle ware controller
 app.MapControllers();
 
 //use swagger

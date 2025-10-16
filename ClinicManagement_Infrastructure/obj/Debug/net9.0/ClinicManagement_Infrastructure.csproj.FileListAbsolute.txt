@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\appsettings.Development.json
 D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\appsettings.json
 D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\ClinicManagement_Infrastructure.staticwebassets.endpoints.json
@@ -133,8 +132,15 @@ D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9
 D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.pdb
 D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.genruntimeconfig.cache
 D:\webdao\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ref\ClinicManagement_Infrastructure.dll
-=======
->>>>>>> phuoc
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.csproj.AssemblyReference.cache
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\rpswa.dswa.cache.json
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.AssemblyInfoInputs.cache
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.AssemblyInfo.cs
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.csproj.CoreCompileInputs.cache
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.MvcApplicationPartsAssemblyInfo.cs
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.MvcApplicationPartsAssemblyInfo.cache
+D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.sourcelink.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\appsettings.Development.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\appsettings.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\ClinicManagement_Infrastructure.staticwebassets.endpoints.json
@@ -246,15 +252,6 @@ D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicMan
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.csproj.AssemblyReference.cache
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\rpswa.dswa.cache.json
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.AssemblyInfoInputs.cache
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.AssemblyInfo.cs
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.csproj.CoreCompileInputs.cache
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.MvcApplicationPartsAssemblyInfo.cs
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.MvcApplicationPartsAssemblyInfo.cache
-D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\ClinicManagement_Infrastructure.sourcelink.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\rjimswa.dswa.cache.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 D:\Tài liệu\Bootcamp_DotNet 03\DoAnCuoiKhoa\ClinicManagementProject\ClinicManagement_Infrastructure\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
