@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class StaffSchedule
 {
@@ -19,5 +19,5 @@ public partial class StaffSchedule
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
-    public virtual User1? Staff { get; set; }
+    public virtual User? Staff { get; set; }
 }

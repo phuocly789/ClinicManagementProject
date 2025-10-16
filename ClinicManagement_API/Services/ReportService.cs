@@ -1,4 +1,4 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using NpgsqlTypes;
@@ -202,7 +202,7 @@ public class ReportsService : IReportsService
             var query =
                 from i in _context.Invoices
                 join id in _context.InvoiceDetails on i.InvoiceId equals id.InvoiceId
-                join u in _context.Users1 on i.PatientId equals u.UserId into users
+                join u in _context.Users on i.PatientId equals u.UserId into users
                 from u in users.DefaultIfEmpty()
                 join a in _context.Appointments
                     on i.AppointmentId equals a.AppointmentId
@@ -270,7 +270,7 @@ public class ReportsService : IReportsService
             var totalItemsQuery =
                 from i in _context.Invoices
                 join id in _context.InvoiceDetails on i.InvoiceId equals id.InvoiceId
-                join u in _context.Users1 on i.PatientId equals u.UserId into users
+                join u in _context.Users on i.PatientId equals u.UserId into users
                 from u in users.DefaultIfEmpty()
                 where
                     i.Status == "Paid"

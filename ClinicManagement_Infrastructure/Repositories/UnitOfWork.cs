@@ -1,6 +1,7 @@
 // unitofwork
 
-using ClinicManagement_Infrastructure.Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore.Storage;
 
 public interface IUnitOfWork : IAsyncDisposable

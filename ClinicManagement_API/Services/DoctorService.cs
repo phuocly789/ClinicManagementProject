@@ -1,4 +1,4 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 

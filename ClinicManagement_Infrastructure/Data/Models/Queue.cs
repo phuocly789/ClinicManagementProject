@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class Queue
 {
@@ -27,7 +27,7 @@ public partial class Queue
 
     public virtual Appointment? Appointment { get; set; }
 
-    public virtual User1? CreatedByNavigation { get; set; }
+    public virtual User? CreatedByNavigation { get; set; }
 
     public virtual Patient? Patient { get; set; }
 

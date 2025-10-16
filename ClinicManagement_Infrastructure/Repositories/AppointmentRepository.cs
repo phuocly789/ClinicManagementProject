@@ -1,5 +1,5 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 public interface IAppointmentRepository : IRepository<Appointment>
@@ -24,7 +24,7 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
         return await _context
             .Appointments.Where(a => a.StaffId == staffId && a.AppointmentDate == date)
             .Join(
-                _context.Users1,
+                _context.Users,
                 a => a.PatientId,
                 u => u.UserId,
                 (a, u) => new { Appointment = a, User = u }

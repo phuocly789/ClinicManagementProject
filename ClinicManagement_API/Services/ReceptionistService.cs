@@ -1,4 +1,4 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using ClinicManagementSystem.Application.DTOs.Auth;
 
 public interface IReceptionistService
@@ -57,7 +57,7 @@ public class ReceptionistService : IReceptionistService
                     "Số điện thoại hoặc email đã tồn tại."
                 );
             }
-            var user = new User1
+            var user = new User
             {
                 FullName = patientDto.FullName,
                 Email = patientDto.Email,

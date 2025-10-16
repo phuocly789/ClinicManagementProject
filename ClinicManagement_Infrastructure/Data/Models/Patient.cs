@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class Patient
 {
@@ -11,7 +11,7 @@ public partial class Patient
 
     public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
 
-    public virtual User1 PatientNavigation { get; set; } = null!;
+    public virtual User PatientNavigation { get; set; } = null!;
 
     public virtual ICollection<Queue> Queues { get; set; } = new List<Queue>();
 }

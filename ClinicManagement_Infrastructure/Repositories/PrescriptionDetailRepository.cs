@@ -1,6 +1,5 @@
-using ClinicManagement_Infrastructure.Infrastructure.Data;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
-
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 public interface IPrescriptionDetailRepository : IRepository<PrescriptionDetail>
 {
     // Add custom methods for PrescriptionDetail here if needed

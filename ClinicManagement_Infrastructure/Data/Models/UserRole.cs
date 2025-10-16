@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class UserRole
 {
@@ -13,5 +13,5 @@ public partial class UserRole
 
     public virtual Role Role { get; set; } = null!;
 
-    public virtual User1 User { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

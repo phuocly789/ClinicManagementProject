@@ -1,5 +1,5 @@
 using System.Transactions;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 public interface IScheduleService

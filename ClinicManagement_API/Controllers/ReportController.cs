@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+using ClinicManagement_Infrastructure.Data.Models;
 // using ClinicManagement_Infrastructure.Infrastructure.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

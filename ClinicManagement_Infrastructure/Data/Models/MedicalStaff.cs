@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
 public partial class MedicalStaff
 {
@@ -15,5 +15,5 @@ public partial class MedicalStaff
 
     public string? Bio { get; set; }
 
-    public virtual User1 Staff { get; set; } = null!;
+    public virtual User Staff { get; set; } = null!;
 }

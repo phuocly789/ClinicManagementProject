@@ -1,91 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicManagement_Infrastructure.Infrastructure.Data.Models;
+namespace ClinicManagement_Infrastructure.Data.Models;
 
-/// <summary>
-/// Auth: Stores user login data within a secure schema.
-/// </summary>
 public partial class User
 {
-    public Guid? InstanceId { get; set; }
+    public int UserId { get; set; }
 
-    public Guid Id { get; set; }
+    public string Username { get; set; } = null!;
 
-    public string? Aud { get; set; }
+    public string PasswordHash { get; set; } = null!;
 
-    public string? Role { get; set; }
+    public string FullName { get; set; } = null!;
 
-    public string? Email { get; set; }
-
-    public string? EncryptedPassword { get; set; }
-
-    public DateTime? EmailConfirmedAt { get; set; }
-
-    public DateTime? InvitedAt { get; set; }
-
-    public string? ConfirmationToken { get; set; }
-
-    public DateTime? ConfirmationSentAt { get; set; }
-
-    public string? RecoveryToken { get; set; }
-
-    public DateTime? RecoverySentAt { get; set; }
-
-    public string? EmailChangeTokenNew { get; set; }
-
-    public string? EmailChange { get; set; }
-
-    public DateTime? EmailChangeSentAt { get; set; }
-
-    public DateTime? LastSignInAt { get; set; }
-
-    public string? RawAppMetaData { get; set; }
-
-    public string? RawUserMetaData { get; set; }
-
-    public bool? IsSuperAdmin { get; set; }
-
-    public DateTime? CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
+    public string Email { get; set; } = null!;
 
     public string? Phone { get; set; }
 
-    public DateTime? PhoneConfirmedAt { get; set; }
+    public string? Gender { get; set; }
 
-    public string? PhoneChange { get; set; }
+    public string? Address { get; set; }
 
-    public string? PhoneChangeToken { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
 
-    public DateTime? PhoneChangeSentAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
-    public DateTime? ConfirmedAt { get; set; }
+    public bool? IsActive { get; set; }
 
-    public string? EmailChangeTokenCurrent { get; set; }
+    public bool MustChangePassword { get; set; }
 
-    public short? EmailChangeConfirmStatus { get; set; }
+    public virtual ICollection<Appointment> AppointmentCreatedByNavigations { get; set; } = new List<Appointment>();
 
-    public DateTime? BannedUntil { get; set; }
+    public virtual ICollection<Appointment> AppointmentPatients { get; set; } = new List<Appointment>();
 
-    public string? ReauthenticationToken { get; set; }
+    public virtual ICollection<Appointment> AppointmentStaffs { get; set; } = new List<Appointment>();
 
-    public DateTime? ReauthenticationSentAt { get; set; }
+    public virtual ICollection<Diagnosis> Diagnoses { get; set; } = new List<Diagnosis>();
 
-    /// <summary>
-    /// Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.
-    /// </summary>
-    public bool IsSsoUser { get; set; }
+    public virtual ICollection<ImportBill> ImportBills { get; set; } = new List<ImportBill>();
 
-    public DateTime? DeletedAt { get; set; }
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
-    public bool IsAnonymous { get; set; }
+    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
 
-    public virtual ICollection<Identity> Identities { get; set; } = new List<Identity>();
+    public virtual MedicalStaff? MedicalStaff { get; set; }
 
-    public virtual ICollection<MfaFactor> MfaFactors { get; set; } = new List<MfaFactor>();
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-    public virtual ICollection<OneTimeToken> OneTimeTokens { get; set; } = new List<OneTimeToken>();
+    public virtual Patient? Patient { get; set; }
 
-    public virtual ICollection<Session> Sessions { get; set; } = new List<Session>();
+    public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
+
+    public virtual ICollection<Queue> Queues { get; set; } = new List<Queue>();
+
+    public virtual ICollection<ServiceOrder> ServiceOrders { get; set; } = new List<ServiceOrder>();
+
+    public virtual ICollection<StaffSchedule> StaffSchedules { get; set; } = new List<StaffSchedule>();
+
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }
