@@ -24,6 +24,7 @@ import Home from "./pages/Home.jsx";
 import PDFEditorPage from './pages/Doctors/PrintsPDF/PDFPreviewEditor.jsx';
 import TechnicianDashboard from "./pages/Technician/TechnicianDashboard.jsx";
 import PrivateRoute from "./Components/PrivateRoute.jsx";
+import Logout from "./pages/auth/Logout.jsx";
 
 function App() {
   return (
@@ -72,6 +73,7 @@ function App() {
         </Route>
         <Route path={path.LOGIN} element={<LoginPage />} />{" "}
         <Route path={path.REGISTER} element={<Register />} />{" "}
+        <Route path={path.LOGOUT} element={<Logout />} />{" "}
         <Route
           path={path.VERIFICATION_EMAIL}
           element={<VerifyEmailPage />}

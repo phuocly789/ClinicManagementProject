@@ -44,6 +44,7 @@ public class ScheduleService : IScheduleService
     {
         try
         {
+            var currentDate = DateTime.Now;
             //parse input
             if (
                 !DateTime.TryParse(request.WorkDate, out var workDate)
@@ -54,16 +55,27 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<CreateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "Invalid date or time format."
+                    "Thời gian hoặc định dạng ngày không hợp lệ."
                 );
             }
-
+            if (
+                workDate < currentDate
+                || workDate.Date == currentDate.Date
+                    && endTime <= TimeOnly.FromDateTime(currentDate)
+            )
+            {
+                return new ResponseValue<CreateScheduleRequestDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Không thể tạo lịch trong quá khứ."
+                );
+            }
             if (startTime >= endTime)
             {
                 return new ResponseValue<CreateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "Start time must be before end time."
+                    "Thời gian bắt đầu phải trước thời gian kết thúc."
                 );
             }
             bool isNotPatient = await _medicalStaffRepository
@@ -94,7 +106,7 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<CreateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "The new schedule overlaps with an existing schedule."
+                    "Lịch bị trùng với lịch hiện có."
                 );
             }
             //transaction
@@ -123,7 +135,7 @@ public class ScheduleService : IScheduleService
                     IsAvailable = schedule.IsAvailable,
                 },
                 StatusReponse.Success,
-                "Schedule created successfully."
+                "Tạo lịch thành công."
             );
         }
         catch (Exception ex)
@@ -132,7 +144,7 @@ public class ScheduleService : IScheduleService
             return new ResponseValue<CreateScheduleRequestDTO>(
                 null,
                 StatusReponse.Error,
-                "An error occurred while creating the schedule: " + ex.Message
+                "Lỗi khi tạo lịch: " + ex.Message
             );
         }
     }
@@ -144,6 +156,7 @@ public class ScheduleService : IScheduleService
     {
         try
         {
+            var currentDate = DateTime.Now;
             // Parse input
             if (
                 !DateTime.TryParse(request.WorkDate, out var workDate)
@@ -154,16 +167,27 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "Invalid date or time format."
+                    "Lịch hoặc định dạng ngày không hợp lệ."
                 );
             }
-
+            if (
+                workDate < currentDate
+                || workDate.Date == currentDate.Date
+                    && endTime <= TimeOnly.FromDateTime(currentDate)
+            )
+            {
+                return new ResponseValue<UpdateScheduleRequestDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Không thể tạo lịch trong quá khứ."
+                );
+            }
             if (startTime >= endTime)
             {
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "Start time must be before end time."
+                    "Thời gian bắt đầu phải trước thời gian kết thúc."
                 );
             }
 
@@ -174,7 +198,7 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.NotFound,
-                    "Schedule not found."
+                    "Không tìm thấy lịch."
                 );
             }
 
@@ -184,7 +208,7 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "Can only update schedule for the same date."
+                    "Chỉ có thể cập nhật lịch trong cùng một ngày làm việc."
                 );
             }
 
@@ -197,7 +221,7 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "StaffId does correspond to a valid Patient."
+                    "StaffId Là Bệnh nhân, Không thể cập nhật lịch."
                 );
             }
 
@@ -219,7 +243,7 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<UpdateScheduleRequestDTO>(
                     null,
                     StatusReponse.BadRequest,
-                    "The new schedule overlaps with an existing schedule."
+                    "Lịch bị trùng với lịch hiện có."
                 );
             }
 
@@ -244,7 +268,7 @@ public class ScheduleService : IScheduleService
                     IsAvailable = schedule.IsAvailable,
                 },
                 StatusReponse.Success,
-                "Schedule updated successfully."
+                "Cập nhật lịch thành công."
             );
         }
         catch (Exception ex)
@@ -323,7 +347,7 @@ public class ScheduleService : IScheduleService
                 return new ResponseValue<bool>(
                     false,
                     StatusReponse.NotFound,
-                    "Schedule not found."
+                    "Không tìm thấy lịch."
                 );
             }
             using var transaction = await _uow.BeginTransactionAsync();
@@ -331,11 +355,7 @@ public class ScheduleService : IScheduleService
             await transaction.CommitAsync();
             await _uow.SaveChangesAsync();
 
-            return new ResponseValue<bool>(
-                true,
-                StatusReponse.Success,
-                "Schedule deleted successfully."
-            );
+            return new ResponseValue<bool>(true, StatusReponse.Success, "Xóa lịch thành công.");
         }
         catch (Exception ex)
         {

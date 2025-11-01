@@ -39,7 +39,7 @@ const AdminDashboard = () => {
         setLoading(true);
         try {
             const [lowStockRes,revenueStatisRes, revenueRes] = await Promise.all([
-                instance.get('Medicine/Inventory-Warnings?threshold=200'),
+                instance.get('Medicine/Inventory-Warnings?threshold=300'),
                 instance.get(`Reports/GetRevenueStatistics?startDate=${start}&endDate=${end}`),
                 instance.get(`Reports/GetDashBoardStaticAsync?startDate=${start}&endDate=${end}`),
             ]);
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
 
                         <div className="card shadow-sm border-0 table-panel">
                             <div className="card-header bg-transparent border-0">
-                                <h3 className="h6 mb-0">Cảnh Báo Tồn Kho (Dưới 200)</h3>
+                                <h3 className="h6 mb-0">Cảnh Báo Tồn Kho (Dưới 300)</h3>
                             </div>
                             <div className="table-responsive-container">
                                 <table className="table table-hover table-striped clinic-table mb-0">

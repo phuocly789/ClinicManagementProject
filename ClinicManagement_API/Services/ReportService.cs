@@ -273,8 +273,7 @@ public class ReportsService : IReportsService
                 join u in _context.Users on i.PatientId equals u.UserId into users
                 from u in users.DefaultIfEmpty()
                 where
-                    i.Status == "Paid"
-                    && i.InvoiceDate >= fromDate
+                    i.InvoiceDate >= fromDate
                     && i.InvoiceDate <= toDate
                     && (
                         string.IsNullOrEmpty(search)
