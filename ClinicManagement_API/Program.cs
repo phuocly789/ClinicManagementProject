@@ -89,16 +89,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(
         "AllowAllOrigins",
-        builder =>
-            builder
-                .WithOrigins(
-                    "http://localhost:5098",
-                    "https://localhost:5001",
-                    "https://localhost:5066"
-                )
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials()
+        builder => builder.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader()
     );
 });
 
@@ -133,7 +124,7 @@ builder
             RoleClaimType = ClaimTypes.Role,
             // Xác định claim chứa tên của user
             NameClaimType = ClaimTypes.Name,
-            // Kiểm tra thời gian hết hạn của token, không cho phép sử dụng token hết hạn
+            // Kiểm tra thời gian hết hạn của token, không cho phépa sử dụng token hết hạn
             ValidateLifetime = true,
         };
     });
@@ -146,7 +137,10 @@ builder.Services.AddScoped<JwtAuthService>();
 
 var app = builder.Build();
 
+app.UseCors("AllowAllOrigins");
+
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

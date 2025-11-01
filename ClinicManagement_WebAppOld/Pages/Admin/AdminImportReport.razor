@@ -1,0 +1,675 @@
+@page "/admin/import-report"
+@using System.Text.Json
+@using Blazored.Typeahead
+@layout MainLayout
+@attribute [Authorize(Roles = "Admin")]
+@inject IHttpClientFactory HttpClientFactory
+@inject IJSRuntime JSRuntime
+<PageTitle>Quản Lý Nhập Hàng</PageTitle>
+
+<Loading IsLoading="@isLoading" />
+
+<div class="main-content">
+    <header class="header">
+        <h1>Quản Lý Nhập Hàng</h1>
+        <div>
+            <input type="text" class="form-control" placeholder="Tìm kiếm hóa đơn..." @bind="searchQuery" @oninput="OnSearchInput" />
+            <button style="width: 400px;" class="btn btn-primary" @onclick="ShowAddImportForm">Thêm Hóa Đơn Nhập</button>
+        </div>
+    </header>
+
+    <!-- Toast thông báo -->
+    <ToastNotification 
+        IsVisible="@showToast"
+        Message="@toastMessage"
+        ToastType="@toastType"
+        OnClose="@HideToast" />
+
+    <!-- Modal thêm hóa đơn -->
+    @if (showForm)
+    {
+        <div class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>Thêm Hóa Đơn Nhập</h3>
+                    <button class="close-button bg-secondary border-0" @onclick="CancelForm">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newImport" OnValidSubmit="@HandleFormSubmit">
+                        <DataAnnotationsValidator />
+                        <div class="form-group">
+                            <label>Nhà cung cấp:</label>
+                            <InputSelect class="form-control" @bind-Value="newImport.SupplierId">
+                                <option value="0">-- Chọn nhà cung cấp --</option>
+                                @foreach (var supplier in suppliers)
+                                {
+                                    <option value="@supplier.SuplierId">@supplier.SuplierName</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => newImport.SupplierId)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Ghi chú:</label>
+                            <InputTextArea class="form-control" @bind-Value="newImport.Notes" rows="3" />
+                            <ValidationMessage For="@(() => newImport.Notes)" />
+                        </div>
+                        <div class="form-group">
+                            <label>Người tạo (ID):</label>
+                            <InputNumber class="form-control" @bind-Value="newImport.CreatedBy" />
+                            <ValidationMessage For="@(() => newImport.CreatedBy)" />
+                        </div>
+                        <hr />
+                        <h6>Chi tiết nhập</h6>
+                        <button class="btn btn-sm btn-primary mb-2" @onclick="AddDetailRow">+ Thêm dòng</button>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th>Số lượng</th>
+                                    <th>Giá nhập</th>
+                                    <th>Tổng phụ</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @if (newImport.Details.Count <= 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">
+                                        Không có dữ liệu trong phiếu nhập này
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @for (int i = 0; i < newImport.Details.Count; i++)
+                                {
+                                    var row = newImport.Details[i];
+                                    var idx = i;
+
+                                    <tr @key="row">
+                                        <!-- Cột chọn thuốc -->
+                                        <td class="align-middle">
+                                            <InputSelect @bind-Value="row.MedicineId" class="form-select shadow-sm">
+                                                <option value="0">-- Chọn thuốc --</option>
+                                                @foreach (var m in medicines)
+                                                {
+                                                    <option value="@m.MedicineId">@m.MedicineName</option>
+                                                }
+                                            </InputSelect>
+                                            <ValidationMessage For="@(() => row.MedicineId)" />
+
+                                        </td>
+
+                                        <!-- Cột số lượng -->
+                                        <td class="align-middle">
+                                            <div class="d-flex flex-column">
+                                                <InputNumber class="form-control text-center shadow-sm" @bind-Value="row.Quantity" />
+                                                <ValidationMessage For="@(() => row.Quantity)" />
+                                            </div>
+                                        </td>
+
+                                        <!-- Cột giá nhập -->
+                                        <td class="align-middle text-end text-primary fw-semibold">
+                                            @foreach (var m in medicines)
+                                            {
+                                                @if (m.MedicineId == row.MedicineId)
+                                                {
+                                                    row.ImportPrice = m.Price;
+                                                    <span>@(row.ImportPrice.ToString("N0")) VNĐ</span>
+                                                }
+                                            }
+                                        </td>
+
+                                        <!-- Cột tổng phụ -->
+                                        <td class="align-middle text-end text-success fw-bold">
+                                            @(row.SubTotal.ToString("N0")) VNĐ
+                                        </td>
+
+                                        <!-- Cột hành động -->
+                                        <td class="text-center align-middle">
+                                            <button class="btn btn-outline-danger btn-sm px-3 shadow-sm"
+                                                    title="Xóa dòng"
+                                                    @onclick="() => RemoveDetailRow(idx)">
+                                                <i class="fa-solid fa-trash"></i> Xóa
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                            </tbody>
+                        </table>
+                        <div><strong>Tổng cộng: @newImport.TotalAmount.ToString("N0") VNĐ</strong></div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">Thêm</button>
+                            <button type="button" class="btn btn-danger" @onclick="CancelForm">Hủy</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Bộ lọc -->
+    <div class="filter-container mb-3">
+        <div class="row">
+            <div class="col-md-3">
+                <label>Từ ngày:</label>
+                <InputDate class="form-control" @bind-Value="filter.StartDate" />
+            </div>
+            <div class="col-md-3">
+                <label>Đến ngày:</label>
+                <InputDate class="form-control" @bind-Value="filter.EndDate" />
+            </div>
+            <div class="col-md-3">
+                <label>Nhà cung cấp:</label>
+                <InputSelect class="form-control" @bind-Value="filter.SupplierId">
+                    <option value="">-- Tất cả --</option>
+                    @foreach (var supplier in suppliers)
+                    {
+                        <option value="@supplier.SuplierId">@supplier.SuplierName</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-3 align-self-end d-flex justify-content-between">
+                <button class="btn btn-primary" @onclick="ApplyFilter">Lọc</button>
+
+                <button class="btn btn-secondary" @onclick="ExportToCsv">Xuất CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách hóa đơn -->
+    <div class="table-container" style="max-height: 65vh;">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 135px;">Mã Hóa Đơn</th>
+                    <th style="width: 150px;">Ngày Nhập</th>
+                    <th style="width: 350px;">Nhà Cung Cấp</th>
+                    <th style="width: 180px;">Tổng Cộng</th>
+                    <th>Ghi Chú</th>
+                    <th style="width: 110px;">Hành Động</th>
+                </tr>
+            </thead>
+              <tbody>
+                @if (Imports.Count == 0)
+                {
+                    <tr><td colspan="6">Không tìm thấy hóa đơn nào.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Imports)
+                    {
+                        <tr>
+                            <td>@("import" + item.ImportId)</td>
+                            <td>@item.ImportDate.ToString("dd/MM/yyyy")</td>
+                            <td>@item.SupplierName</td>
+                            <td>@item.TotalAmount.ToString("N0") VNĐ</td>
+                            <td>@item.Notes</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm" title="Xem chi tiết" @onclick="() => ViewImportDetails(item.ImportId)">
+                                    <lord-icon src="https://cdn.lordicon.com/knitbwfa.json" trigger="hover"
+                                        style="width:30px;height:30px">
+                                    </lord-icon>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phân trang -->
+    @if (totalPages > 1)
+    {
+        <div class="pagination">
+            <button class="btn btn-primary" disabled="@(currentPage <= 1)" @onclick="PreviousPage">Trước</button>
+            <span>Trang @currentPage / @totalPages</span>
+            <button class="btn btn-primary" disabled="@(currentPage >= totalPages)" @onclick="NextPage">Tiếp</button>
+        </div>
+    }
+
+    <!-- Modal xem chi tiết -->
+    @if (showDetailModal)
+    {
+        <div class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>Chi Tiết Hóa Đơn #@currentDetail.ImportId</h3>
+                    <button class="close-button bg-secondary border-0" @onclick="() => showDetailModal = false">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Nhà cung cấp:</strong> @currentDetail.SupplierName</p>
+                    <p><strong>Ngày nhập:</strong> @currentDetail.ImportDate.ToString("dd/MM/yyyy")</p>
+                    <p><strong>Tổng:</strong> @currentDetail.TotalAmount.ToString("N0") VNĐ</p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Thuốc</th>
+                                <th>Số lượng</th>
+                                <th>Giá nhập</th>
+                                <th>Tổng phụ</th>
+                            </tr>
+                        </thead>
+                       <tbody>
+    @if (currentDetail.Details == null || !currentDetail.Details.Any())
+    {
+        <tr>
+            <td colspan="4" class="text-center">Không có dữ liệu trong phiếu nhập này</td>
+        </tr>
+    }
+    else
+    {
+        @foreach (var d in currentDetail.Details)
+        {
+            <tr>
+                <td>@d.MedicineName</td>
+                <td>@d.Quantity</td>
+                <td>@d.ImportPrice.ToString("N0") VNĐ</td>
+                <td>@d.SubTotal.ToString("N0") VNĐ</td>
+            </tr>
+        }
+    }
+</tbody>
+
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showDetailModal = false">Đóng</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private HttpClient _httpClient;
+    private List<ImportDTO> Imports { get; set; } = new List<ImportDTO>();
+    private List<SupplierDTO> suppliers = new();
+    private List<MedicineDTO> medicines = new();
+    private ImportVM newImport = new ImportVM();
+    private bool showForm = false;
+    private bool isLoading = false;
+    private string searchQuery = "";
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages = 1;
+    private int totalItems = 0;
+    private bool showToast = false;
+    private string toastMessage = "";
+    private string toastType = "info";
+    private bool showDetailModal = false;
+    private ImportDetailByIdDTO currentDetail;
+    private FilterModel filter = new() { StartDate = DateTime.Today.AddDays(-30), EndDate = DateTime.Today.AddDays(1).AddTicks(-1) };
+    private DateTime lastSearchTime = DateTime.MinValue;
+    private readonly TimeSpan debounceDelay = TimeSpan.FromMilliseconds(500);
+
+    private class FilterModel
+    {
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? SupplierId { get; set; }
+    }
+
+    private class SupplierDTO
+    {
+        public int SuplierId { get; set; }
+        public string SuplierName { get; set; }
+        public string ContactEmail { get; set; }
+        public string ContactPhone { get; set; }
+        public string Address { get; set; }
+        public string? Description { get; set; }
+    }
+
+    private class MedicineDTO
+    {
+        public int MedicineId { get; set; }
+        public string MedicineName { get; set; }
+        public decimal Price {get;set;}
+    }
+
+    private class ImportDTO
+    {
+        public int ImportId { get; set; }
+        public DateTime ImportDate { get; set; }
+        public string SupplierName { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string Notes { get; set; }
+    }
+
+    private class ImportDetailByIdDTO
+    {
+        public int ImportId { get; set; }
+        public DateTime ImportDate { get; set; }
+        public string SupplierName { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string Notes { get; set; }
+        public List<ImportDetailDTO> Details { get; set; } = new();
+    }
+
+    private class ImportDetailDTO
+    {
+        public int MedicineId { get; set; }
+        public string MedicineName { get; set; }
+        public int Quantity { get; set; }
+        public decimal ImportPrice { get; set; }
+        public decimal SubTotal => Quantity * ImportPrice;
+    }
+
+    private class ImportVM
+    {
+        public int SupplierId { get; set; }
+        public string Notes { get; set; } = "";
+        public int CreatedBy { get; set; } = 1;
+        public List<ImportDetailDTO> Details { get; set; } = new();
+        public decimal TotalAmount => Details.Sum(d => d.SubTotal);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _httpClient = HttpClientFactory.CreateClient("ClinicManagement_API");
+        await Task.WhenAll(LoadSuppliers(), LoadMedicines(), LoadImportBills());
+    }
+
+    private async Task LoadSuppliers()
+    {
+        try
+        {
+            isLoading = true;
+            var resp = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<SupplierDTO>>>("Supplier/GetAllSupplierAsync");
+            if (resp?.Status == StatusReponse.Success)
+            {
+                suppliers = resp.Content?.Items.ToList() ?? new();
+            }
+            else
+            {
+                ShowToast($"Không thể tải danh sách nhà cung cấp: {resp?.Message ?? "Lỗi không xác định"}", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi khi tải nhà cung cấp: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadMedicines()
+    {
+        try
+        {
+            isLoading = true;
+            var resp = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<MedicineDTO>>>("Medicine/GetAllMedicinesAsync");
+            if (resp?.Status == StatusReponse.Success)
+            {
+                medicines = resp.Content?.Items.ToList() ?? new();
+                Console.WriteLine(JsonSerializer.Serialize(medicines));
+            }
+            else
+            {
+                ShowToast($"Không thể tải danh sách thuốc: {resp?.Message ?? "Lỗi không xác định"}", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi khi tải thuốc: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadImportBills()
+    {
+        try
+        {
+            isLoading = true;
+            var query = $"Import/GetAllImportBillsAsync?page={currentPage}&pageSize={pageSize}";
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                query += $"&search={Uri.EscapeDataString(searchQuery)}";
+            }
+            if (filter.SupplierId.HasValue && filter.SupplierId > 0)
+            {
+                query += $"&supplierId={filter.SupplierId}";
+            }
+            if (filter.StartDate.HasValue)
+            {
+                query += $"&startDate={filter.StartDate:yyyy-MM-dd}";
+            }
+            if (filter.EndDate.HasValue)
+            {
+                var endDateWithTime = filter.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+    query += $"&endDate={endDateWithTime:yyyy-MM-ddTHH:mm:ss}";
+            }
+
+            var resp = await _httpClient.GetFromJsonAsync<ResponseValue<PagedResult<ImportDTO>>>(query);
+            if (resp?.Status == StatusReponse.Success && resp.Content != null)
+            {
+                Imports = resp.Content.Items.ToList();
+                totalItems = resp.Content.TotalItems;
+                totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            }
+            else
+            {
+                ShowToast($"Không thể tải danh sách hóa đơn: {resp?.Message ?? "Lỗi không xác định"}", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi khi gọi API: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        if (DateTime.Now - lastSearchTime < debounceDelay)
+        {
+            return;
+        }
+        lastSearchTime = DateTime.Now;
+        currentPage = 1;
+        await LoadImportBills();
+    }
+
+    private async Task ApplyFilter()
+    {
+        currentPage = 1;
+        await LoadImportBills();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadImportBills();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            await LoadImportBills();
+        }
+    }
+
+    private async Task ExportToCsv()
+    {
+        try
+        {
+            var csv = "Mã Hóa Đơn,Ngày Nhập,Nhà Cung Cấp,Tổng Cộng,Ghi Chú\n";
+            foreach (var item in Imports)
+            {
+                csv += $"import{item.ImportId},{item.ImportDate:dd/MM/yyyy},{item.SupplierName.Replace(",", "")},{item.TotalAmount.ToString("N0")},{item.Notes?.Replace(",", "") ?? ""}\n";
+            }
+            await JSRuntime.InvokeVoidAsync("downloadCsv", "ImportBills.csv", csv);
+            ShowToast("Xuất CSV thành công!", "success");
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi xuất CSV: {ex.Message}", "error");
+        }
+    }
+
+    private async Task ViewImportDetails(int id)
+    {
+        try
+        {
+            isLoading = true;
+            var response = await _httpClient.GetFromJsonAsync<ResponseValue<ImportDetailByIdDTO>>($"Import/GetImportBillByIdAsync/{id}");
+            if (response?.Status == StatusReponse.Success && response.Content != null)
+            {
+                currentDetail = response.Content;
+                showDetailModal = true;
+            }
+            else
+            {
+                ShowToast(response?.Message ?? "Không tải được chi tiết", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi khi tải chi tiết: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowAddImportForm()
+    {
+        if (!medicines.Any())
+        {
+        ShowToast("Danh sách thuốc chưa được tải. Vui lòng thử lại.", "error");
+        return;
+        }
+        newImport = new ImportVM { Details = new List<ImportDetailDTO> { new ImportDetailDTO() } };
+        showForm = true;
+        showToast = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleFormSubmit()
+    {
+        if (newImport.SupplierId <= 0 || newImport.Details.Any(d => d.MedicineId <= 0 || d.Quantity <= 0 || d.ImportPrice <= 0))
+        {
+            ShowToast("Vui lòng nhập đầy đủ thông tin hợp lệ.", "error");
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            var response = await _httpClient.PostAsJsonAsync("Import/CreateImportBillAsync", newImport);
+            if (response.IsSuccessStatusCode)
+            {
+                var addedImport = await response.Content.ReadFromJsonAsync<ResponseValue<ImportDTO>>();
+                if (addedImport?.Status == StatusReponse.Success && addedImport.Content != null)
+                {
+                    Imports.Add(addedImport.Content);
+                    ShowToast($"Đã thêm hóa đơn: import{addedImport.Content.ImportId}", "success");
+                    showForm = false;
+                    newImport = new ImportVM();
+                }
+                else
+                {
+                    ShowToast($"Thêm hóa đơn thất bại: {addedImport?.Message ?? "Lỗi không xác định"}", "error");
+                }
+            }
+            else
+            {
+                var error = await response.Content.ReadFromJsonAsync<ResponseValue<object>>();
+                ShowToast($"Thêm hóa đơn thất bại: {error?.Message ?? "Lỗi không xác định"}", "error");
+            }
+            await LoadImportBills();
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Lỗi khi xử lý hóa đơn: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+        newImport = new ImportVM();
+        showToast = false;
+        StateHasChanged();
+    }
+
+    private void AddDetailRow()
+    {
+        newImport.Details.Add(new ImportDetailDTO());
+        StateHasChanged();
+    }
+
+    private void RemoveDetailRow(int idx)
+    {
+        newImport.Details.RemoveAt(idx);
+        StateHasChanged();
+    }
+
+    private void UpdateMedicineName(ImportDetailDTO row)
+    {
+        Console.WriteLine($"Selected MedicineId: {row.MedicineId}");
+        var selectedMedicine = medicines.FirstOrDefault(m => m.MedicineId == row.MedicineId);
+        if (selectedMedicine != null)
+        {
+        Console.WriteLine($"Found Medicine: {selectedMedicine.MedicineName}, Price: {selectedMedicine.Price}");
+        row.MedicineName = selectedMedicine.MedicineName;
+        row.ImportPrice = selectedMedicine.Price;
+        row.Quantity = row.Quantity == 0 ? 1 : row.Quantity;
+        }
+        else
+        {
+        Console.WriteLine("No medicine found for MedicineId: " + row.MedicineId);
+        row.MedicineName = null;
+        row.ImportPrice = 0;
+        }
+        StateHasChanged();
+    }
+
+
+    private void ShowToast(string message, string type)
+    {
+        toastMessage = message;
+        toastType = type;
+        showToast = true;
+        StateHasChanged();
+    }
+
+    private async Task HideToast()
+    {
+        showToast = false;
+        toastMessage = "";
+        toastType = "info";
+        StateHasChanged();
+    }
+
+  
+
+}

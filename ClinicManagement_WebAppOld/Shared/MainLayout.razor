@@ -1,0 +1,235 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+<div class="dashboard-container">
+  <aside class="sidebar">
+        <h2>Phòng Khám XYZ</h2>
+        <AuthorizeView>
+            <Authorized>
+                <div class="user-info">
+                    <p>Xin chào,</p>
+                    <strong>@context.User.Identity?.Name</strong>
+                    @* <div style="background: yellow; color: black; padding: 5px; text-align: left;">
+                        <p><strong>DEBUG CLAIMS:</strong></p>
+                        <ul>
+                            @foreach (var claim in context.User.Claims)
+                            {
+                                <li><strong>Type:</strong> @claim.Type | <strong>Value:</strong> @claim.Value</li>
+                            }
+                        </ul>
+                    </div> *@
+                    <!-- Debug: Hiển thị vai trò -->
+                    <p>Vai trò: @string.Join(", ", context.User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value))</p>
+                </div>
+                <nav>
+                    <ul>
+                        <AuthorizeView Roles="Admin" Context="adminContext">
+                            <Authorized>
+                                <li>
+                                    <NavLink href="/admin/dashboard" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z" />
+                                        </svg>
+                                        Dashboard (Thống kê)
+                                    </NavLink>
+                                </li>
+                                <li>
+                                    <NavLink href="/admin/users" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M400-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM80-160v-112q0-33 17-62t47-44q51-26 115-44t141-18h14q6 0 12 2-8 18-13.5 37.5T404-360h-4q-71 0-127.5 18T180-306q-9 5-14.5 14t-5.5 20v32h252q6 21 16 41.5t22 38.5H80Zm560 40-12-60q-12-5-22.5-10.5T584-204l-58 18-40-68 46-40q-2-14-2-26t2-26l-46-40 40-68 58 18q11-8 21.5-13.5T628-460l12-60h80l12 60q12 5 22.5 11t21.5 15l58-20 40 70-46 40q2 12 2 25t-2 25l46 40-40 68-58-18q-11 8-21.5 13.5T732-180l-12 60h-80Zm40-120q33 0 56.5-23.5T760-320q0-33-23.5-56.5T680-400q-33 0-56.5 23.5T600-320q0 33 23.5 56.5T680-240ZM400-560q33 0 56.5-23.5T480-640q0-33-23.5-56.5T400-720q-33 0-56.5 23.5T320-640q0 33 23.5 56.5T400-560Zm0-80Zm12 400Z" />
+                                        </svg>
+                                        Quản Lý Người Dùng
+                                    </NavLink>
+                                </li>
+                                <li>
+                                    <NavLink href="/admin/schedule-management" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Zm280 240q-17 0-28.5-11.5T440-440q0-17 11.5-28.5T480-480q17 0 28.5 11.5T520-440q0 17-11.5 28.5T480-400Zm-160 0q-17 0-28.5-11.5T280-440q0-17 11.5-28.5T320-480q17 0 28.5 11.5T360-440q0 17-11.5 28.5T320-400Zm320 0q-17 0-28.5-11.5T600-440q0-17 11.5-28.5T640-480q17 0 28.5 11.5T680-440q0 17-11.5 28.5T640-400ZM480-240q-17 0-28.5-11.5T440-280q0-17 11.5-28.5T480-320q17 0 28.5 11.5T520-280q0 17-11.5 28.5T480-240Zm-160 0q-17 0-28.5-11.5T280-280q0-17 11.5-28.5T320-320q17 0 28.5 11.5T360-280q0 17-11.5 28.5T320-240Zm320 0q-17 0-28.5-11.5T600-280q0-17 11.5-28.5T640-320q17 0 28.5 11.5T680-280q0 17-11.5 28.5T640-240Z" />
+                                        </svg>
+                                        Quản Lý Lịch Làm Việc
+                                    </NavLink>
+                                </li>
+                                <li>
+                                    <NavLink href="/admin/services" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M160-80q-33 0-56.5-23.5T80-160v-480q0-33 23.5-56.5T160-720h160v-80q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v80h160q33 0 56.5 23.5T880-640v480q0 33-23.5 56.5T800-80H160Zm0-80h640v-480H160v480Zm240-560h160v-80H400v80ZM160-160v-480 480Zm280-200v120h80v-120h120v-80H520v-120h-80v120H320v80h120Z" />
+                                        </svg>
+                                        Quản Lý Dịch Vụ
+                                    </NavLink>
+                                </li>
+                                <li>
+                                    <NavLink href="/admin/medicines" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M345-120q-94 0-159.5-65.5T120-345q0-45 17-86t49-73l270-270q32-32 73-49t86-17q94 0 159.5 65.5T840-615q0 45-17 86t-49 73L504-186q-32 32-73 49t-86 17Zm266-286 107-106q20-20 31-47t11-56q0-60-42.5-102.5T615-760q-29 0-56 11t-47 31L406-611l205 205ZM345-200q29 0 56-11t47-31l106-107-205-205-107 106q-20 20-31 47t-11 56q0 60 42.5 102.5T345-200Z" />
+                                        </svg>
+                                        Quản Lý Thuốc
+                                    </NavLink>
+                                </li>
+                                <li>
+                                    <NavLink href="/admin/import-report" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M160-120q-50 0-85-35t-35-85q0-26 10-49.5T80-330v-190h80v-240h320l188 443q6 14 9 28t3 29q0 58-41 99t-99 41q-41 0-75.5-21.5T413-200H273q-13 36-44 58t-69 22Zm560-40v-640h80v560h120v80H720Zm-560-40q17 0 28.5-11.5T200-240q0-17-11.5-28.5T160-280q-17 0-28.5 11.5T120-240q0 17 11.5 28.5T160-200Zm380 0q25 0 42.5-17.5T600-260q0-25-17.5-42.5T540-320q-25 0-42.5 17.5T480-260q0 25 17.5 42.5T540-200Zm-267-80h128q2-11 4.5-20.5T413-320h-90L206-440h-46v80q38 0 69 22t44 58Zm84-120h189L427-680H240v160l117 120Zm-34 80-18.5-19q-18.5-19-40-41.5t-40-41L206-440h-46 46l117 120h90-90Z" />
+                                        </svg>
+                                        Quản Lý Nhập Kho
+                                    </NavLink>
+                                </li>
+                                <li>
+                                    <NavLink href="/admin/revenue-report" Match="NavLinkMatch.Prefix" class="nav-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                            <path d="M320-414v-306h120v306l-60-56-60 56Zm200 60v-526h120v406L520-354ZM120-216v-344h120v224L120-216Zm0 98 258-258 142 122 224-224h-64v-80h200v200h-80v-64L524-146 382-268 232-118H120Z" />
+                                        </svg>
+                                        Báo Cáo Doanh Thu
+                                    </NavLink>
+                                </li>
+                            </Authorized>
+                            <NotAuthorized>
+                                <p>Không có vai trò Admin.</p>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                        <li>
+                            <NavLink href="/logout" Match="NavLinkMatch.Prefix" class="nav-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                    <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z" />
+                                </svg>
+                                Đăng Xuất
+                            </NavLink>
+                        </li>
+                    </ul>
+                </nav>
+            </Authorized>
+            <NotAuthorized>
+                <div class="user-info">
+                    <p>Vui lòng đăng nhập</p>
+                </div>
+                <nav>
+                    <ul>
+                        <li>
+                            <NavLink href="/login" class="nav-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                    <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z" />
+                                </svg>
+                                Đăng Nhập
+                            </NavLink>
+                        </li>
+                    </ul>
+                </nav>
+            </NotAuthorized>
+        </AuthorizeView>
+    </aside>
+    <main>
+        @Body
+    </main>
+</div>
+
+<style>
+   
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: #f5f6fa;
+}
+
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    width: 270px;
+    background: linear-gradient(180deg, #17a2b8 0%, #138496 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    @* justify-content: space-between; *@
+    padding: 20px 0;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+}
+
+.sidebar-header {
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+}
+
+.user-info {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    padding-bottom: 10px;
+}
+
+.user-info p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* --- Navigation --- */
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;           
+    gap: 12px;                     
+    padding: 14px 22px;
+    font-size: 16px;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border-left: 4px solid transparent;
+    width: 100%;                   /* ✅ Đảm bảo chiếm toàn bộ chiều ngang */
+    box-sizing: border-box;
+}
+
+/* ✅ Khi NavLink được render thành  có class active */
+.nav-item.active,
+.nav-item.active:hover {
+    background-color: rgba(255,255,255,0.25);
+    border-left: 4px solid #fff;
+    font-weight: 600;
+    transform: none;
+}
+
+.nav-item:hover {
+    background-color: rgba(255,255,255,0.15);
+    border-left: 4px solid #fff;
+    transform: translateX(4px);
+}
+
+.nav-item i {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.logout {
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+/* --- Main Content --- */
+.main-content {
+    flex: 1;
+    background-color: #f8f9fa;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.main-content h1 {
+    margin-top: 0;
+    font-size: 26px;
+    font-weight: 600;
+    color: #333;
+}
+
+</style>

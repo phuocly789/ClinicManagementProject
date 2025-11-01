@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    // [Authorize(Roles = "Receptionist")]
+    [Authorize(Roles = "Receptionist")]
     [ApiController]
     [Route("api/[controller]")]
     public class QueueController : ControllerBase
@@ -15,35 +15,32 @@ namespace ClinicManagement_API.Controllers
             _queueService = queueService;
         }
 
-            [HttpGet("queues/room/{roomId}")]
-            public async Task<IActionResult> GetQueues(int roomId, [FromQuery] DateOnly date)
+        [HttpGet("queues/room/{roomId}")]
+        public async Task<IActionResult> GetQueues(int roomId, [FromQuery] DateOnly date)
+        {
+            try
             {
-                try
-                {
-                    var result = await _queueService.GetQueuesAsync(roomId, date);
-                    return Ok(
-                        new
-                        {
-                            success = true,
-                            data = result
-                        });
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(
-                        500,
-                        new
-                        {
-                            success = false,
-                            message = "Có lỗi xảy ra khi lấy hàng chờ.",
-                            error = ex.Message
-                        }
-                    );
-                }
+                var result = await _queueService.GetQueuesAsync(roomId, date);
+                return Ok(new { success = true, data = result });
             }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        success = false,
+                        message = "Có lỗi xảy ra khi lấy hàng chờ.",
+                        error = ex.Message,
+                    }
+                );
+            }
+        }
 
         [HttpPost("CreateQueueAsync")]
-        public async Task<ActionResult<ResponseValue<QueueDTO>>> CreateQueueAsync([FromBody] QueueCreateDTO request)
+        public async Task<ActionResult<ResponseValue<QueueDTO>>> CreateQueueAsync(
+            [FromBody] QueueCreateDTO request
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -67,7 +64,10 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpPut("UpdateStatusQueueAsync/{id}")]
-        public async Task<ActionResult<ResponseValue<SuplierDTO>>> UpdateStatusQueueAsync(int id, [FromBody] QueueStatusUpdateDTO request)
+        public async Task<ActionResult<ResponseValue<SuplierDTO>>> UpdateStatusQueueAsync(
+            int id,
+            [FromBody] QueueStatusUpdateDTO request
+        )
         {
             if (!ModelState.IsValid)
             {

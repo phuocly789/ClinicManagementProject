@@ -12,19 +12,21 @@ public class JwtAuthService
     private readonly string? _issuer;
     private readonly string? _audience;
     private readonly SupabaseContext _context;
+    private readonly int _munutes;
 
     public JwtAuthService(IConfiguration Configuration, SupabaseContext db)
     {
         _key = Configuration["jwt:Serect-Key"];
         _issuer = Configuration["jwt:Issuer"];
         _audience = Configuration["jwt:Audience"];
+        _munutes = int.Parse(Configuration["jwt:ExpireMinutes"] ?? "60");
         _context = db;
     }
 
     public string GenerateToken(User userLogin, List<string> roles)
     {
         // Khóa bí mật để ký token
-        var key = Encoding.ASCII.GetBytes(_key);
+        var key = Encoding.UTF8.GetBytes(_key);
         // Tạo danh sách các claims cho token
         var claims = new List<Claim>
         {
@@ -37,10 +39,7 @@ public class JwtAuthService
             new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()), // Thời gian tạo token
         };
         //Thêm  claim roles vào token
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
+
         // userLogin.Id//10034
         var lstRole = _context
             .UserRoles.Include(n => n.Role)
@@ -62,7 +61,7 @@ public class JwtAuthService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(2), // Token hết hạn sau 1 giờ
+            Expires = DateTime.UtcNow.AddMinutes(_munutes), // Token hết hạn sau 1 giờ
             SigningCredentials = credentials,
             Issuer = _issuer, // Thêm Issuer vào token
             Audience = _audience, // Thêm Audience vào token

@@ -1,0 +1,56 @@
+@* ToastNotification.razor *@
+@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="toast @ToastType.ToLower()" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content">
+            <span>@Message</span>
+            <button class="toast-close" @onclick="HideToast">×</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public string Message { get; set; } = "";
+
+    [Parameter]
+    public string ToastType { get; set; } = "info"; // success, error, warning, info
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private bool _autoHideTriggered;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible && !_autoHideTriggered)
+        {
+            _autoHideTriggered = true;
+            try
+            {
+                // Gọi JavaScript để hiển thị toast (nếu cần)
+                await JSRuntime.InvokeVoidAsync("showToast", "toast");
+                // Tự động ẩn sau 5 giây
+                await Task.Delay(5000);
+                await HideToast();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in toast: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task HideToast()
+    {
+        _autoHideTriggered = false;
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+        StateHasChanged();
+    }
+}

@@ -54,7 +54,7 @@ public class UserService : ServiceBase<User>, IUserService
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
             .SingleOrDefaultAsync(u =>
-                u.Username == model.EmailOrPhone || u.Email == model.EmailOrPhone
+                u.Phone == model.EmailOrPhone || u.Email == model.EmailOrPhone
             );
         if (user == null)
             return new ResponseValue<LoginResponseDTO>(
