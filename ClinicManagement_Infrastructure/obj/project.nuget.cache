@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4eZauVunY4Q=",
+  "dgSpecHash": "fI7voT6r2xw=",
   "success": true,
-  "projectFilePath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+  "projectFilePath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\phuoc\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\phuoc\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.6\\microsoft.aspnetcore.openapi.9.0.6.nupkg.sha512",

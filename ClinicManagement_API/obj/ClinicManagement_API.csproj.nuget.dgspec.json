@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {}
+    "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj": {}
   },
   "projects": {
-    "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {
+    "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
+        "projectUniqueName": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj",
         "projectName": "ClinicManagement_API",
-        "projectPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
+        "projectPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj",
         "packagesPath": "C:\\Users\\phuoc\\.nuget\\packages\\",
-        "outputPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_API\\obj\\",
+        "outputPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -32,8 +32,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
-                "projectPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj"
+              "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
+                "projectPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj"
               }
             }
           }
@@ -102,14 +102,14 @@
         }
       }
     },
-    "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
+    "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+        "projectUniqueName": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
         "projectName": "ClinicManagement_Infrastructure",
-        "projectPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+        "projectPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
         "packagesPath": "C:\\Users\\phuoc\\.nuget\\packages\\",
-        "outputPath": "D:\\Tài liệu\\Bootcamp_DotNet 03\\DoAnCuoiKhoa\\ClinicManagementProject\\ClinicManagement_Infrastructure\\obj\\",
+        "outputPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

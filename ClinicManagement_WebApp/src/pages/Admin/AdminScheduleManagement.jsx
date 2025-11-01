@@ -14,11 +14,11 @@ import { FaUserMd, FaUserNurse, FaUserPlus, FaUserTie } from 'react-icons/fa';
 import '../../App.css';
 
 const initialFormState = {
-    StaffId: '',
-    WorkDate: new Date().toISOString().split('T')[0],
-    StartTime: '08:00:00',
-    EndTime: '17:00:00',
-    IsAvailable: true,
+    staffId: '',
+    workDate: new Date().toISOString().split('T')[0],
+    startTime: '08:00:00',
+    endTime: '17:00:00',
+    isAvailable: true,
 };
 
 const AdminScheduleManagement = () => {
@@ -37,13 +37,14 @@ const AdminScheduleManagement = () => {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await instance.get('/api/schedules');
-            const fetchedSchedules = response.data.Items || [];
+            const response = await instance.get('Schedule/GetAllSchedulesAsync');
+            const fetchedSchedules = response.content.items || [];
             setSchedules(fetchedSchedules);
-
+            console.log(response);
+            
             const uniqueStaff = fetchedSchedules.reduce((acc, current) => {
-                if (!acc.find(item => item.StaffId === current.StaffId)) {
-                    acc.push({ StaffId: current.StaffId, StaffName: current.StaffName, Role: current.Role });
+                if (!acc.find(item => item.staffId === current.staffId)) {
+                    acc.push({ staffId: current.staffId, staffName: current.staffName, role: current.role });
                 }
                 return acc;
             }, []);
@@ -74,11 +75,11 @@ const AdminScheduleManagement = () => {
     };
 
     const calendarEvents = schedules.map(s => ({
-        id: s.ScheduleId,
-        title: s.StaffName,
-        start: `${s.WorkDate}T${s.StartTime}`,
-        end: `${s.WorkDate}T${s.EndTime}`,
-        className: `event-${ChangeRole(s.Role).toLowerCase().replace('ĩ', 'i').replace(/\s+/g, '')}`,
+        id: s.scheduleId,
+        title: s.staffName,
+        start: `${s.workDate}T${s.startTime}`,
+        end: `${s.workDate}T${s.endTime}`,
+        className: `event-${ChangeRole(s.role).toLowerCase().replace('ĩ', 'i').replace(/\s+/g, '')}`,
         extendedProps: { ...s }
     }));
 
@@ -105,13 +106,13 @@ const AdminScheduleManagement = () => {
 
     const handleOpenEditModal = (event) => {
         handleCloseModals();
-        const { extendedProps, startStr, endStr } = event;
+        const { extendedProps} = event;
         setScheduleFormData({
-            StaffId: extendedProps.StaffId,
-            WorkDate: startStr.split('T')[0],
-            StartTime: startStr.split('T')[1],
-            EndTime: endStr.split('T')[1],
-            IsAvailable: extendedProps.IsAvailable,
+            staffId: extendedProps.staffId,
+            workDate: extendedProps.workDate,
+            startTime: extendedProps.startTime,
+            endTime: extendedProps.endTime,
+            isAvailable: extendedProps.isAvailable,
         });
         setSelectedEvent(event);
         setFormModalOpen(true);
@@ -132,7 +133,7 @@ const AdminScheduleManagement = () => {
         e.preventDefault();
         setLoading(true);
         const isEditing = !!selectedEvent;
-        const url = isEditing ? `/api/schedules/${selectedEvent.id}` : '/api/schedules';
+        const url = isEditing ? `Schedule/UpdateScheduleAsync/${selectedEvent.id}` : 'Schedule/CreateScheduleAsync';
         const method = isEditing ? 'put' : 'post';
         try {
             const response = await instance[method](url, scheduleFormData);
@@ -150,7 +151,7 @@ const AdminScheduleManagement = () => {
         if (!selectedEvent) return;
         setLoading(true);
         try {
-            const response = await instance.delete(`/api/schedules/${selectedEvent.id}`);
+            const response = await instance.delete(`Schedule/DeleteScheduleAsync/${selectedEvent.id}`);
             setToast({ type: 'success', message: response.message });
             handleCloseModals();
             fetchData();
@@ -188,13 +189,13 @@ const AdminScheduleManagement = () => {
                         <div className="modal-header"><h5 className="modal-title">{selectedEvent ? "Cập Nhật Lịch" : "Thêm Lịch Mới"}</h5><button type="button" className="btn-close" onClick={handleCloseModals}></button></div>
                         <form onSubmit={handleFormSubmit}>
                             <div className="modal-body">
-                                <div className="mb-3"><label className="form-label">Nhân viên</label><select name="StaffId" value={scheduleFormData.StaffId} onChange={handleFormChange} className="form-select" required disabled={!!selectedEvent}><option value="">-- Chọn nhân viên --</option>{staffList.map(staff => <option key={staff.StaffId} value={staff.StaffId}>{staff.StaffName} ({staff.Role})</option>)}</select></div>
-                                <div className="mb-3"><label className="form-label">Ngày làm</label><input type="date" name="WorkDate" value={scheduleFormData.WorkDate} onChange={handleFormChange} className="form-control" required /></div>
+                                <div className="mb-3"><label className="form-label">Nhân viên</label><select name="staffId" value={scheduleFormData.staffId} onChange={handleFormChange} className="form-select" required disabled={!!selectedEvent}><option value="">-- Chọn nhân viên --</option>{staffList.map(staff => <option key={staff.staffId} value={staff.staffId}>{staff.staffName} ({staff.role})</option>)}</select></div>
+                                <div className="mb-3"><label className="form-label">Ngày làm</label><input type="date" name="workDate" value={scheduleFormData.workDate} onChange={handleFormChange} className="form-control" required /></div>
                                 <div className="row mb-3">
-                                    <div className="col-md-6"><label className="form-label">Bắt đầu</label><input type="time" name="StartTime" value={scheduleFormData.StartTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
-                                    <div className="col-md-6"><label className="form-label">Kết thúc</label><input type="time" name="EndTime" value={scheduleFormData.EndTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
+                                    <div className="col-md-6"><label className="form-label">Bắt đầu</label><input type="time" name="startTime" value={scheduleFormData.startTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
+                                    <div className="col-md-6"><label className="form-label">Kết thúc</label><input type="time" name="endTime" value={scheduleFormData.endTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
                                 </div>
-                                <div className="form-check form-switch"><input type="checkbox" name="IsAvailable" checked={scheduleFormData.IsAvailable} onChange={handleFormChange} className="form-check-input" id="isAvailableCheck" /><label className="form-check-label" htmlFor="isAvailableCheck">Có mặt</label></div>
+                                <div className="form-check form-switch"><input type="checkbox" name="isAvailable" checked={scheduleFormData.isAvailable} onChange={handleFormChange} className="form-check-input" id="isAvailableCheck" /><label className="form-check-label" htmlFor="isAvailableCheck">Có mặt</label></div>
                             </div>
                             <div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={handleCloseModals}>Hủy</button><button type="submit" className="btn btn-primary"><BiSave /> Lưu</button></div>
                         </form>
@@ -211,11 +212,11 @@ const AdminScheduleManagement = () => {
                     <div className="modal-content">
                         <div className="modal-header"><h5 className="modal-title">Chi Tiết Lịch Làm Việc</h5><button type="button" className="btn-close" onClick={handleCloseModals}></button></div>
                         <div className="modal-body">
-                            <div className="info-row"><span className="label">Nhân viên:</span> <span className="value">{selectedEvent?.extendedProps.StaffName}</span></div>
-                            <div className="info-row"><span className="label">Chức vụ:</span> <span className="value">{selectedEvent?.extendedProps.Role}</span></div>
+                            <div className="info-row"><span className="label">Nhân viên:</span> <span className="value">{selectedEvent?.extendedProps.staffName}</span></div>
+                            <div className="info-row"><span className="label">Chức vụ:</span> <span className="value">{selectedEvent?.extendedProps.role}</span></div>
                             <div className="info-row"><span className="label">Ngày làm:</span> <span className="value">{selectedEvent ? new Date(selectedEvent.startStr).toLocaleDateString('vi-VN') : ''}</span></div>
                             <div className="info-row"><span className="label">Thời gian:</span> <span className="value">{selectedEvent ? `${new Date(selectedEvent.startStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(selectedEvent.endStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ''}</span></div>
-                            <div className="info-row"><span className="label">Trạng thái:</span> <span className="value">{selectedEvent?.extendedProps.IsAvailable ? "Có mặt" : "Vắng"}</span></div>
+                            <div className="info-row"><span className="label">Trạng thái:</span> <span className="value">{selectedEvent?.extendedProps.isAvailable ? "Có mặt" : "Vắng"}</span></div>
                         </div>
                         <div className="modal-footer d-flex justify-content-end gap-2"><button className="btn btn-outline-secondary" onClick={() => handleOpenEditModal(selectedEvent)}><BiPencil /> Sửa</button><button className="btn btn-outline-danger" onClick={() => handleOpenDeleteModal(selectedEvent)}><BiTrash /> Xóa</button><button className="btn btn-primary" onClick={handleCloseModals}><BiX /> Đóng</button></div>
                     </div>
@@ -230,7 +231,7 @@ const AdminScheduleManagement = () => {
                 <div className="modal-dialog modal-dialog-centered modal-sm" onClick={e => e.stopPropagation()}>
                     <div className="modal-content">
                         <div className="modal-header"><h5 className="modal-title">Xác Nhận Xóa</h5><button type="button" className="btn-close" onClick={handleCloseModals}></button></div>
-                        <div className="modal-body"><p>Bạn có chắc muốn xóa lịch của <strong>{selectedEvent?.extendedProps.StaffName}</strong> vào ngày <strong>{selectedEvent ? new Date(selectedEvent.startStr).toLocaleDateString('vi-VN') : ''}</strong>?</p></div>
+                        <div className="modal-body"><p>Bạn có chắc muốn xóa lịch của <strong>{selectedEvent?.extendedProps.staffName}</strong> vào ngày <strong>{selectedEvent ? new Date(selectedEvent.startStr).toLocaleDateString('vi-VN') : ''}</strong>?</p></div>
                         <div className="modal-footer"><button className="btn btn-secondary" onClick={handleCloseModals}>Hủy</button><button className="btn btn-danger" onClick={handleDeleteConfirm}>Xác Nhận</button></div>
                     </div>
                 </div>

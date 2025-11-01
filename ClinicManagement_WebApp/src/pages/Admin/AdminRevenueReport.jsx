@@ -26,11 +26,11 @@ const StatusBadge = ({ status }) => {
   let statusText = status;
 
   switch (status) {
-    case 'Đã thanh toán':
+    case 'Paid':
       statusClass = 'bg-success-soft';
       statusText = 'Thành Công';
       break;
-    case 'Chờ thanh toán':
+    case 'Pending':
       statusClass = 'bg-warning-soft';
       statusText = 'Chờ Thanh Toán';
       break;
@@ -64,9 +64,10 @@ const AdminRevenueReport = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, pageSize, search: searchQuery, startDate, endDate });
-      const response = await instance.get(`api/report-revenue/detail-revenue?${params.toString()}`);
-      setInvoices(response.data.items || []);
-      setTotalItems(response.data.totalItems || 0);
+      const response = await instance.get(`Reports/GetDetailedRevenueReportAsync?${params.toString()}`);
+      console.log(response);
+      setInvoices(response?.content?.items || []);
+      setTotalItems(response?.content?.totalItems || 0);
     } catch (error) {
       setToast({ type: 'error', message: error.message || 'Lỗi khi tải hóa đơn' });
     } finally {
@@ -75,8 +76,8 @@ const AdminRevenueReport = () => {
   }, [searchQuery, pageSize, startDate, endDate]);
 
   useEffect(() => {
-    fetchInvoices(1);
-  }, []);
+    fetchInvoices(currentPage);
+  }, [searchQuery, startDate, endDate]);
 
   const handleFilterAction = () => {
     if (new Date(startDate) > new Date(endDate)) {
@@ -98,7 +99,7 @@ const AdminRevenueReport = () => {
     try {
       let csv = 'Mã Hóa Đơn,Ngày Hóa Đơn,Bệnh Nhân,Tổng Cộng,Ngày Cuộc Hẹn,Trạng Thái\n';
       invoices.forEach(item => {
-        csv += [`#${item.InvoiceId}`, formatDate(item.InvoiceDate), `"${item.PatientName.replace(/"/g, '""')}"`, item.TotalAmount, formatDate(item.AppointmentDate), item.Status].join(',') + '\n';
+        csv += [`#${item.invoiceId}`, formatDate(item.invoiceDate), `"${item.patientName.replace(/"/g, '""')}"`, item.totalAmount, formatDate(item.appointmentDate), item.status].join(',') + '\n';
       });
       const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -133,15 +134,15 @@ const AdminRevenueReport = () => {
                   <div className="row">
                     <div className="col-md-6">
                       <small className="text-muted d-block">Bệnh nhân</small>
-                      <span className="fw-semibold">{detail.PatientName}</span>
+                      <span className="fw-semibold">{detail.patientName}</span>
                     </div>
                     <div className="col-md-3">
                       <small className="text-muted d-block">Ngày lập</small>
-                      <span className="fw-semibold">{formatDate(detail.InvoiceDate)}</span>
+                      <span className="fw-semibold">{formatDate(detail.invoiceDate)}</span>
                     </div>
                     <div className="col-md-3">
                       <small className="text-muted d-block">Mã hóa đơn</small>
-                      <span className="fw-bold text-primary">{`#${detail.InvoiceId}`}</span>
+                      <span className="fw-bold text-primary">{`#${detail.invoiceId}`}</span>
                     </div>
                   </div>
                 </div>
@@ -149,15 +150,15 @@ const AdminRevenueReport = () => {
                 <table className='table table-sm'>
                   <thead><tr><th>Dịch vụ / Thuốc</th><th className='text-center'>Số Lượng</th><th className='text-end'>Đơn Giá</th><th className='text-end'>Thành Tiền</th></tr></thead>
                   <tbody>
-                    {detail.Details.map((d, index) => (
+                    {detail.details.map((d, index) => (
                       <tr key={index}>
                         <td>
-                          <div className="fw-semibold">{d.ServiceName || d.MedicineName || 'N/A'}</div>
-                          <small className="text-muted">{d.ServiceId ? 'Dịch vụ' : 'Thuốc'}</small>
+                          <div className="fw-semibold">{d.serviceName || d.medicineName || 'N/A'}</div>
+                          <small className="text-muted">{d.serviceId ? 'Dịch vụ' : 'Thuốc'}</small>
                         </td>
-                        <td className='text-center align-middle'>{d.Quantity}</td>
-                        <td className='text-end align-middle'>{formatCurrency(d.UnitPrice)}</td>
-                        <td className='text-end align-middle fw-semibold'>{formatCurrency(d.SubTotal)}</td>
+                        <td className='text-center align-middle'>{d.quantity}</td>
+                        <td className='text-end align-middle'>{formatCurrency(d.unitPrice)}</td>
+                        <td className='text-end align-middle fw-semibold'>{formatCurrency(d.subTotal)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -165,7 +166,7 @@ const AdminRevenueReport = () => {
 
                 <div className="invoice-total d-flex justify-content-end align-items-baseline gap-3">
                   <span className="h6 text-muted mb-0">TỔNG CỘNG</span>
-                  <span className="invoice-total-amount">{formatCurrency(detail.TotalAmount)}</span>
+                  <span className="invoice-total-amount">{formatCurrency(detail.totalAmount)}</span>
                 </div>
               </div>
             </div>
@@ -221,13 +222,13 @@ const AdminRevenueReport = () => {
                       <tr><td colSpan="7" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>
                     ) : (
                       invoices.map(item => (
-                        <tr key={item.InvoiceId}>
-                          <td className="px-4"><span className='invoice-id'>{`#${item.InvoiceId}`}</span></td>
-                          <td>{formatDate(item.InvoiceDate)}</td>
-                          <td>{item.PatientName}</td>
-                          <td className="text-end fw-semibold">{formatCurrency(item.TotalAmount)}</td>
-                          <td>{formatDate(item.AppointmentDate)}</td>
-                          <td className='text-center'><StatusBadge status={item.Status} /></td>
+                        <tr key={item.invoiceId}>
+                          <td className="px-4"><span className='invoice-id'>{`#${item.invoiceId}`}</span></td>
+                          <td>{formatDate(item.invoiceDate)}</td>
+                          <td>{item.patientName}</td>
+                          <td className="text-end fw-semibold">{formatCurrency(item.totalAmount)}</td>
+                          <td>{formatDate(item.appointmentDate)}</td>
+                          <td className='text-center'><StatusBadge status={item.status} /></td>
                           <td className="text-center px-4">
                             <button className="btn btn-light btn-lg" title="Xem chi tiết" onClick={() => setModal({ show: true, detail: item })}>
                               <FiEye />
@@ -241,7 +242,16 @@ const AdminRevenueReport = () => {
               </div>
               {totalPages > 1 && (
                 <div className="card-footer p-3 border-0 flex-shrink-0">
-                  <Pagination pageCount={totalPages} onPageChange={handlePageChange} forcePage={currentPage - 1} />
+                  <Pagination
+                    pageCount={totalPages}
+                    currentPage={currentPage - 1} // chuyển về 0-based cho UI
+                    onPageChange={({ selected }) => {
+                      setCurrentPage(selected + 1); // cập nhật số trang (1-based)
+                      fetchInvoices(selected + 1);  // gọi API trang mới
+                    }}
+
+                    isLoading={loading}
+                  />
                 </div>
               )}
             </>
