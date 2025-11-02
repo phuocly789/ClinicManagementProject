@@ -15,23 +15,33 @@ namespace ClinicManagement_API.Controllers
     public class DoctorController : ControllerBase
     {
         private readonly IDoctorService _doctorService;
+        private readonly IMedicineService _medicineService;
 
-        public DoctorController(IDoctorService doctorService)
+        public DoctorController(IDoctorService doctorService, IMedicineService medicineService)
         {
             _doctorService = doctorService;
+            _medicineService = medicineService;
         }
 
         [HttpGet("GetMySchedule")]
         public async Task<ResponseValue<List<AppointmentMyScheduleDto>>> GetMySchedule(
-            int staffId,
             [FromQuery] DateOnly? date = null
         )
         {
+            var staffIdClaim = User.FindFirst("StaffId")?.Value;
+            if (!int.TryParse(staffIdClaim, out int staffId))
+            {
+                return new ResponseValue<List<AppointmentMyScheduleDto>>(
+                    null,
+                    StatusReponse.Unauthorized,
+                    "Unauthorized"
+                );
+            }
             try
             {
                 var appointments = await _doctorService.GetAppointmentsByStaffIdAnddDateAsync(
-                    staffId,
-                    date
+                    date,
+                    int.Parse(staffIdClaim)
                 );
                 return new ResponseValue<List<AppointmentMyScheduleDto>>(
                     appointments,
@@ -45,6 +55,66 @@ namespace ClinicManagement_API.Controllers
                     null,
                     StatusReponse.Error,
                     ex.Message
+                );
+            }
+        }
+
+        [HttpGet("GetAllMedicinesByDoctorAsync")]
+        public async Task<ResponseValue<PagedResult<MedicineDTO>>> GetAllMedicinesByDoctorAsync(
+            [FromQuery] string? search = null
+        )
+        {
+            try
+            {
+                var result = await _doctorService.GetAllMedicinesAsync(search);
+
+                return new ResponseValue<PagedResult<MedicineDTO>>(
+                    result.Content,
+                    StatusReponse.Success,
+                    "Lấy danh sách thuốc thành công."
+                );
+            }
+            catch (ArgumentException ex)
+            {
+                return new ResponseValue<PagedResult<MedicineDTO>>(
+                    null,
+                    StatusReponse.BadRequest,
+                    ex.Message
+                );
+            }
+            catch (Exception ex)
+            {
+                return new ResponseValue<PagedResult<MedicineDTO>>(
+                    null,
+                    StatusReponse.Error,
+                    "Đã xảy ra lỗi khi lấy danh sách thuốc: " + ex.Message
+                );
+            }
+        }
+
+        [HttpGet("GetAllServicesByDoctorAsync")]
+        public async Task<
+            ActionResult<ResponseValue<PagedResult<ServiceDTO>>>
+        > GetAllServicesByDoctorAsync(string? search = null)
+        {
+            try
+            {
+                var result = await _doctorService.GetAllServicesAsync(search);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        success = false,
+                        message = "Đã xảy ra lỗi khi lấy danh sách người dùng. Vui lòng thử lại sau.",
+                    }
                 );
             }
         }
@@ -175,6 +245,34 @@ namespace ClinicManagement_API.Controllers
                     ex.Message
                 );
             }
+        }
+
+        [HttpPost("SubmitExamination")]
+        public async Task<ActionResult<ResponseValue<object>>> SubmitExamination(
+            [FromBody] ExaminationRequestDto request
+        )
+        {
+            var staffIdClaim = User.FindFirst("UserId")?.Value;
+            if (!int.TryParse(staffIdClaim, out int staffId))
+            {
+                return Unauthorized(
+                    new ResponseValue<object>(null, StatusReponse.Unauthorized, "Unauthorized")
+                );
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _doctorService.SubmitExaminationAsync(request, staffId);
+
+            if (result.Status != StatusReponse.Success)
+            {
+                return StatusCode(500, result);
+            }
+
+            return Ok(result);
         }
     }
 }

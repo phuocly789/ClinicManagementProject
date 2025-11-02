@@ -5,9 +5,12 @@ using Microsoft.EntityFrameworkCore;
 public interface IServiceService
 {
     Task<ResponseValue<PagedResult<ServiceDTO>>> GetAllServicesAsync(
-        string search,
-        int page,
-        int pageSize
+        string? search,
+        string? serviceType,
+        decimal? minPrice,
+        decimal? maxPrice,
+        int page = 1,
+        int pageSize = 10
     );
     Task<ResponseValue<ServiceDTO>> GetServiceByIdAsync(int serviceId);
     Task<ResponseValue<ServiceDTO>> CreateServiceAsync(ServiceDTO request);
@@ -34,7 +37,10 @@ public class ServiceService : IServiceService
     }
 
     public async Task<ResponseValue<PagedResult<ServiceDTO>>> GetAllServicesAsync(
-        string search,
+        string? search,
+        string? serviceType,
+        decimal? minPrice,
+        decimal? maxPrice,
         int page = 1,
         int pageSize = 10
     )
@@ -49,7 +55,20 @@ public class ServiceService : IServiceService
                     s.ServiceName != null && EF.Functions.Like(s.ServiceName, $"%{search}%")
                 );
             }
-
+            //filter by service type
+            if (!string.IsNullOrEmpty(serviceType))
+            {
+                query = query.Where(s => s.ServiceType == serviceType);
+            }
+            //filter by price range
+            if (minPrice.HasValue)
+            {
+                query = query.Where(s => s.Price >= minPrice.Value);
+            }
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(s => s.Price <= maxPrice.Value);
+            }
             //get total count
             var totalItems = await query.CountAsync();
             //fetch services with pagination

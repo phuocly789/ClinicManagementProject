@@ -82,7 +82,7 @@ const LoginPage = () => {
 
         setTimeout(() => {
           if (role === "Admin") navigate("/admin/dashboard");
-          else if (role === "Doctor") navigate("/doctor/dashboard");
+          else if (role === "Doctor") navigate("/doctor/today-appointment");
           else if (role === "Technician") navigate("/technician");
           else navigate("/");
         }, 1000);

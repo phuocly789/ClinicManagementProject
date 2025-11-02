@@ -6,6 +6,7 @@ import { Eye, Pencil, Trash, Search, DollarSign, Calendar, PlusCircle, X, Printe
 import Loading from '../../Components/Loading/Loading';
 import instance from '../../axios';
 import '../../App.css';
+import { userHelper } from '../../../helper/userHelper';
 
 // --- Helper Functions & Components ---
 const formatVND = (value) => {
@@ -41,10 +42,10 @@ const InventoryList = memo(({ inventories, isLoading, suppliers, handleShowDelet
         {isLoading && inventories.length === 0 ? (<Loading isLoading={isLoading} />) : (
           <>
             <div className="table-responsive-container">
-              <table className="table table-hover clinic-table mb-0">
+              <table className="table table-hover clinic-table mb-0 text-center">
                 <thead><tr><th className="px-4">Mã Phiếu</th><th>Nhà Cung Cấp</th><th>Ngày Nhập</th><th className="text-end">Tổng Tiền</th><th>Ghi Chú</th><th className="text-center px-4">Hành Động</th></tr></thead>
                 <tbody>
-                  {!isLoading && inventories.length === 0 ? (<tr><td colSpan="6" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>) : (inventories.map((inv) => (<tr key={inv.importId} style={{ cursor: 'pointer' }} onClick={() => handleShowDetail(inv)}><td className="px-4"><span className="user-id">#{inv.importId}</span></td><td>{inv.supplierName || 'N/A'}</td><td>{new Date(inv.importDate).toLocaleDateString('vi-VN')}</td><td className="text-end fw-semibold">{formatVND(inv.totalAmount)}</td><td title={inv.notes}>{inv.notes?.length > 30 ? inv.notes.substring(0, 30) + '...' : inv.notes || '—'}</td><td className="text-center px-4" onClick={(e) => e.stopPropagation()}><button className="btn btn-light btn-sm me-2" title="Xem chi tiết" onClick={() => handleShowDetail(inv)}><Eye size={16} /></button><button className="btn btn-light btn-sm me-2" title="Sửa" onClick={() => handleShowEditForm(inv)}><Pencil size={16} /></button><button className="btn btn-light btn-sm text-danger" title="Xóa" onClick={() => handleShowDeleteModal(inv.importId)}><Trash size={16} /></button></td></tr>)))}
+                  {!isLoading && inventories.length === 0 ? (<tr><td colSpan="6" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>) : (inventories.map((inv) => (<tr key={inv.importId} style={{ cursor: 'pointer' }} onClick={() => handleShowDetail(inv)}><td className="px-4"><span className="user-id">#{inv.importId}</span></td><td className='fw-bold'>{inv.supplierName || 'N/A'}</td><td>{new Date(inv.importDate).toLocaleDateString('vi-VN')}</td><td className="text-end fw-semibold">{formatVND(inv.totalAmount)}</td><td title={inv.notes}>{inv.notes?.length > 30 ? inv.notes.substring(0, 30) + '...' : inv.notes || '—'}</td><td className="text-center px-4" onClick={(e) => e.stopPropagation()}><button className="btn btn-light btn-sm me-2" title="Xem chi tiết" onClick={() => handleShowDetail(inv)}><Eye size={16} /></button></td></tr>)))}
                 </tbody>
               </table>
             </div>
@@ -66,13 +67,28 @@ const InventoryFormModal = memo(({ show, onHide, isEditMode, inventory, onSubmit
       if (isEditMode && inventory?.details) {
         setItems(inventory.details.map(d => ({ medicineId: d.medicineId, quantity: d.quantity, importPrice: d.importPrice })));
       } else {
-        setItems([{ medicineId: '', quantity: 1, importPrice: '' }]);
+        setItems([{ medicineId: '', quantity: 1, importPrice: 0 }]);
       }
     }
   }, [show, isEditMode, inventory]);
 
-  const handleItemChange = (index, field, value) => { setItems(prev => { const newItems = [...prev]; newItems[index][field] = value; return newItems; }); };
-  const handleAddItem = () => { setItems([...items, { medicineId: '', quantity: 1, importPrice: '' }]); };
+  const handleItemChange = (index, field, value) => {
+    const updateItems = [...items];
+    updateItems[index][field] = value;
+
+    //auto update price if medicine selected
+    if (field === 'medicineId') {
+      const selectedMedicine = medicines.find(m => m.medicineId === parseInt(value));
+      if (selectedMedicine) {
+        updateItems[index].importPrice = selectedMedicine.price || 0;
+        if (!updateItems[index].quantity || updateItems[index].quantity <= 0) {
+          updateItems[index].quantity = 1;
+        }
+      }
+    }
+    setItems(updateItems);
+  };
+  const handleAddItem = () => { setItems([...items, { medicineId: '', quantity: 1, importPrice: 0 }]); };
   const handleRemoveItem = (index) => { if (items.length > 1) { setItems(items.filter((_, i) => i !== index)); } };
 
   const handleSubmit = (e) => { e.preventDefault(); const formData = new FormData(formRef.current); onSubmit(formData, items); };
@@ -93,21 +109,36 @@ const InventoryFormModal = memo(({ show, onHide, isEditMode, inventory, onSubmit
                 <div className="col-md-6"><label className="form-label">Ngày Nhập</label><input type="date" name="importDate" defaultValue={(inventory?.importDate || new Date().toISOString()).split('T')[0]} className="form-control" required /></div>
                 <div className="col-12"><label className="form-label">Ghi Chú</label><textarea name="notes" defaultValue={inventory?.notes || ''} className="form-control" rows="2" placeholder="Thông tin thêm..."></textarea></div>
               </div><hr /><h6>Chi tiết phiếu nhập</h6>
-              {items.map((item, index) => (
-                <div key={index} className="row g-2 align-items-center mb-2">
-                  <div className="col-md-5"><select className="form-select" value={item.medicineId} onChange={(e) => handleItemChange(index, 'medicineId', e.target.value)} required><option value="" disabled>Chọn thuốc</option>{medicines.map(m => <option key={m.medicineId} value={m.medicineId}>{m.medicineName} ({m.unit})</option>)}</select></div>
-                  <div className="col-md-3"><input type="number" className="form-control" placeholder="Số lượng" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} min="1" required /></div>
-                  <div className="col-md-3"><input type="number" className="form-control" placeholder="Giá nhập" value={item.importPrice} onChange={(e) => handleItemChange(index, 'importPrice', e.target.value)} min="0" required /></div>
-                  <div className="col-md-1"><button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveItem(index)} disabled={items.length <= 1}><Trash2 size={16} /></button></div>
-                </div>
-              ))}
+              <table className='table table-hover clinic-table mb-0 text-center'>
+                <thead>
+                  <tr className="row g-2 mb-2">
+                    <th className="col-md-5">Tên Thuốc</th>
+                    <th className="col-md-2">Giá Nhập (VND)</th>
+                    <th className="col-md-2">Số Lượng</th>
+                    <th className="col-md-2">Thành Tiền (VND)</th>
+                    <th className="col-md-1">Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={index} className="row g-2 mb-2">
+                      <td className="col-md-5"><select className="form-select" value={item.medicineId} onChange={(e) => handleItemChange(index, 'medicineId', e.target.value)} required><option value="" disabled>Chọn thuốc</option>{medicines.map(m => <option key={m.medicineId} value={m.medicineId}>{m.medicineName} ({m.unit})</option>)}</select></td>
+                      <td className="col-md-2 "><input type="number" className="form-control" placeholder="Giá nhập" value={item.importPrice} onChange={(e) => handleItemChange(index, 'importPrice', e.target.value)} min="0" disabled /></td>
+                      <td className="col-md-2"><input type="number" className="form-control" placeholder="Số lượng" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} min="1" required /></td>
+                      <td className="col-md-2  fw-semibold"> {formatVND(item.quantity * item.importPrice)}</td>
+                      <td className="col-md-1"><button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveItem(index)} disabled={items.length <= 1}><Trash2 size={16} /></button></td>
+                    </tr>
+                  ))}
+
+                </tbody>
+              </table>
               <button type="button" className="btn btn-success btn-sm mt-2 d-flex align-items-center gap-2" onClick={handleAddItem}><Plus size={16} /> Thêm Thuốc</button>
               <div className="text-end mt-3 fs-5"><strong>Tổng cộng: <span className="text-danger">{formatVND(totalAmount)}</span></strong></div>
             </div>
             <div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={onHide}>Hủy</button><button type="submit" className="btn btn-primary" disabled={isLoading}>{isLoading ? 'Đang lưu...' : 'Lưu Phiếu Nhập'}</button></div>
           </form>
-        </div>
-      </div></>
+        </div >
+      </div ></>
   );
 });
 
@@ -200,34 +231,10 @@ const AdminInventory = () => {
 
   const handleDelete = useCallback(async () => {
     showToast('info', 'Chức năng xóa đang được phát triển.');
-    // TODO: Mở comment khi có API DELETE
-    // try {
-    //     await instance.delete(`Import/DeleteImportBillAsync/${inventoryToDelete}`);
-    //     showToast('success', `Đã xóa phiếu nhập #${inventoryToDelete}`);
-    //     fetchInventories(1, filters);
-    // } catch (error) { showToast('error', `Lỗi khi xóa`); }
     setShowDeleteModal(false);
   }, [showToast]);
 
-  const handleShowEditForm = async (inventory) => {
-    await fetchCommonData(); // Đảm bảo có NCC và thuốc trước khi mở modal
-    if (inventory) {
-      // Fetch chi tiết để có mục `details` cho form sửa
-      setIsLoading(true);
-      try {
-        const res = await instance.get(`Import/GetImportBillByIdAsync/${inventory.importId}`);
-        setEditInventory(res.content);
-      } catch {
-        showToast('error', 'Không thể tải dữ liệu để sửa.');
-        return;
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      setEditInventory(null);
-    }
-    setShowFormModal(true);
-  };
+
 
   const handleShowDetail = async (inventory) => {
     setIsLoading(true);
@@ -235,22 +242,26 @@ const AdminInventory = () => {
       const response = await instance.get(`Import/GetImportBillByIdAsync/${inventory.importId}`);
       setSelectedInventory(response.content);
       console.log("Phiếu đã chọn", selectedInventory);
-      
+
       setShowDetailModal(true);
     } catch (error) { showToast('error', `Không thể tải chi tiết phiếu nhập.`); } finally { setIsLoading(false); }
   };
 
   const handleFormSubmit = useCallback(async (formData, items) => {
     const isEdit = !!editInventory;
+    const userId = userHelper.getUserIdFromToken(); 
     const data = {
       supplierId: parseInt(formData.get('supplierId')),
       importDate: formData.get('importDate'),
       notes: formData.get('notes'),
+      createdBy:userId,
       // createdBy: 1, // Lấy ID người dùng đang đăng nhập từ context hoặc local storage
       details: items.map(item => ({ medicineId: parseInt(item.medicineId), quantity: parseInt(item.quantity), importPrice: parseFloat(item.importPrice) }))
     };
     setIsLoading(true);
     try {
+      console.log(data);
+      
       const response = isEdit
         ? null // TODO: await instance.put(`Import/UpdateImportBillAsync/${editInventory.importId}`, data)
         : await instance.post('Import/CreateImportBillAsync', data);
@@ -266,7 +277,7 @@ const AdminInventory = () => {
       <main className='main-content flex-grow-1 p-4 d-flex flex-column gap-4'>
         {toast && <CustomToast type={toast.type} message={toast.message} onClose={hideToast} />}
 
-        <InventoryList inventories={inventories} isLoading={isLoading} suppliers={suppliers} handleShowDeleteModal={handleShowDeleteModal} handleShowEditForm={handleShowEditForm} handleShowDetail={handleShowDetail} pageCount={pageCount} currentPage={currentPage} handlePageChange={handlePageChange} filters={filters} setFilters={setFilters} applyFilters={applyFilters} clearFilters={clearFilters} />
+        <InventoryList inventories={inventories} isLoading={isLoading} suppliers={suppliers} handleShowDeleteModal={handleShowDeleteModal} handleShowEditForm={() => setShowFormModal(true)}  handleShowDetail={handleShowDetail} pageCount={pageCount} currentPage={currentPage} handlePageChange={handlePageChange} filters={filters} setFilters={setFilters} applyFilters={applyFilters} clearFilters={clearFilters} />
 
         <ConfirmDeleteModal isOpen={showDeleteModal} title="Xác nhận xóa" message={`Bạn có chắc muốn xóa phiếu nhập kho mã #${inventoryToDelete}?`} onConfirm={handleDelete} onCancel={handleCancelDelete} />
 

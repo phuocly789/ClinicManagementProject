@@ -1,9 +1,9 @@
 using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data;
+using ClinicManagement_Infrastructure.Data.Models;
 using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
-using ClinicManagement_Infrastructure.Data;
-using ClinicManagement_Infrastructure.Data.Models;
 public interface IQueueRepository : IRepository<Queue>
 {
     Task<List<QueueDto>> GetQueuesAsync(int roomId, DateOnly date);
@@ -17,8 +17,8 @@ public class QueueRepository : Repository<Queue>, IQueueRepository
 
     public async Task<List<QueueDto>> GetQueuesAsync(int roomId, DateOnly date)
     {
-        return await _context.Queues
-            .Where(q => q.RoomId == roomId && q.QueueDate == date)
+        return await _context
+            .Queues.Where(q => q.RoomId == roomId && q.QueueDate == date)
             .Join(
                 _context.Users,
                 q => q.PatientId,
@@ -29,23 +29,25 @@ public class QueueRepository : Repository<Queue>, IQueueRepository
                 _context.Rooms,
                 qu => qu.Queue.RoomId,
                 r => r.RoomId,
-                (qu, r) => new
-                {
-                    qu.Queue,
-                    qu.User,
-                    Room = r
-                }
+                (qu, r) =>
+                    new
+                    {
+                        qu.Queue,
+                        qu.User,
+                        Room = r,
+                    }
             )
             .Select(qur => new QueueDto
             {
                 QueueId = qur.Queue.QueueId,
+                QueueNumber = qur.Queue.QueueNumber,
                 PatientId = qur.Queue.PatientId,
                 PatientName = qur.User.FullName,
                 RoomId = qur.Queue.RoomId,
                 RoomName = qur.Room.RoomName,
                 QueueDate = qur.Queue.QueueDate,
                 QueueTime = qur.Queue.QueueTime,
-                Status = qur.Queue.Status
+                Status = qur.Queue.Status,
             })
             .OrderBy(q => q.QueueTime)
             .AsNoTracking()
@@ -54,9 +56,9 @@ public class QueueRepository : Repository<Queue>, IQueueRepository
 
     public async Task<int> GetMaxQueueNumberAsync(int roomId, DateOnly date)
     {
-        return await _context.Queues
-            .Where(q => q.RoomId == roomId && q.QueueDate == date)
-            .MaxAsync(q => (int?)q.QueueNumber) ?? 0;
+        return await _context
+                .Queues.Where(q => q.RoomId == roomId && q.QueueDate == date)
+                .MaxAsync(q => (int?)q.QueueNumber) ?? 0;
     }
 }
 
@@ -72,4 +74,3 @@ public class QueueDto
     public TimeOnly QueueTime { get; set; }
     public string? Status { get; set; }
 }
-

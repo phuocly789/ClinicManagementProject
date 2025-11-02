@@ -113,10 +113,10 @@ const MedicineList = memo(({ medicines, isLoading, handleShowDeleteModal, handle
         {isLoading ? (<Loading isLoading={isLoading} />) : (
           <>
             <div className="table-responsive-container">
-              <table className="table table-hover clinic-table mb-0">
+              <table className="table table-hover clinic-table mb-0 text-center">
                 <thead><tr><th className="px-4">Mã</th><th>Tên Thuốc</th><th>Loại</th><th>ĐV</th><th className="text-end">Giá</th><th className="text-center">Tồn Kho</th><th>Mô Tả</th><th className="text-center px-4">Hành Động</th></tr></thead>
                 <tbody>
-                  {medicines.length === 0 ? (<tr><td colSpan="8" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>) : (medicines.map((m) => (<tr key={m.medicineId}><td className="px-4"><span className="user-id">{m.medicineId}</span></td><td>{m.medicineName}</td><td>{m.medicineType}</td><td>{m.unit}</td><td className="text-end fw-semibold">{formatVND(m.price)}</td><td className="text-center"><StockBadge quantity={m.stockQuantity} /></td><td title={m.description}>{m.description?.length > 100 ? m.description.substring(0, 100) + '...' : m.description || '—'}</td><td className="text-center px-4"><button className="btn btn-light btn-sm me-2" title="Sửa" onClick={() => handleShowEditForm(m)}><Pencil size={16} /></button><button className="btn btn-light btn-sm text-danger" title="Xóa" onClick={() => handleShowDeleteModal(m.medicineId)}><Trash size={16} /></button></td></tr>)))}
+                  {medicines.length === 0 ? (<tr><td colSpan="8" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>) : (medicines.map((m) => (<tr key={m.medicineId}><td className="px-4"><span className="user-id">{m.medicineId}</span></td><td className='fw-bold'>{m.medicineName}</td><td>{m.medicineType}</td><td>{m.unit}</td><td className="text-end fw-semibold">{formatVND(m.price)}</td><td className="text-center"><StockBadge quantity={m.stockQuantity} /></td><td title={m.description}>{m.description?.length > 100 ? m.description.substring(0, 100) + '...' : m.description || '—'}</td><td className="text-center px-4"><button className="btn btn-light btn-sm me-2" title="Sửa" onClick={() => handleShowEditForm(m)}><Pencil size={16} /></button><button className="btn btn-light btn-sm text-danger" title="Xóa" onClick={() => handleShowDeleteModal(m.medicineId)}><Trash size={16} /></button></td></tr>)))}
                 </tbody>
               </table>
             </div>

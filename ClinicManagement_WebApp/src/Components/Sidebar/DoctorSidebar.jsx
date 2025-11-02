@@ -1,93 +1,58 @@
 import React from "react";
+import { NavLink, Outlet } from "react-router-dom";
+import "../../App.css";
 
-const DoctorSidebar = ({ currentSection, switchSection }) => {
-  const handleClick = (sectionId) => {
-    switchSection(sectionId);
-  };
-
-  const MenuItem = ({ section, icon, text, isLogout = false }) => (
-    <div
-      className={`d-flex align-items-center py-3 px-3 mb-2 rounded cursor-pointer transition-all ${
-        currentSection === section ? "active-menu" : "text-white"
-      }`}
-      onClick={isLogout ? () => (window.location.href = "/") : () => handleClick(section)}
-    >
-      <i className={`${icon} me-3`} style={{ width: '20px', textAlign: 'center' }}></i>
-      <span className="fw-medium">{text}</span>
-    </div>
-  );
-
+const AdminSidebar = () => {
   return (
-    <aside 
-      className="position-fixed start-0 top-0 vh-100 z-3 d-flex flex-column"
-      style={{
-        width: '280px',
-        background: 'linear-gradient(to bottom, #28a745, #218838)',
-        boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)'
-      }}
-    >
-      {/* Header */}
-      <div className="p-4 pb-0">
-        <h2 className="text-white fw-bold text-center mb-4" style={{ fontSize: '1.4rem' }}>
+    <div className="d-flex" style={{ minHeight: "100vh" }}>
+      {/* Sidebar */}
+      <div className="sidebar d-flex flex-column shadow-sm">
+        <h2 className="sidebar-header text-center fw-bold mb-3">
           Phòng Khám XYZ
         </h2>
-        
-        {/* User Info */}
-        <div className="text-center p-3 rounded mb-4" style={{ background: 'rgba(255,255,255,0.1)' }}>
-          <p className="text-white mb-1 small opacity-75">Xin chào,</p>
-          <strong className="text-white">Bác sĩ Trần Thị B</strong>
+
+        <div className="user-info text-center border-bottom pb-3 mb-3">
+          <p className="mb-0 opacity-75">Xin chào,</p>
+          <strong>Admin</strong>
         </div>
+
+        <nav>
+          <ul className="nav flex-column nav-list">
+            <li>
+              <NavLink to="/doctor/today-appointment" className="nav-item">
+                <i className="fa-solid fa-chart-line"></i>
+                Lịch Khám Hôm Nay
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/doctor/schedule" className="nav-item">
+                <i className="fa-solid fa-calendar-days"></i>
+                Lịch Làm Việc
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/doctor/patient-history" className="nav-item">
+                <i className="fa-solid fa-history"></i>
+                Lịch Sử Bệnh Nhân
+              </NavLink>
+            </li>
+            
+            <li className="logout border-top mt-auto pt-3">
+              <NavLink to="/logout" className="nav-item">
+                <i className="fa-solid fa-right-from-bracket"></i>
+                Đăng Xuất
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
       </div>
 
-      {/* Navigation Menu */}
-      <div className="flex-grow-1 p-3 pt-0">
-        <MenuItem 
-          section="today"
-          icon="fa-solid fa-calendar-day"
-          text="Lịch Khám Hôm Nay"
-        />
-        <MenuItem 
-          section="schedule"
-          icon="fa-solid fa-clock"
-          text="Lịch Làm Việc"
-        />
-        <MenuItem 
-          section="history"
-          icon="fa-solid fa-user-clock"
-          text="Lịch Sử Bệnh Nhân"
-        />
-        <MenuItem 
-          icon="fa-solid fa-right-from-bracket"
-          text="Đăng Xuất"
-          isLogout={true}
-        />
+      {/* Nội dung trang con */}
+      <div className="flex-grow-1 ">
+        <Outlet />
       </div>
-
-      {/* Custom CSS */}
-      <style jsx>{`
-        .cursor-pointer {
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        
-        .cursor-pointer:hover {
-          background: rgba(255, 255, 255, 0.15) !important;
-          transform: translateX(5px);
-        }
-        
-        .active-menu {
-          background: #fff !important;
-          color: #218838 !important;
-          font-weight: 600;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .transition-all {
-          transition: all 0.3s ease;
-        }
-      `}</style>
-    </aside>
+    </div>
   );
 };
 
-export default DoctorSidebar;
+export default AdminSidebar;

@@ -150,7 +150,7 @@ const AdminRevenueReport = () => {
             <form onSubmit={(e) => { e.preventDefault(); handleFilterAction(); }}>
               <div className="row g-3">
                 {/* Hàng 1: Các ô nhập liệu */}
-                <div className="col-md-5">
+                <div className="col-md-6">
                   <label className="form-label small text-muted">Tìm theo tên bệnh nhân</label>
                   <div className="input-group">
                     <span className="input-group-text"><BiSearch /></span>
@@ -181,10 +181,9 @@ const AdminRevenueReport = () => {
           {loading ? (<Loading isLoading={loading} />) : (
             <>
               <div className="table-responsive-container">
-                <table className="table table-hover clinic-table mb-0">
-                  {/* ... Nội dung bảng giữ nguyên ... */}
+                <table className="table table-hover clinic-table mb-0 text-center">
                   <thead className='p-4'><tr><th className="px-4">Mã HĐ</th><th>Ngày Lập</th><th>Bệnh Nhân</th><th className='text-end'>Tổng Cộng</th><th>Ngày Hẹn</th><th className='text-center'>Trạng Thái</th><th className="text-center px-4">Chi Tiết</th></tr></thead>
-                  <tbody>{invoices.length === 0 ? (<tr><td colSpan="7" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>) : (invoices.map(item => (<tr key={item.invoiceId}><td className="px-4"><span className='invoice-id'>{`#${item.invoiceId}`}</span></td><td>{formatDate(item.invoiceDate)}</td><td>{item.patientName}</td><td className="text-end fw-semibold">{formatCurrency(item.totalAmount)}</td><td>{formatDate(item.appointmentDate)}</td><td className='text-center'><StatusBadge status={item.status} /></td><td className="text-center px-4"><button className="btn btn-light btn-lg" title="Xem chi tiết" onClick={() => setModal({ show: true, detail: item })}><FiEye /></button></td></tr>)))}</tbody>
+                  <tbody>{invoices.length === 0 ? (<tr><td colSpan="7" className="text-center p-5 text-muted">Không có dữ liệu</td></tr>) : (invoices.map(item => (<tr key={item.invoiceId}><td className="px-4"><span className='invoice-id'>{`#${item.invoiceId}`}</span></td><td>{formatDate(item.invoiceDate)}</td><td className='fw-bold'>{item.patientName}</td><td className="text-end fw-semibold">{formatCurrency(item.totalAmount)}</td><td>{formatDate(item.appointmentDate)}</td><td className='text-center'><StatusBadge status={item.status} /></td><td className="text-center px-4"><button className="btn btn-light btn-lg" title="Xem chi tiết" onClick={() => setModal({ show: true, detail: item })}><FiEye /></button></td></tr>)))}</tbody>
                 </table>
               </div>
               {totalPages > 1 && (
