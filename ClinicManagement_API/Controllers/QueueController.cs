@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Receptionist")]
+    [Authorize(Roles = "Receptionist,Doctor")]
     [ApiController]
     [Route("api/[controller]")]
     public class QueueController : ControllerBase
@@ -88,6 +88,20 @@ namespace ClinicManagement_API.Controllers
                 return StatusCode(403, result);
             }
             return StatusCode(500, result);
+        }
+
+        [HttpPut("start/{queueId}")]
+        public async Task<IActionResult> StartExamination(int queueId)
+        {
+            var result = await _queueService.QueueUpdateStatusAsync(
+                queueId,
+                new QueueStatusUpdateDTO { Status = "InProgress" }
+            );
+            if (result.Status == StatusReponse.Success)
+            {
+                return Ok(new { success = true, message = "Bắt đầu khám." });
+            }
+            return BadRequest(new { success = false, message = result.Message });
         }
     }
 }

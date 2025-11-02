@@ -19,6 +19,11 @@ export const path = {
             CREATE: "/admin/medicines/create",
             UPDATE: "/admin/medicines/update/:id",
         },
+        SERVICE: {
+            MANAGEMENT: "/admin/services",
+            CREATE: "/admin/services/create",
+            UPDATE: "/admin/services/update/:id",
+        },
         INVENTORY: "/admin/inventory",
         SUPPLIERS: {
             MANAGEMENT: "/admin/suppliers",
@@ -72,12 +77,9 @@ export const path = {
     },
     DOCTOR:{
         ROOT: "/doctor",
-        DASHBOARD: "/doctor/dashboard",
-        APPOINTMENT: {
-            MANAGEMENT: "/doctor/apppointment-management",
-            CREATE: "/doctor/apppointment-create",
-            UPDATE: "/doctor/apppointment-update",
-        },
+        TODAYAPPOINTMENT: "/doctor/today-appointment",
+        SCHEDULE: "/doctor/schedule",
+        PATIENTHISTORY: "/doctor/patient-history",
     }
 };
 

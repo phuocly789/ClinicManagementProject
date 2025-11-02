@@ -25,6 +25,8 @@ import PDFEditorPage from './pages/Doctors/PrintsPDF/PDFPreviewEditor.jsx';
 import TechnicianDashboard from "./pages/Technician/TechnicianDashboard.jsx";
 import PrivateRoute from "./Components/PrivateRoute.jsx";
 import Logout from "./pages/auth/Logout.jsx";
+import AdminService from "./pages/Admin/AdminService.jsx";
+import AdminSupplier from "./pages/Admin/AdminSupplier.jsx";
 
 function App() {
   return (
@@ -36,12 +38,11 @@ function App() {
         <Route element={<PrivateRoute allowedRoles={['Admin']} />}>
           <Route path={path.ADMIN.ROOT} element={<AdminSidebar />} >
             <Route path={path.ADMIN.DASHBOARD} element={<AdminDashboard />} />
-            <Route path={path.ADMIN.REVENUE_REPORT} element={<AdminRevenueReport />} />
-            <Route
-              path={path.ADMIN.SCHEDULE.MANAGEMENT}
-              element={<AdminScheduleManagement />}
-            />
             <Route path={path.ADMIN.USER.MANAGEMENT} element={<AdminUserManagement />} />
+            <Route path={path.ADMIN.REVENUE_REPORT} element={<AdminRevenueReport />} />
+            <Route path={path.ADMIN.SCHEDULE.MANAGEMENT} element={<AdminScheduleManagement />} />
+            <Route path={path.ADMIN.SERVICE.MANAGEMENT} element={<AdminService />} />
+            <Route path={path.ADMIN.SUPPLIERS.MANAGEMENT} element={<AdminSupplier />} />
             <Route path={path.ADMIN.MEDICINE.MANAGEMENT} element={<AdminMedicine />} />
             <Route path={path.ADMIN.INVENTORY} element={<AdminInventory />} />
             <Route path={path.ADMIN.SUPPLIERS.MANAGEMENT} element={<AdminSuppliers />} />
@@ -54,8 +55,9 @@ function App() {
         </Route>
         {/* Doctor */}
         <Route element={<PrivateRoute allowedRoles={['Doctor']} />}>
-          <Route path={path.DOCTOR.ROOT} element={<DoctorSidebar />} />
-          <Route path={path.DOCTOR.DASHBOARD} element={<DoctorDashboard />} />
+          <Route path={path.DOCTOR.ROOT} element={<DoctorSidebar />} >
+            <Route path={path.DOCTOR.TODAYAPPOINTMENT} element={<DoctorDashboard />} />
+          </Route>
         </Route>
         {/* Technician */}
         <Route element={<PrivateRoute allowedRoles={['Technician']} />}>

@@ -25,14 +25,24 @@ namespace ClinicManagement_API.Controllers
 
         [HttpGet("GetAllServicesAsync")]
         public async Task<ActionResult<ResponseValue<PagedResult<ServiceDTO>>>> GetAllServicesAsync(
-            [FromQuery] string search = null,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10
+            string? search,
+            string? serviceType,
+            decimal? minPrice,
+            decimal? maxPrice,
+            int page = 1,
+            int pageSize = 10
         )
         {
             try
             {
-                var result = await _serviceService.GetAllServicesAsync(search, page, pageSize);
+                var result = await _serviceService.GetAllServicesAsync(
+                    search,
+                    serviceType,
+                    minPrice,
+                    maxPrice,
+                    page,
+                    pageSize
+                );
                 return Ok(result);
             }
             catch (ArgumentException ex)

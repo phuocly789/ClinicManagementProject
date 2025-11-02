@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 public interface IDoctorService
 {
     Task<List<AppointmentMyScheduleDto>> GetAppointmentsByStaffIdAnddDateAsync(
-        int staffId,
-        DateOnly? date = null
+        DateOnly? date = null,
+        int staffId = 0
     );
     Task<DiagnosisDataDto> CreateDiagnosisAsync(CreateDiagnosisDto request, int currentStaffId);
     Task<ResponseValue<ServiceOrderResponseDto>> CreateServiceOrderAsync(
@@ -22,6 +22,11 @@ public interface IDoctorService
         int currentStaffId
     );
     Task<List<TodaysAppointmentDTO>> GetTodaysAppointmentsAsync(DateOnly date);
+
+    // ----------------------------------------
+    Task<ResponseValue<object>> SubmitExaminationAsync(ExaminationRequestDto request, int staffId);
+    Task<ResponseValue<PagedResult<MedicineDTO>>> GetAllMedicinesAsync(string? search);
+    Task<ResponseValue<PagedResult<ServiceDTO>>> GetAllServicesAsync(string? search);
 }
 
 public class DoctorService : IDoctorService
@@ -35,6 +40,10 @@ public class DoctorService : IDoctorService
     private readonly IMedicalStaffRepository _medicalStaffRepository;
     private readonly IPrescriptionRepository _prescriptionRepository;
     private readonly IPrescriptionDetailRepository _prescriptionDetailRepository;
+    private readonly IMedicineRepository _medicineRepository;
+    private readonly IServiceRepository _serviceRepository;
+
+
 
     public DoctorService(
         IAppointmentRepository appointmentRepository,
@@ -45,7 +54,9 @@ public class DoctorService : IDoctorService
         IServiceOrderRepository serviceOrderRepository,
         IMedicalStaffRepository medicalStaffRepository,
         IPrescriptionRepository prescriptionRepository,
-        IPrescriptionDetailRepository prescriptionDetailRepository
+        IPrescriptionDetailRepository prescriptionDetailRepository,
+        IMedicineRepository medicineRepository,
+        IServiceRepository serviceRepository
     )
     {
         _appointmentRepository = appointmentRepository;
@@ -57,12 +68,14 @@ public class DoctorService : IDoctorService
         _medicalStaffRepository = medicalStaffRepository;
         _prescriptionRepository = prescriptionRepository;
         _prescriptionDetailRepository = prescriptionDetailRepository;
+        _medicineRepository = medicineRepository;
+        _serviceRepository = serviceRepository;
     }
 
     //lấy lịch làm
     public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsByStaffIdAnddDateAsync(
-        int staffId,
-        DateOnly? date = null
+        DateOnly? date = null,
+        int staffId = 0
     )
     {
         var selectedDate = date ?? DateOnly.FromDateTime(DateTime.Now);
@@ -430,5 +443,293 @@ public class DoctorService : IDoctorService
                 Status = a.Status,
             })
             .ToListAsync();
+    }
+
+    public async Task<ResponseValue<object>> SubmitExaminationAsync(
+        ExaminationRequestDto request,
+        int staffId
+    )
+    {
+        // Bắt đầu một transaction để đảm bảo tất cả các thao tác đều thành công hoặc thất bại cùng nhau
+        using var transaction = await _uow.BeginTransactionAsync();
+        try
+        {
+            // 1. Tìm cuộc hẹn và kiểm tra quyền của bác sĩ
+            var appointment = await _appointmentRepository
+                .GetAll()
+                .FirstOrDefaultAsync(a =>
+                    a.AppointmentId == request.AppointmentId && a.StaffId == staffId
+                );
+
+            if (appointment == null)
+            {
+                return new ResponseValue<object>(
+                    null,
+                    StatusReponse.NotFound,
+                    "Không tìm thấy cuộc hẹn hợp lệ cho bác sĩ này."
+                );
+            }
+
+            // 2. Xử lý Chẩn đoán (Lưu hoặc Cập nhật)
+            var diagnosis = await _diagnosisRepository
+                .GetAll()
+                .FirstOrDefaultAsync(d => d.AppointmentId == request.AppointmentId);
+
+            if (diagnosis == null) // Nếu chưa có chẩn đoán -> tạo mới
+            {
+                diagnosis = new Diagnosis
+                {
+                    AppointmentId = request.AppointmentId,
+                    StaffId = staffId,
+                    RecordId = appointment.RecordId,
+                    DiagnosisDate = DateTime.UtcNow, // Sử dụng UTC để nhất quán
+                };
+                await _diagnosisRepository.AddAsync(diagnosis);
+            }
+            // Cập nhật thông tin chẩn đoán từ request
+            diagnosis.Symptoms = request.Symptoms;
+            diagnosis.Diagnosis1 = request.Diagnosis;
+            // Lưu thay đổi để diagnosis có ID nếu là bản ghi mới
+            await _uow.SaveChangesAsync();
+
+            // 3. Xử lý Đơn thuốc (Prescriptions)
+            // Tìm đơn thuốc đã có của cuộc hẹn này
+            var prescription = await _prescriptionRepository
+                .GetAll()
+                .FirstOrDefaultAsync(p => p.AppointmentId == request.AppointmentId);
+
+            // Nếu có đơn thuốc cũ, xóa hết chi tiết cũ để thêm lại danh sách mới
+            if (prescription != null)
+            {
+                var oldDetails = await _prescriptionDetailRepository
+                    .GetAll()
+                    .Where(pd => pd.PrescriptionId == prescription.PrescriptionId)
+                    .ToListAsync();
+
+                if (oldDetails.Any())
+                {
+                    _prescriptionDetailRepository.RemoveRange(oldDetails);
+                    await _uow.SaveChangesAsync();
+                }
+            }
+
+            // Nếu frontend gửi lên danh sách thuốc mới
+            if (request.Prescriptions != null && request.Prescriptions.Any())
+            {
+                // Nếu chưa có đơn thuốc, tạo mới
+                if (prescription == null)
+                {
+                    prescription = new Prescription
+                    {
+                        AppointmentId = request.AppointmentId,
+                        RecordId = appointment.RecordId,
+                        PrescriptionDate = DateTime.UtcNow,
+                        StaffId = staffId,
+                        Instructions = "Uống theo chỉ dẫn của bác sĩ.", // Có thể thêm trường này vào DTO nếu cần
+                    };
+                    await _prescriptionRepository.AddAsync(prescription);
+                    await _uow.SaveChangesAsync(); // Lưu để lấy PrescriptionId
+                }
+
+                // Thêm các chi tiết đơn thuốc mới
+                foreach (var detailDto in request.Prescriptions)
+                {
+                    // KIỂM TRA TỒN KHO TRƯỚC KHI THÊM
+                    bool hasStock = await _prescriptionRepository.HasEnoughStockAsync(
+                        detailDto.MedicineId,
+                        detailDto.Quantity
+                    );
+                    if (!hasStock)
+                    {
+                        // Nếu không đủ thuốc, hủy toàn bộ transaction và báo lỗi
+                        throw new Exception(
+                            $"Không đủ số lượng tồn kho cho thuốc ID {detailDto.MedicineId}"
+                        );
+                    }
+
+                    var detail = new PrescriptionDetail
+                    {
+                        PrescriptionId = prescription.PrescriptionId,
+                        MedicineId = detailDto.MedicineId,
+                        Quantity = detailDto.Quantity,
+                        DosageInstruction = detailDto.DosageInstruction,
+                    };
+                    await _prescriptionDetailRepository.AddAsync(detail);
+
+                    // TRỪ TỒN KHO
+                    await _prescriptionRepository.UpdateMedicineStockAsync(
+                        detailDto.MedicineId,
+                        detailDto.Quantity
+                    );
+                }
+            }
+
+            // 4. Xử lý Dịch vụ được chỉ định (Service Orders)
+            // Xóa tất cả các dịch vụ đã chỉ định trước đó cho cuộc hẹn này để đồng bộ lại
+            var oldServiceOrders = await _serviceOrderRepository
+                .GetAll()
+                .Where(so => so.AppointmentId == request.AppointmentId)
+                .ToListAsync();
+
+            if (oldServiceOrders.Any())
+            {
+                _serviceOrderRepository.RemoveRange(oldServiceOrders);
+            }
+
+            // Tạo lại các dịch vụ mới từ request
+            if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                foreach (var serviceId in request.ServiceIds)
+                {
+                    var serviceOrder = new ServiceOrder
+                    {
+                        AppointmentId = request.AppointmentId,
+                        ServiceId = serviceId,
+                        OrderDate = DateTime.UtcNow,
+                        Status = "Pending", // Trạng thái chờ thực hiện
+                        // AssignedStaffId có thể null hoặc cần logic để gán cho kỹ thuật viên
+                    };
+                    await _serviceOrderRepository.AddAsync(serviceOrder);
+                }
+            }
+
+            // 5. Cập nhật trạng thái cuộc hẹn nếu bác sĩ chọn "Hoàn tất"
+            if (request.IsComplete)
+            {
+                // appointment.Status = "Completed";
+                var queue = await _uow.GetDbContext()
+                    .Queues.FirstOrDefaultAsync(q => q.AppointmentId == request.AppointmentId);
+                if (queue != null)
+                {
+                    queue.Status = "Completed";
+                    appointment.Status = "Đã khám";
+                }
+            }
+
+            // Lưu tất cả thay đổi vào database
+            await _uow.SaveChangesAsync();
+            // Hoàn tất transaction
+            await transaction.CommitAsync();
+
+            return new ResponseValue<object>(
+                null,
+                StatusReponse.Success,
+                request.IsComplete ? "Hoàn tất khám bệnh thành công" : "Tạm lưu thành công"
+            );
+        }
+        catch (Exception ex)
+        {
+            // Nếu có bất kỳ lỗi nào, hủy bỏ tất cả các thay đổi
+            await transaction.RollbackAsync();
+            return new ResponseValue<object>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi hệ thống: " + ex.Message
+            );
+        }
+    }
+
+    public async Task<ResponseValue<PagedResult<MedicineDTO>>> GetAllMedicinesAsync(
+        string? search = null
+    )
+    {
+        try
+        {
+            var query = _medicineRepository.GetAll().AsNoTracking();
+            // search
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(s =>
+                    s.MedicineName != null && EF.Functions.Like(s.MedicineName, $"%{search}%")
+                );
+            }
+
+            //get total count
+            var totalItems = await query.CountAsync();
+
+            //fetch services with pagination
+            var medicines = await query
+                .OrderBy(m => m.MedicineId)
+                .Select(m => new MedicineDTO
+                {
+                    MedicineId = m.MedicineId,
+                    MedicineName = m.MedicineName,
+                    MedicineType = m.MedicineType,
+                    Unit = m.Unit,
+                    Price = m.Price,
+                    StockQuantity = m.StockQuantity,
+                    Description = m.Description,
+                })
+                .ToListAsync();
+            return new ResponseValue<PagedResult<MedicineDTO>>(
+                new PagedResult<MedicineDTO>
+                {
+                    TotalItems = totalItems,
+                    Page = 0,
+                    PageSize = 0,
+                    Items = medicines,
+                },
+                StatusReponse.Success,
+                "Lấy danh sách thuốc thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            return new ResponseValue<PagedResult<MedicineDTO>>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy danh sách thuốc: " + ex.Message
+            );
+        }
+    }
+     public async Task<ResponseValue<PagedResult<ServiceDTO>>> GetAllServicesAsync(
+        string? search
+    )
+    {
+        try
+        {
+            var query = _serviceRepository.GetAll().AsNoTracking();
+            //search
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(s =>
+                    s.ServiceName != null && EF.Functions.Like(s.ServiceName, $"%{search}%")
+                );
+            }
+           
+            //get total count
+            var totalItems = await query.CountAsync();
+            //fetch services with pagination
+            var services = await query
+                .OrderBy(s => s.ServiceId)
+                .Select(s => new ServiceDTO
+                {
+                    ServiceId = s.ServiceId,
+                    ServiceName = s.ServiceName,
+                    ServiceType = s.ServiceType,
+                    Price = s.Price,
+                    Description = s.Description,
+                })
+                .ToListAsync();
+            return new ResponseValue<PagedResult<ServiceDTO>>(
+                new PagedResult<ServiceDTO>
+                {
+                    TotalItems = totalItems,
+                    Page = 0,
+                    PageSize = 0,
+                    Items = services,
+                },
+                StatusReponse.Success,
+                "Lấy danh sách dịch vụ thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            return new ResponseValue<PagedResult<ServiceDTO>>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy danh sách dịch vụ: " + ex.Message
+            );
+        }
     }
 }

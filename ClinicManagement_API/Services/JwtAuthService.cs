@@ -31,6 +31,7 @@ public class JwtAuthService
         var claims = new List<Claim>
         {
             new Claim("username", userLogin.Username), // Claim mặc định cho username
+            new Claim("userid", userLogin.UserId.ToString()), // Claim tùy chỉnh cho userId
             new Claim("email", userLogin.Email), // Claim mặc định cho username
             new Claim("fullname", userLogin.FullName), // Claim tùy chỉnh cho full name
             // new Claim(ClaimTypes.Role, userLogin.Role),                   // Claim mặc định cho Role
