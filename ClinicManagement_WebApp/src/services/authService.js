@@ -11,6 +11,11 @@ const handleLogin = async (data) => {
   return res;
 };
 
+const handleRegister = async (data) => {
+  const res = await instance.post(`${API_URL}/PatientRegister`, data);
+  return res;
+}
+
 const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("roles");
@@ -19,4 +24,4 @@ const logout = () => {
 const getToken = () => localStorage.getItem("token");
 const getRoles = () => JSON.parse(localStorage.getItem("roles") || "[]");
 
-export default { handleLogin, logout, getToken, getRoles };
+export default { handleLogin, logout, getToken, getRoles,handleRegister };

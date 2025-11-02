@@ -3,13 +3,13 @@ using Microsoft.EntityFrameworkCore;
 
 public interface ISuplierService
 {
-    Task<ResponseValue<PagedResult<SuplierDTO>>> GetAllMSupliersAsync(
+    Task<ResponseValue<PagedResult<SupplierDTO>>> GetAllMSupliersAsync(
         string? search = null,
-        int page = 1,
-        int pageSize = 10
+        int? page = null,
+        int? pageSize = null
     );
-    Task<ResponseValue<SuplierDTO>> CreateSuplierAsync(SuplierDTO request);
-    Task<ResponseValue<SuplierDTO>> UpdateSuplierAsync(int suplierId, SuplierDTO request);
+    Task<ResponseValue<SupplierDTO>> CreateSuplierAsync(SupplierDTO request);
+    Task<ResponseValue<SupplierDTO>> UpdateSuplierAsync(int suplierId, SupplierDTO request);
     Task DeleteSuplierAsync(int suplierId);
 }
 
@@ -30,73 +30,105 @@ public class SuplierService : ISuplierService
         _logger = logger;
     }
 
-    public async Task<ResponseValue<PagedResult<SuplierDTO>>> GetAllMSupliersAsync(
+    public async Task<ResponseValue<PagedResult<SupplierDTO>>> GetAllMSupliersAsync(
         string? search = null,
-        int page = 1,
-        int pageSize = 10
+        int? page = null,
+        int? pageSize = null
     )
     {
         try
         {
             var query = _suplierRepository.GetAll().AsNoTracking();
+
+            // search theo tên
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(s =>
                     s.SupplierName != null && EF.Functions.Like(s.SupplierName, $"%{search}%")
                 );
             }
-            //
+
             var totalItems = await query.CountAsync();
 
-            //fetch services with pagination
+            // ✅ Nếu không truyền page hoặc pageSize -> lấy toàn bộ
+            if (page == null || pageSize == null || page <= 0 || pageSize <= 0)
+            {
+                var allSupliers = await query
+                    .OrderBy(s => s.SupplierId)
+                    .Select(s => new SupplierDTO
+                    {
+                        SupplierId = s.SupplierId,
+                        SupplierName = s.SupplierName,
+                        ContactEmail = s.ContactEmail,
+                        ContactPhone = s.ContactPhone,
+                        Address = s.Address,
+                        Description = s.Description,
+                    })
+                    .ToListAsync();
+
+                return new ResponseValue<PagedResult<SupplierDTO>>(
+                    new PagedResult<SupplierDTO>
+                    {
+                        TotalItems = totalItems,
+                        Page = 0,
+                        PageSize = 0,
+                        Items = allSupliers,
+                    },
+                    StatusReponse.Success,
+                    "Lấy toàn bộ danh sách nhà cung cấp thành công."
+                );
+            }
+
+            // ✅ Ngược lại: phân trang
             var supliers = await query
                 .OrderBy(s => s.SupplierId)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(s => new SuplierDTO
+                .Skip((page.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(s => new SupplierDTO
                 {
-                    SuplierId = s.SupplierId,
-                    SuplierName = s.SupplierName,
+                    SupplierId = s.SupplierId,
+                    SupplierName = s.SupplierName,
                     ContactEmail = s.ContactEmail,
                     ContactPhone = s.ContactPhone,
                     Address = s.Address,
                     Description = s.Description,
                 })
                 .ToListAsync();
-            return new ResponseValue<PagedResult<SuplierDTO>>(
-                new PagedResult<SuplierDTO>
+
+            return new ResponseValue<PagedResult<SupplierDTO>>(
+                new PagedResult<SupplierDTO>
                 {
                     TotalItems = totalItems,
-                    Page = page,
-                    PageSize = pageSize,
+                    Page = page.Value,
+                    PageSize = pageSize.Value,
                     Items = supliers,
                 },
                 StatusReponse.Success,
-                "Lấy danh sách thuốc thành công."
+                "Lấy danh sách nhà cung cấp thành công."
             );
         }
         catch (Exception ex)
         {
-            return new ResponseValue<PagedResult<SuplierDTO>>(
+            return new ResponseValue<PagedResult<SupplierDTO>>(
                 null,
                 StatusReponse.Error,
-                "Đã xảy ra lỗi khi lấy danh sách thuốc: " + ex.Message
+                "Đã xảy ra lỗi khi lấy danh sách nhà cung cấp: " + ex.Message
             );
         }
     }
 
-    public async Task<ResponseValue<SuplierDTO>> CreateSuplierAsync(SuplierDTO request)
+    public async Task<ResponseValue<SupplierDTO>> CreateSuplierAsync(SupplierDTO request)
     {
         try
         {
             if (
-                string.IsNullOrWhiteSpace(request.SuplierName)
+                string.IsNullOrWhiteSpace(request.SupplierName)
                 || string.IsNullOrWhiteSpace(request.ContactEmail)
                 || string.IsNullOrWhiteSpace(request.ContactPhone)
                 || string.IsNullOrWhiteSpace(request.Address)
             )
             {
-                return new ResponseValue<SuplierDTO>(
+                return new ResponseValue<SupplierDTO>(
                     null,
                     StatusReponse.BadRequest,
                     "Thông tin thuốc không hợp lệ."
@@ -106,10 +138,10 @@ public class SuplierService : ISuplierService
             if (
                 await _suplierRepository
                     .GetAll()
-                    .AnyAsync(s => s.SupplierName == request.SuplierName)
+                    .AnyAsync(s => s.SupplierName == request.SupplierName)
             )
             {
-                return new ResponseValue<SuplierDTO>(
+                return new ResponseValue<SupplierDTO>(
                     null,
                     StatusReponse.BadRequest,
                     "Tên thuốc đã tồn tại."
@@ -120,7 +152,7 @@ public class SuplierService : ISuplierService
 
             var suplier = new Supplier
             {
-                SupplierName = request.SuplierName,
+                SupplierName = request.SupplierName,
                 ContactEmail = request.ContactEmail,
                 ContactPhone = request.ContactPhone,
                 Address = request.Address,
@@ -133,11 +165,11 @@ public class SuplierService : ISuplierService
             await _uow.SaveChangesAsync();
             await transaction.CommitAsync();
             //trả về kết quả
-            return new ResponseValue<SuplierDTO>(
-                new SuplierDTO
+            return new ResponseValue<SupplierDTO>(
+                new SupplierDTO
                 {
-                    SuplierId = suplier.SupplierId,
-                    SuplierName = suplier.SupplierName,
+                    SupplierId = suplier.SupplierId,
+                    SupplierName = suplier.SupplierName,
                     ContactEmail = suplier.ContactEmail,
                     ContactPhone = suplier.ContactPhone,
                     Address = suplier.Address,
@@ -149,7 +181,7 @@ public class SuplierService : ISuplierService
         }
         catch (Exception ex)
         {
-            return new ResponseValue<SuplierDTO>(
+            return new ResponseValue<SupplierDTO>(
                 null,
                 StatusReponse.Error,
                 "Đã xảy ra lỗi khi tạo thuốc: " + ex.Message
@@ -157,21 +189,21 @@ public class SuplierService : ISuplierService
         }
     }
 
-    public async Task<ResponseValue<SuplierDTO>> UpdateSuplierAsync(
+    public async Task<ResponseValue<SupplierDTO>> UpdateSuplierAsync(
         int suplierId,
-        SuplierDTO request
+        SupplierDTO request
     )
     {
         try
         {
             if (
-                string.IsNullOrWhiteSpace(request.SuplierName)
+                string.IsNullOrWhiteSpace(request.SupplierName)
                 || string.IsNullOrWhiteSpace(request.ContactEmail)
                 || string.IsNullOrWhiteSpace(request.ContactPhone)
                 || string.IsNullOrWhiteSpace(request.Address)
             )
             {
-                return new ResponseValue<SuplierDTO>(
+                return new ResponseValue<SupplierDTO>(
                     null,
                     StatusReponse.BadRequest,
                     "Thông tin thuốc không hợp lệ."
@@ -183,12 +215,12 @@ public class SuplierService : ISuplierService
             var duplicateSuplier = await _suplierRepository
                 .GetAll()
                 .AnyAsync(m =>
-                    m.SupplierName.ToLower() == request.SuplierName.ToLower()
+                    m.SupplierName.ToLower() == request.SupplierName.ToLower()
                     && m.SupplierId != suplierId
                 );
             if (duplicateSuplier)
             {
-                return new ResponseValue<SuplierDTO>(
+                return new ResponseValue<SupplierDTO>(
                     null,
                     StatusReponse.BadRequest,
                     "Tên thuốc đã tồn tại."
@@ -198,7 +230,7 @@ public class SuplierService : ISuplierService
             using var transaction = await _uow.BeginTransactionAsync();
             try
             {
-                suplier.SupplierName = request.SuplierName;
+                suplier.SupplierName = request.SupplierName;
                 suplier.ContactEmail = request.ContactEmail;
                 suplier.ContactPhone = request.ContactPhone;
                 suplier.Address = request.Address;
@@ -209,10 +241,10 @@ public class SuplierService : ISuplierService
                 await _uow.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseValue<SuplierDTO>(
-                    new SuplierDTO
+                return new ResponseValue<SupplierDTO>(
+                    new SupplierDTO
                     {
-                        SuplierName = suplier.SupplierName,
+                        SupplierName = suplier.SupplierName,
                         ContactEmail = suplier.ContactEmail,
                         ContactPhone = suplier.ContactPhone,
                         Address = suplier.Address,
@@ -225,7 +257,7 @@ public class SuplierService : ISuplierService
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return new ResponseValue<SuplierDTO>(
+                return new ResponseValue<SupplierDTO>(
                     null,
                     StatusReponse.Error,
                     "Đã xảy ra lỗi khi cập nhật thuốc: " + ex.Message
@@ -234,7 +266,7 @@ public class SuplierService : ISuplierService
         }
         catch (Exception ex)
         {
-            return new ResponseValue<SuplierDTO>(
+            return new ResponseValue<SupplierDTO>(
                 null,
                 StatusReponse.Error,
                 "Đã xảy ra lỗi khi cập nhật thuốc: " + ex.Message

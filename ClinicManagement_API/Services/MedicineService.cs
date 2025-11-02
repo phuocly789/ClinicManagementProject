@@ -4,7 +4,12 @@ using Microsoft.EntityFrameworkCore;
 public interface IMedicineService
 {
     Task<ResponseValue<PagedResult<MedicineDTO>>> GetAllMedicinesAsync(
-        string search,
+        string? search,
+        string? type, // Thêm
+        string? unit, // Thêm
+        decimal? minPrice, // Thêm
+        decimal? maxPrice, // Thêm
+        bool lowStock, // Thêm
         int page,
         int pageSize
     );
@@ -37,6 +42,11 @@ public class MedicineService : IMedicineService
 
     public async Task<ResponseValue<PagedResult<MedicineDTO>>> GetAllMedicinesAsync(
         string? search = null,
+        string? type = null,
+        string? unit = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        bool lowStock = false,
         int page = 1,
         int pageSize = 10
     )
@@ -44,12 +54,36 @@ public class MedicineService : IMedicineService
         try
         {
             var query = _medicineRepository.GetAll().AsNoTracking();
-            //search
+            // search
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(s =>
                     s.MedicineName != null && EF.Functions.Like(s.MedicineName, $"%{search}%")
                 );
+            }
+            // filter by type
+            if (!string.IsNullOrEmpty(type))
+            {
+                query = query.Where(m => m.MedicineType == type);
+            }
+            // filter by unit
+            if (!string.IsNullOrEmpty(unit))
+            {
+                query = query.Where(m => m.Unit == unit);
+            }
+            // filter by price range
+            if (minPrice.HasValue)
+            {
+                query = query.Where(m => m.Price >= minPrice.Value);
+            }
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(m => m.Price <= maxPrice.Value);
+            }
+            // filter by low stock (ví dụ: dưới 100)
+            if (lowStock)
+            {
+                query = query.Where(m => m.StockQuantity < 300);
             }
 
             //get total count

@@ -15,7 +15,9 @@ public class ImportBillRepository : Repository<ImportBill>, IImportBillRepositor
 
     public async Task<ImportBill?> GetByIdWithDetailsAsync(int id)
     {
-        var importBill = await GetByIdAsync(id);
+        var importBill = await _context
+            .ImportBills.Include(i => i.Supplier)
+            .FirstOrDefaultAsync(i => i.ImportId == id);
         if (importBill == null)
             return null;
 

@@ -64,7 +64,7 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpPut("UpdateStatusQueueAsync/{id}")]
-        public async Task<ActionResult<ResponseValue<SuplierDTO>>> UpdateStatusQueueAsync(
+        public async Task<ActionResult<ResponseValue<SupplierDTO>>> UpdateStatusQueueAsync(
             int id,
             [FromBody] QueueStatusUpdateDTO request
         )

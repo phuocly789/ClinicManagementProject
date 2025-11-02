@@ -5,9 +5,12 @@ using Microsoft.EntityFrameworkCore;
 public interface IImportService
 {
     Task<ResponseValue<PagedResult<ImportDTO>>> GetAllImportBillsAsync(
+        string? search = null, // Thêm
         int? supplierId = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        decimal? minTotal = null, // Thêm
+        decimal? maxTotal = null, // Thêm
         int page = 1,
         int pageSize = 10
     );
@@ -49,9 +52,12 @@ public class ImportService : IImportService
     }
 
     public async Task<ResponseValue<PagedResult<ImportDTO>>> GetAllImportBillsAsync(
+        string? search = null, // Thêm
         int? supplierId = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        decimal? minTotal = null, // Thêm
+        decimal? maxTotal = null, // Thêm
         int page = 1,
         int pageSize = 10
     )
@@ -60,13 +66,30 @@ public class ImportService : IImportService
         {
             var query = _importBillRepository.GetAll().AsNoTracking();
 
-            // Áp dụng bộ lọc
+            // Thêm bộ lọc tìm kiếm theo tên nhà cung cấp
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(ib =>
+                    ib.Supplier != null && ib.Supplier.SupplierName.Contains(search)
+                );
+            }
+
             if (supplierId.HasValue && supplierId.Value > 0)
                 query = query.Where(ib => ib.SupplierId == supplierId.Value);
             if (startDate.HasValue)
                 query = query.Where(ib => ib.ImportDate >= startDate.Value);
             if (endDate.HasValue)
-                query = query.Where(ib => ib.ImportDate <= endDate.Value);
+            {
+                // Nếu bạn muốn endDate tính đến cuối ngày
+                var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(ib => ib.ImportDate <= end);
+            }
+
+            // Thêm bộ lọc theo tổng tiền
+            if (minTotal.HasValue)
+                query = query.Where(ib => ib.TotalAmount >= minTotal.Value);
+            if (maxTotal.HasValue)
+                query = query.Where(ib => ib.TotalAmount <= maxTotal.Value);
 
             // Tổng số lượng
             var totalItems = await query.CountAsync();
