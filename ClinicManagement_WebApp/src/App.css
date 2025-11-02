@@ -11,7 +11,7 @@
   --primary-hover: #3260AC;
   --background-color: #F8F9FA;
   --card-background: #FFFFFF;
-
+  --bs-danger-rgb: 239, 68, 68;
   /* Bảng màu phụ */
   --sky-color: #0ea5e9;
   --green-color: #22c55e;
@@ -49,11 +49,13 @@ body {
   background-color: var(--background-color);
   overflow-x: hidden;
 }
-li{
+
+li {
   list-style-type: none;
   justify-content: center;
 }
-ul{
+
+ul {
   justify-content: center;
   margin: 0;
   padding: 0;
@@ -181,10 +183,20 @@ ul{
   color: #5F6368 !important;
 }
 
+.bg-danger-soft {
+  background-color: rgba(var(--bs-danger-rgb), 0.1) !important;
+  color: #D93444 !important;
+}
+
 /* Modal */
 .modal-backdrop.show {
   opacity: 0.6;
   background-color: #212b36;
+}
+
+.modal-content {
+  border: 0;
+  box-shadow: var(--box-shadow);
 }
 
 .info-row {
@@ -376,6 +388,7 @@ ul{
   background-color: #f8f9fa !important;
   transition: background-color 0.2s ease;
 }
+
 .event-technician .event-icon {
   color: var(--grey-color);
 }

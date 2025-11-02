@@ -27,9 +27,12 @@ namespace ClinicManagement_API.Controllers
         public async Task<
             ActionResult<ResponseValue<PagedResult<ImportDTO>>>
         > GetAllImportBillsAsync(
+            [FromQuery] string? search = null, // Thêm
             [FromQuery] int? supplierId = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
+            [FromQuery] decimal? minTotal = null, // Thêm
+            [FromQuery] decimal? maxTotal = null, // Thêm
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10
         )
@@ -37,9 +40,12 @@ namespace ClinicManagement_API.Controllers
             try
             {
                 var result = await _importService.GetAllImportBillsAsync(
+                    search,
                     supplierId,
                     startDate,
                     endDate,
+                    minTotal,
+                    maxTotal,
                     page,
                     pageSize
                 );

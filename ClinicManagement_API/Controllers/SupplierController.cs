@@ -27,17 +27,17 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpGet("GetAllSupplierAsync")]
-        public async Task<ResponseValue<PagedResult<SuplierDTO>>> GetAllSupplierAsync(
+        public async Task<ResponseValue<PagedResult<SupplierDTO>>> GetAllSupplierAsync(
             [FromQuery] string? search = null,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10
+            [FromQuery] int? page = null,
+            [FromQuery] int? pageSize = null
         )
         {
             try
             {
                 var rusult = await _suplierService.GetAllMSupliersAsync(search, page, pageSize);
 
-                return new ResponseValue<PagedResult<SuplierDTO>>(
+                return new ResponseValue<PagedResult<SupplierDTO>>(
                     rusult.Content,
                     StatusReponse.Success,
                     "Lấy danh sách thuốc thành công."
@@ -45,7 +45,7 @@ namespace ClinicManagement_API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return new ResponseValue<PagedResult<SuplierDTO>>(
+                return new ResponseValue<PagedResult<SupplierDTO>>(
                     null,
                     StatusReponse.BadRequest,
                     ex.Message
@@ -53,7 +53,7 @@ namespace ClinicManagement_API.Controllers
             }
             catch (Exception ex)
             {
-                return new ResponseValue<PagedResult<SuplierDTO>>(
+                return new ResponseValue<PagedResult<SupplierDTO>>(
                     null,
                     StatusReponse.Error,
                     "Đã xảy ra lỗi khi lấy danh sách thuốc: " + ex.Message
@@ -62,8 +62,8 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpPost("CreateSupplierAsync")]
-        public async Task<ActionResult<ResponseValue<SuplierDTO>>> CreateSupplierAsync(
-            [FromBody] SuplierDTO request
+        public async Task<ActionResult<ResponseValue<SupplierDTO>>> CreateSupplierAsync(
+            [FromBody] SupplierDTO request
         )
         {
             if (!ModelState.IsValid)
@@ -87,9 +87,9 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpPut("UpdateSupplierAsync/{id}")]
-        public async Task<ActionResult<ResponseValue<SuplierDTO>>> UpdateSupplierAsync(
+        public async Task<ActionResult<ResponseValue<SupplierDTO>>> UpdateSupplierAsync(
             int id,
-            [FromBody] SuplierDTO request
+            [FromBody] SupplierDTO request
         )
         {
             if (!ModelState.IsValid)

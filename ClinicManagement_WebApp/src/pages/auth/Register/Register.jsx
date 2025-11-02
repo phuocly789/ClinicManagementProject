@@ -9,13 +9,14 @@ const Register = () => {
   const [form, setForm] = useState({
     fullName: "",
     email: "",
-    phone: "",
-    username: "",
+    phoneNumber: "",
+    address: "",
     password: "",
     confirmPassword: "",
     gender: "",
-    birthday: "",
+    dateOfBirth: "",
   });
+
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -38,7 +39,7 @@ const Register = () => {
     const htmlRegex = /<[^>]*>/g;
     const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
     const now = new Date();
-    const birthdayDate = form.birthday ? new Date(form.birthday) : null;
+    const birthdayDate = form.dateOfBirth ? new Date(form.dateOfBirth) : null;
 
     // Họ tên
     if (!form.fullName) temp.fullName = "Họ tên không được để trống";
@@ -59,18 +60,18 @@ const Register = () => {
       temp.email = "Email không được quá 255 ký tự";
 
     // Số điện thoại
-    if (!form.phone) temp.phone = "Số điện thoại không được để trống";
-    else if (!/^0\d{9,10}$/.test(form.phone))
-      temp.phone = "Số điện thoại không hợp lệ";
-    else if (form.phone.length > 11)
-      temp.phone = "Số điện thoại không được quá 11 số";
+    if (!form.phoneNumber) temp.phoneNumber = "Số điện thoại không được để trống";
+    else if (!/^0\d{9,10}$/.test(form.phoneNumber))
+      temp.phoneNumber = "Số điện thoại không hợp lệ";
+    else if (form.phoneNumber.length > 11)
+      temp.phoneNumber = "Số điện thoại không được quá 11 số";
 
-    // Username
-    if (!form.username) temp.username = "Tên đăng nhập không được để trống";
-    else if (htmlRegex.test(form.username))
-      temp.username = "Vui lòng không nhập mã HTML";
-    else if (form.username.length > 255)
-      temp.username = "Tên đăng nhập không được quá 255 ký tự";
+    // Address
+    if (!form.address) temp.address = "Địa chỉ không được để trống";
+    else if (htmlRegex.test(form.address))
+      temp.address = "Vui lòng không nhập mã HTML";
+    else if (form.address.length > 500)
+      temp.address = "Địa chỉ không được quá 500 ký tự";
 
     // Password
     if (!form.password) temp.password = "Mật khẩu không được để trống";
@@ -89,10 +90,10 @@ const Register = () => {
     if (!form.gender) temp.gender = "Giới tính không được để trống";
 
     // Birthday
-    if (!form.birthday)
-      temp.birthday = "Ngày tháng năm sinh không được để trống";
+    if (!form.dateOfBirth)
+      temp.dateOfBirth = "Ngày tháng năm sinh không được để trống";
     else if (birthdayDate > now)
-      temp.birthday = "Không được chọn ngày tháng năm sinh trong tương lai";
+      temp.dateOfBirth = "Không được chọn ngày tháng năm sinh trong tương lai";
 
     setErrors(temp);
     return Object.keys(temp).length === 0;
@@ -105,51 +106,70 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const res = await authService.handleRegister(form);
 
-      // ⚙️ Laravel trả về theo dạng { status, user, token } hoặc { status: false, error, details }
-      if (res?.status === true) {
+      const payload = {
+        fullName: form.fullName,
+        email: form.email,
+        phoneNumber: form.phoneNumber,
+        address: form.address,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        gender: form.gender,
+        dateOfBirth: form.dateOfBirth,
+      };
+
+      const res = await authService.handleRegister(payload);
+
+      if (res?.status === "Success") {
         showToast(
           "success",
-          "Đăng ký tài khoản thành công. Vui lòng nhập mã OTP để xác thực tài khoản."
+          res.message || "Đăng ký tài khoản thành công. Vui lòng nhập mã OTP để xác thực tài khoản."
         );
         // Chuyển hướng sau
-        setTimeout(() => {
-          navigate(path.VERIFICATION_EMAIL, {
-            state: {
-              email: res?.user?.email,
-              justRegistered: true,
-              expired: res?.user?.expired,
-            },
-          });
-        }, 1000);
-      } else if (res?.status === false && res?.error) {
-        // 🔥 Nếu backend trả về lỗi (VD: trùng email, phone, username)
-        const msg = res?.error || "Đã xảy ra lỗi ở phía server.";
-        showToast("error", msg);
+        setTimeout(() => navigate(path.LOGIN), 1200);
+
+
+      } else {
+        showToast("error", res?.message || "Đăng ký thất bại!");
       }
     } catch (err) {
-      console.error("Error:", err);
-
-      // Trường hợp Laravel trả ValidationException (422)
-      if (err?.response?.status === 422) {
-        const backendErrors = err.response.data.errors || {};
-        const mappedErrors = {};
-
-        for (const [key, value] of Object.entries(backendErrors)) {
-          mappedErrors[key] = value[0]; // lấy thông báo đầu tiên
-        }
-
-        setErrors(mappedErrors);
-
-        // Hiển thị lỗi tổng quát
-        showToast("error", "Thông tin không hợp lệ. Vui lòng kiểm tra lại.");
-      } else {
-        showToast("error", "Đã xảy ra lỗi ở phía server. Vui lòng thử lại.");
-      }
+      showToast("error", err.response?.data?.message || "Lỗi máy chủ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
+  };
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      showToast("error", "Trình duyệt không hỗ trợ định vị.");
+      return;
+    }
+
+    showToast("info", "Đang xác định vị trí...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=vi`
+          );
+          const data = await response.json();
+
+          if (data?.display_name) {
+            setForm((prev) => ({ ...prev, address: data.display_name }));
+            showToast("success", "Đã lấy vị trí thành công");
+          } else {
+            showToast("error", "Không tìm được địa chỉ từ vị trí GPS.");
+          }
+        } catch (error) {
+          showToast("error", "Lỗi khi lấy địa chỉ từ GPS.");
+        }
+      },
+      () => {
+        showToast("error", "Không thể truy cập GPS. Hãy bật định vị.");
+      }
+    );
   };
 
   return (
@@ -175,12 +195,7 @@ const Register = () => {
                     {[
                       { label: "Họ và tên", name: "fullName", type: "text" },
                       { label: "Email", name: "email", type: "email" },
-                      { label: "Số điện thoại", name: "phone", type: "text" },
-                      {
-                        label: "Tên đăng nhập",
-                        name: "username",
-                        type: "text",
-                      },
+                      { label: "Số điện thoại", name: "phoneNumber", type: "text" },
                     ].map((input) => (
                       <div className="mb-3" key={input.name}>
                         <label className="form-label fw-semibold">
@@ -189,9 +204,8 @@ const Register = () => {
                         <input
                           type={input.type}
                           name={input.name}
-                          className={`form-control ${
-                            errors[input.name] ? "is-invalid" : ""
-                          }`}
+                          className={`form-control ${errors[input.name] ? "is-invalid" : ""
+                            }`}
                           placeholder={`Nhập ${input.label.toLowerCase()}`}
                           value={form[input.name]}
                           onChange={handleChange}
@@ -203,135 +217,154 @@ const Register = () => {
                         )}
                       </div>
                     ))}
+                    {/* Địa chỉ */}
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold">Địa chỉ</label>
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          name="address"
+                          className={`form-control ${errors.address ? "is-invalid" : ""}`}
+                          placeholder="Nhập địa chỉ hoặc bấm nút lấy vị trí"
+                          value={form.address}
+                          onChange={handleChange}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={handleGetLocation}
+                        >
+                          Lấy vị trí
+                        </button>
+                      </div>
+                      {errors.address && (
+                        <div className="invalid-feedback d-block">{errors.address}</div>
+                      )}
+                    </div>
+                  </div>
+                {/* Cột phải */}
+                <div className="col-md-6">
+                  {/* Mật khẩu */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Mật khẩu</label>
+                    <input
+                      type="password"
+                      name="password"
+                      className={`form-control ${errors.password ? "is-invalid" : ""
+                        }`}
+                      placeholder="Nhập mật khẩu"
+                      value={form.password}
+                      onChange={handleChange}
+                    />
+                    {errors.password && (
+                      <div className="invalid-feedback">
+                        {errors.password}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Cột phải */}
-                  <div className="col-md-6">
-                    {/* Mật khẩu */}
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold">Mật khẩu</label>
-                      <input
-                        type="password"
-                        name="password"
-                        className={`form-control ${
-                          errors.password ? "is-invalid" : ""
+                  {/* Xác nhận mật khẩu */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Xác nhận mật khẩu
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      className={`form-control ${errors.confirmPassword ? "is-invalid" : ""
                         }`}
-                        placeholder="Nhập mật khẩu"
-                        value={form.password}
-                        onChange={handleChange}
-                      />
-                      {errors.password && (
-                        <div className="invalid-feedback">
-                          {errors.password}
-                        </div>
-                      )}
-                    </div>
+                      placeholder="Nhập lại mật khẩu"
+                      value={form.confirmPassword}
+                      onChange={handleChange}
+                    />
+                    {errors.confirmPassword && (
+                      <div className="invalid-feedback">
+                        {errors.confirmPassword}
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Xác nhận mật khẩu */}
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold">
-                        Xác nhận mật khẩu
-                      </label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        className={`form-control ${
-                          errors.confirmPassword ? "is-invalid" : ""
+                  {/* Giới tính */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Giới tính
+                    </label>
+                    <select
+                      name="gender"
+                      className={`form-select ${errors.gender ? "is-invalid" : ""
                         }`}
-                        placeholder="Nhập lại mật khẩu"
-                        value={form.confirmPassword}
-                        onChange={handleChange}
-                      />
-                      {errors.confirmPassword && (
-                        <div className="invalid-feedback">
-                          {errors.confirmPassword}
-                        </div>
-                      )}
-                    </div>
+                      value={form.gender}
+                      onChange={handleChange}
+                    >
+                      <option value="">-- Chọn giới tính --</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                      <option value="Khác">Khác</option>
+                    </select>
+                    {errors.gender && (
+                      <div className="invalid-feedback">{errors.gender}</div>
+                    )}
+                  </div>
 
-                    {/* Giới tính */}
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold">
-                        Giới tính
-                      </label>
-                      <select
-                        name="gender"
-                        className={`form-select ${
-                          errors.gender ? "is-invalid" : ""
+                  {/* Ngày sinh */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Ngày tháng năm sinh
+                    </label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      className={`form-control ${errors.dateOfBirth ? "is-invalid" : ""
                         }`}
-                        value={form.gender}
-                        onChange={handleChange}
-                      >
-                        <option value="">-- Chọn giới tính --</option>
-                        <option value="male">Nam</option>
-                        <option value="female">Nữ</option>
-                        <option value="other">Khác</option>
-                      </select>
-                      {errors.gender && (
-                        <div className="invalid-feedback">{errors.gender}</div>
-                      )}
-                    </div>
-
-                    {/* Ngày sinh */}
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold">
-                        Ngày tháng năm sinh
-                      </label>
-                      <input
-                        type="date"
-                        name="birthday"
-                        className={`form-control ${
-                          errors.birthday ? "is-invalid" : ""
-                        }`}
-                        value={form.birthday}
-                        onChange={handleChange}
-                      />
-                      {errors.birthday && (
-                        <div className="invalid-feedback">
-                          {errors.birthday}
-                        </div>
-                      )}
-                    </div>
+                      value={form.dateOfBirth}
+                      onChange={handleChange}
+                    />
+                    {errors.dateOfBirth && (
+                      <div className="invalid-feedback">
+                        {errors.dateOfBirth}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-lg w-100 fw-semibold mt-3"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Spinner animation="border" size="sm" className="me-2" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    "Đăng ký"
-                  )}
-                </button>
-              </form>
-
-              <div className="text-center mt-3">
-                <span>Bạn đã có tài khoản? </span>
-                <a
-                  href={path.LOGIN}
-                  className="text-decoration-none text-primary fw-semibold"
-                >
-                  Đăng nhập
-                </a>
-              </div>
             </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg w-100 fw-semibold mt-3"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Đăng ký"
+              )}
+            </button>
+          </form>
+
+          <div className="text-center mt-3">
+            <span>Bạn đã có tài khoản? </span>
+            <a
+              href={path.LOGIN}
+              className="text-decoration-none text-primary fw-semibold"
+            >
+              Đăng nhập
+            </a>
           </div>
         </div>
       </div>
+    </div >
+      </div >
 
-      {toast && (
-        <CustomToast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
+  { toast && (
+    <CustomToast
+      type={toast.type}
+      message={toast.message}
+      onClose={() => setToast(null)}
+    />
+  )}
     </>
   );
 };

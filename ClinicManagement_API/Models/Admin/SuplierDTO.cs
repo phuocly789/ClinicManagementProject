@@ -5,10 +5,10 @@
 //         "address": "123 Đường DEF, TP.HCM",
 //         "description": "Nhà cung cấp thuốc uy tín"
 
-public class SuplierDTO
+public class SupplierDTO
 {
-    public int SuplierId { get; set; }
-    public string SuplierName { get; set; }
+    public int SupplierId { get; set; }
+    public string SupplierName { get; set; }
     public string ContactEmail { get; set; }
     public string ContactPhone { get; set; }
     public string Address { get; set; }

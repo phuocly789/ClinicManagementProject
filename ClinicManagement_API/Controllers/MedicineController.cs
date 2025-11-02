@@ -29,13 +29,27 @@ namespace ClinicManagement_API.Controllers
         [HttpGet("GetAllMedicinesAsync")]
         public async Task<ResponseValue<PagedResult<MedicineDTO>>> GetAllMedicinesAsync(
             [FromQuery] string? search = null,
+            [FromQuery] string? type = null, // Thêm
+            [FromQuery] string? unit = null, // Thêm
+            [FromQuery] decimal? minPrice = null, // Thêm
+            [FromQuery] decimal? maxPrice = null, // Thêm
+            [FromQuery] bool lowStock = false, // Thêm
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10
         )
         {
             try
             {
-                var result = await _medicineService.GetAllMedicinesAsync(search, page, pageSize);
+                var result = await _medicineService.GetAllMedicinesAsync(
+                    search,
+                    type,
+                    unit,
+                    minPrice,
+                    maxPrice,
+                    lowStock,
+                    page,
+                    pageSize
+                );
 
                 return new ResponseValue<PagedResult<MedicineDTO>>(
                     result.Content,
