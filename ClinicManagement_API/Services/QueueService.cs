@@ -1,4 +1,6 @@
 using ClinicManagement_Infrastructure.Data.Models;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.SignalR;
 
 public interface IQueueService
 {
@@ -14,13 +16,15 @@ public class QueueService : IQueueService
     private readonly IRoomRepository _roomRepository;
     private readonly ILogger<QueueService> _logger;
     private readonly IUnitOfWork _uow;
+    private readonly IHubContext<QueueHub> _hubContext;
 
     public QueueService(
         IQueueRepository queueRepository,
         IAppointmentRepository appointmentRepository,
         IRoomRepository roomRepository,
         ILogger<QueueService> logger,
-        IUnitOfWork uow
+        IUnitOfWork uow,
+        IHubContext<QueueHub> hubContext
     )
     {
         _queueRepository = queueRepository;
@@ -28,6 +32,7 @@ public class QueueService : IQueueService
         _roomRepository = roomRepository;
         _logger = logger;
         _uow = uow;
+        _hubContext = hubContext;
     }
 
     public async Task<List<QueueDto>> GetQueuesAsync(int roomId, DateOnly? date = null)
@@ -52,38 +57,48 @@ public class QueueService : IQueueService
             var appointment = await _appointmentRepository.GetByIdAsync(request.AppointmentId);
             if (appointment == null)
             {
-                throw new ArgumentException("Không tìm thấy lịch hẹn");
+                return new ResponseValue<QueueDTO>(
+                    null,
+                    StatusReponse.NotFound,
+                    "Không tìm thấy lịch hẹn."
+                );
             }
 
-            var room = await _roomRepository.GetByIdAsync(request.RoomId);
-            if (room == null)
+            if (appointment.RoomId == null)
             {
-                throw new ArgumentException("Không tìm thấy phòng");
+                return new ResponseValue<QueueDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Lịch hẹn chưa được gán phòng."
+                );
             }
 
             var today = DateOnly.FromDateTime(DateTime.Now);
-            var maxQueue = await _queueRepository.GetMaxQueueNumberAsync(request.RoomId, today);
+            var roomId = appointment.RoomId.Value;
+
+            // Lấy số thứ tự cao nhất của phòng hôm nay
+            var maxQueue = await _queueRepository.GetMaxQueueNumberAsync(roomId, today);
             var newQueueNumber = maxQueue + 1;
-            var now = DateTime.Now;
 
             using var transaction = await _uow.BeginTransactionAsync();
 
+            var now = DateTime.Now;
             var queue = new Queue
             {
                 QueueNumber = newQueueNumber,
-                AppointmentId = request.AppointmentId,
+                AppointmentId = appointment.AppointmentId,
                 PatientId = appointment.PatientId,
-                RoomId = request.RoomId,
+                RoomId = roomId, // ✅ Lấy từ Appointment, không lấy từ client
                 QueueDate = today,
                 QueueTime = new TimeOnly(now.Hour, now.Minute, now.Second),
                 Status = "Waiting",
-                // CreatedBy = request.CreatedBy,
             };
 
             await _queueRepository.AddAsync(queue);
             await _uow.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            await _hubContext.Clients.Group($"room_{queue.RoomId}").SendAsync("QueueUpdated");
             return new ResponseValue<QueueDTO>(
                 new QueueDTO
                 {
@@ -131,6 +146,7 @@ public class QueueService : IQueueService
                     "Thông tin trạng thái không hợp lệ."
                 );
             }
+
             var queue = await _queueRepository.GetByIdAsync(queueId);
             if (queue == null)
             {
@@ -144,11 +160,26 @@ public class QueueService : IQueueService
             using var transaction = await _uow.BeginTransactionAsync();
             try
             {
+                // ✅ Cập nhật trạng thái hàng chờ
                 queue.Status = request.Status;
-
                 await _queueRepository.Update(queue);
+
+                // ✅ Nếu có Appointment đi kèm → cập nhật luôn
+                if (queue.AppointmentId is int appointmentId)
+                {
+                    var appointment = await _appointmentRepository.GetByIdAsync(appointmentId);
+                    if (appointment != null)
+                    {
+                        appointment.Status = request.Status;
+                        await _appointmentRepository.Update(appointment);
+                    }
+                }
+
                 await _uow.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // ✅ Gửi real-time update SignalR
+                await _hubContext.Clients.Group($"room_{queue.RoomId}").SendAsync("QueueUpdated");
 
                 return new ResponseValue<QueueDTO>(
                     null,

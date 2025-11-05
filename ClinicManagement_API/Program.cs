@@ -18,7 +18,8 @@ builder.Services.AddDbContext<SupabaseContext>(options =>
 
 // Đăng ký repository services
 builder.Services.AddRepositoryServices();
-
+// cache
+builder.Services.AddMemoryCache();
 // Đăng ký các dịch vụ khác (nếu có)
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<ITechnicianService, TechnicianService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IQueueService, QueueService>();
+builder.Services.AddSignalR();
 
 // Thêm dịch vụ controller
 builder
@@ -89,7 +91,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(
         "AllowAllOrigins",
-        builder => builder.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader()
+        builder =>
+            builder
+                .WithOrigins("https://localhost:5173")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials()
     );
 });
 
@@ -138,11 +145,12 @@ builder.Services.AddScoped<JwtAuthService>();
 var app = builder.Build();
 
 app.UseCors("AllowAllOrigins");
-
+app.UseMiddleware<CacheMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<QueueHub>("/queueHub");
 
 //use swagger
 app.UseSwagger();

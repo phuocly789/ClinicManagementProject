@@ -9,7 +9,7 @@ import '../../App.css';
 
 // --- COMPONENT: Giao diện Danh sách Nhà cung cấp ---
 const SupplierList = memo(({ suppliers, isLoading, handleShowDeleteModal, handleShowEditForm, pageCount, currentPage, handlePageChange, filters, setFilters, applyFilters, clearFilters }) => {
-    const handleKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFilters(); } };
+const handleKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFilters(); } };
 
     return (
         <>
@@ -214,7 +214,7 @@ const AdminSupplier = () => {
     }, [editSupplier, clearFilters, showToast]);
 
     return (
-        <div className='d-flex'>
+    
             <main className='main-content flex-grow-1 p-4 d-flex flex-column gap-4'>
                 {toast && <CustomToast type={toast.type} message={toast.message} onClose={hideToast} />}
 
@@ -249,7 +249,7 @@ const AdminSupplier = () => {
                     isLoading={isLoading}
                 />
             </main>
-        </div>
+ 
     );
 };
 

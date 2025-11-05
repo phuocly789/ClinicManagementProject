@@ -29,6 +29,8 @@ public partial class Appointment
 
     public string? Notes { get; set; }
 
+    public int? RoomId { get; set; }
+
     public virtual User? CreatedByNavigation { get; set; }
 
     public virtual ICollection<Diagnosis> Diagnoses { get; set; } = new List<Diagnosis>();
@@ -44,6 +46,8 @@ public partial class Appointment
     public virtual ICollection<Queue> Queues { get; set; } = new List<Queue>();
 
     public virtual MedicalRecord? Record { get; set; }
+
+    public virtual Room? Room { get; set; }
 
     public virtual StaffSchedule? Schedule { get; set; }
 

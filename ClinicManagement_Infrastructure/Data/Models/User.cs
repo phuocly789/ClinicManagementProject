@@ -29,11 +29,14 @@ public partial class User
 
     public bool MustChangePassword { get; set; }
 
-    public virtual ICollection<Appointment> AppointmentCreatedByNavigations { get; set; } = new List<Appointment>();
+    public virtual ICollection<Appointment> AppointmentCreatedByNavigations { get; set; } =
+        new List<Appointment>();
 
-    public virtual ICollection<Appointment> AppointmentPatients { get; set; } = new List<Appointment>();
+    public virtual ICollection<Appointment> AppointmentPatients { get; set; } =
+        new List<Appointment>();
 
-    public virtual ICollection<Appointment> AppointmentStaffs { get; set; } = new List<Appointment>();
+    public virtual ICollection<Appointment> AppointmentStaffs { get; set; } =
+        new List<Appointment>();
 
     public virtual ICollection<Diagnosis> Diagnoses { get; set; } = new List<Diagnosis>();
 
@@ -41,7 +44,8 @@ public partial class User
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
-    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } =
+        new List<MedicalRecord>();
 
     public virtual MedicalStaff? MedicalStaff { get; set; }
 
@@ -55,7 +59,8 @@ public partial class User
 
     public virtual ICollection<ServiceOrder> ServiceOrders { get; set; } = new List<ServiceOrder>();
 
-    public virtual ICollection<StaffSchedule> StaffSchedules { get; set; } = new List<StaffSchedule>();
+    public virtual ICollection<StaffSchedule> StaffSchedules { get; set; } =
+        new List<StaffSchedule>();
 
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

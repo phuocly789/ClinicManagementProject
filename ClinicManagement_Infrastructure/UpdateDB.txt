@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Host=aws-1-ap-southeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.rkoffuqhgnhzkacarfgi;Password=lmp@123;" Npgsql.EntityFrameworkCore.PostgreSQL --context SupabaseContext --context-dir Data --output-dir Data/Models --no-onconfiguring --force --schema public

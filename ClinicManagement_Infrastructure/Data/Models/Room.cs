@@ -13,5 +13,10 @@ public partial class Room
 
     public bool? IsActive { get; set; }
 
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+
     public virtual ICollection<Queue> Queues { get; set; } = new List<Queue>();
+
+    public virtual ICollection<StaffSchedule> StaffSchedules { get; set; } =
+        new List<StaffSchedule>();
 }

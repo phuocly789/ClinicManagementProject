@@ -14,6 +14,7 @@ public interface IAdminService
         int page,
         int pageSize
     );
+    Task<ResponseValue<List<StaffMedicalDTO>>> GetAllMedicalStaffAsync();
     Task<ResponseValue<CreateUserResponse>> CreateUserAsync(CreateUserRequest request);
     Task<ResponseValue<UpdateUserResponse>> UpdateUserAsync(int userId, UpdateUserRequest request);
     Task<ResponseValue<ResetPasswordResponse>> ResetPasswordAsync(int userId);
@@ -172,6 +173,39 @@ public class AdminService : IAdminService
                 pageSize
             );
             throw;
+        }
+    }
+
+    public async Task<ResponseValue<List<StaffMedicalDTO>>> GetAllMedicalStaffAsync()
+    {
+        try
+        {
+            var medicalStaff = await _medicalStaffRepository
+                .GetAll()
+                .Include(ms => ms.Staff)
+                .Select(ms => new StaffMedicalDTO
+                {
+                    StaffId = ms.StaffId,
+                    StaffName = ms.Staff.FullName,
+                    StaffType = ms.StaffType,
+                    Specialty = ms.Specialty,
+                    LicenseNumber = ms.LicenseNumber,
+                    Bio = ms.Bio,
+                })
+                .ToListAsync();
+            return new ResponseValue<List<StaffMedicalDTO>>(
+                medicalStaff,
+                StatusReponse.Success,
+                "Lấy danh sách bác sĩ thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            return new ResponseValue<List<StaffMedicalDTO>>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy danh sách bác sĩ: " + ex.Message
+            );
         }
     }
 

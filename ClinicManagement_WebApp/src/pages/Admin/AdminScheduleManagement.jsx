@@ -26,6 +26,7 @@ const AdminScheduleManagement = () => {
     const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
+    const [roomList, setRoomList] = useState([]);
 
     const [isFormModalOpen, setFormModalOpen] = useState(false);
     const [isDetailModalOpen, setDetailModalOpen] = useState(false);
@@ -34,22 +35,35 @@ const AdminScheduleManagement = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [scheduleFormData, setScheduleFormData] = useState(initialFormState);
 
+    // const fetchRooms = useCallback(async () => {
+    //     try {
+    //         const response = await instance.get('Room/GetAllRoomsAsync');
+    //         const fetchedRooms = response.content.items || [];
+    //         setRoomList(fetchedRooms);
+    //     } catch (error) {
+    //         setToast({ type: 'error', message: error.message || 'Lỗi kết nối máy chủ.' })
+    //     }
+    // }, []);
+
+    // useEffect(() => {
+    //     fetchRooms();
+    // }, [fetchRooms]);
+    useEffect(() => {
+        setRoomList([
+            { roomId: 1, roomName: "Phòng 1" },
+            { roomId: 2, roomName: "Phòng 2" },
+            { roomId: 3, roomName: "Phòng 3" },
+            { roomId: 4, roomName: "Phòng 4" }
+        ]);
+    }, []);
+
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const response = await instance.get('Schedule/GetAllSchedulesAsync');
             const fetchedSchedules = response.content.items || [];
             setSchedules(fetchedSchedules);
-            console.log(response);
-            
-            const uniqueStaff = fetchedSchedules.reduce((acc, current) => {
-                if (!acc.find(item => item.staffId === current.staffId)) {
-                    acc.push({ staffId: current.staffId, staffName: current.staffName, role: current.role });
-                }
-                return acc;
-            }, []);
-            setStaffList(uniqueStaff);
-
         } catch (error) {
             setToast({ type: 'error', message: error.message || 'Lỗi kết nối máy chủ.' });
         } finally {
@@ -57,7 +71,22 @@ const AdminScheduleManagement = () => {
         }
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+
+    const fetchStaffList = useCallback(async () => {
+        try {
+            const response = await instance.get("Admin/GetAllMedicalStaffAsync");
+            const doctors = response.content || [];
+            setStaffList(doctors);
+        } catch (error) {
+            setToast({ type: 'error', message: error.message || 'Không tải được danh sách nhân viên.' });
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+        fetchStaffList();
+    }, [fetchData, fetchStaffList]);
+
 
     const ChangeRole = (Role) => {
         switch (Role) {
@@ -83,8 +112,8 @@ const AdminScheduleManagement = () => {
         extendedProps: { ...s }
     }));
 
-   
-    
+
+
 
     const handleCloseModals = () => {
         setFormModalOpen(false);
@@ -106,12 +135,13 @@ const AdminScheduleManagement = () => {
 
     const handleOpenEditModal = (event) => {
         handleCloseModals();
-        const { extendedProps} = event;
+        const { extendedProps } = event;
         setScheduleFormData({
             staffId: extendedProps.staffId,
             workDate: extendedProps.workDate,
             startTime: extendedProps.startTime,
             endTime: extendedProps.endTime,
+            roomId: extendedProps.roomId,
             isAvailable: extendedProps.isAvailable,
         });
         setSelectedEvent(event);
@@ -189,8 +219,17 @@ const AdminScheduleManagement = () => {
                         <div className="modal-header"><h5 className="modal-title">{selectedEvent ? "Cập Nhật Lịch" : "Thêm Lịch Mới"}</h5><button type="button" className="btn-close" onClick={handleCloseModals}></button></div>
                         <form onSubmit={handleFormSubmit}>
                             <div className="modal-body">
-                                <div className="mb-3"><label className="form-label">Nhân viên</label><select name="staffId" value={scheduleFormData.staffId} onChange={handleFormChange} className="form-select" required disabled={!!selectedEvent}><option value="">-- Chọn nhân viên --</option>{staffList.map(staff => <option key={staff.staffId} value={staff.staffId}>{staff.staffName} ({staff.role})</option>)}</select></div>
+                                <select name="staffId" value={scheduleFormData.staffId} onChange={handleFormChange} className="form-select" required disabled={!!selectedEvent}>
+                                    <option value="">-- Chọn nhân viên --</option>
+                                    {staffList.map(staff => (
+                                        <option key={staff.staffId} value={staff.staffId}>
+                                            {staff.staffName} ({staff.staffType})
+                                        </option>
+                                    ))}
+                                </select>
+
                                 <div className="mb-3"><label className="form-label">Ngày làm</label><input type="date" name="workDate" value={scheduleFormData.workDate} onChange={handleFormChange} className="form-control" required /></div>
+                                <div className="mb-3"><label className="form-label">Phòng</label><select name="roomId" value={scheduleFormData.roomId} onChange={handleFormChange} className="form-select" required disabled={!!selectedEvent}><option value="">-- Chọn phòng --</option>{roomList.map(room => <option key={room.roomId} value={room.roomId}>{room.roomName}</option>)}</select></div>
                                 <div className="row mb-3">
                                     <div className="col-md-6"><label className="form-label">Bắt đầu</label><input type="time" name="startTime" value={scheduleFormData.startTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
                                     <div className="col-md-6"><label className="form-label">Kết thúc</label><input type="time" name="endTime" value={scheduleFormData.endTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
@@ -214,6 +253,7 @@ const AdminScheduleManagement = () => {
                         <div className="modal-body">
                             <div className="info-row"><span className="label">Nhân viên:</span> <span className="value">{selectedEvent?.extendedProps.staffName}</span></div>
                             <div className="info-row"><span className="label">Chức vụ:</span> <span className="value">{selectedEvent?.extendedProps.role}</span></div>
+                            <div className="info-row"><span className='label'>Phòng trực: </span> <span className="value">{selectedEvent?.extendedProps.roomName}</span></div>
                             <div className="info-row"><span className="label">Ngày làm:</span> <span className="value">{selectedEvent ? new Date(selectedEvent.startStr).toLocaleDateString('vi-VN') : ''}</span></div>
                             <div className="info-row"><span className="label">Thời gian:</span> <span className="value">{selectedEvent ? `${new Date(selectedEvent.startStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(selectedEvent.endStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ''}</span></div>
                             <div className="info-row"><span className="label">Trạng thái:</span> <span className="value">{selectedEvent?.extendedProps.isAvailable ? "Có mặt" : "Vắng"}</span></div>

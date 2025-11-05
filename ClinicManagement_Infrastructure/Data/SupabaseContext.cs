@@ -142,6 +142,13 @@ public partial class SupabaseContext : DbContext
                 .HasConstraintName("Appointments_RecordId_fkey");
 
             entity
+                .HasOne(d => d.Room)
+                .WithMany(p => p.Appointments)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("Appointments_RoomId_fkey");
+
+            entity
                 .HasOne(d => d.Schedule)
                 .WithMany(p => p.Appointments)
                 .HasForeignKey(d => d.ScheduleId)
@@ -593,6 +600,13 @@ public partial class SupabaseContext : DbContext
 
             entity.Property(e => e.ScheduleId).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsAvailable).HasDefaultValue(true);
+
+            entity
+                .HasOne(d => d.Room)
+                .WithMany(p => p.StaffSchedules)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("StaffSchedules_RoomId_fkey");
 
             entity
                 .HasOne(d => d.Staff)

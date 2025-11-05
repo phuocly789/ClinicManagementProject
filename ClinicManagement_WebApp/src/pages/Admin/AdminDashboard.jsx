@@ -62,7 +62,7 @@ const AdminDashboard = () => {
             } else { throw new Error(revenueRes.message || 'Lỗi khi lấy dữ liệu doanh thu'); }
             setLowStockMedicines(lowStockRes.content || []);
         } catch (error) {
-            setToast({ type: 'error', message: error.message || 'Không thể tải dữ liệu dashboard!' });
+            setToast({ type: 'error', message: error?.response?.message || "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc." });
         } finally { setLoading(false); }
     }, []);
 

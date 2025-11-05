@@ -9,10 +9,16 @@ namespace ClinicManagement_API.Controllers
     public class QueueController : ControllerBase
     {
         private readonly IQueueService _queueService;
+        private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IQueueRepository _queueRepository;
 
-        public QueueController(IQueueService queueService)
+        public QueueController(
+            IQueueService queueService,
+            IAppointmentRepository appointmentRepository
+        )
         {
             _queueService = queueService;
+            _appointmentRepository = appointmentRepository;
         }
 
         [HttpGet("queues/room/{roomId}")]
@@ -97,11 +103,10 @@ namespace ClinicManagement_API.Controllers
                 queueId,
                 new QueueStatusUpdateDTO { Status = "InProgress" }
             );
-            if (result.Status == StatusReponse.Success)
-            {
-                return Ok(new { success = true, message = "Bắt đầu khám." });
-            }
-            return BadRequest(new { success = false, message = result.Message });
+
+            return result.Status == StatusReponse.Success
+                ? Ok(new { success = true, message = "Bắt đầu khám." })
+                : BadRequest(new { success = false, message = result.Message });
         }
     }
 }

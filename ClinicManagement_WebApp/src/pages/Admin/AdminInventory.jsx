@@ -7,7 +7,7 @@ import Loading from '../../Components/Loading/Loading';
 import instance from '../../axios';
 import '../../App.css';
 import { userHelper } from '../../../helper/userHelper';
-
+import Select from "react-select";
 // --- Helper Functions & Components ---
 const formatVND = (value) => {
   if (value === null || value === undefined) return 'N/A';
@@ -58,7 +58,7 @@ const InventoryList = memo(({ inventories, isLoading, suppliers, handleShowDelet
 });
 
 // --- COMPONENT: Modal Form Thêm/Sửa ---
-const InventoryFormModal = memo(({ show, onHide, isEditMode, inventory, onSubmit, isLoading, suppliers, medicines }) => {
+const InventoryFormModal = memo(({ show, onHide, isEditMode, inventory, onSubmit, isLoading, suppliers, medicines, supplierOptions  }) => {
   const [items, setItems] = useState([]);
   const formRef = useRef(null);
 
@@ -105,7 +105,32 @@ const InventoryFormModal = memo(({ show, onHide, isEditMode, inventory, onSubmit
             <div className="modal-header"><h5 className="modal-title">{isEditMode ? `Sửa Phiếu Nhập #${inventory.importId}` : 'Tạo Phiếu Nhập Kho Mới'}</h5><button type="button" className="btn-close" onClick={onHide}></button></div>
             <div className="modal-body">
               <div className="row g-3">
-                <div className="col-md-6"><label className="form-label">Nhà Cung Cấp</label><select name="supplierId" defaultValue={inventory?.supplierId || ''} className="form-select" required><option value="" disabled>Chọn nhà cung cấp</option>{suppliers.map(s => <option key={s.supplierId} value={s.supplierId}>{s.supplierName}</option>)}</select></div>
+                {/* <div className="col-md-6"><label className="form-label">Nhà Cung Cấp</label>
+                  <select name="supplierId" 
+                          defaultValue={inventory?.supplierId || ''} 
+                          className="form-select" 
+                          required>
+                            <option value="" disabled> Chọn nhà cung cấp </option>
+                  {suppliers.map(s => 
+                    <option key={s.supplierId} 
+                            value={s.supplierId}>{s.supplierName}
+                    </option>)}
+                  </select>
+                </div> */}
+                <div className="col-md-6">
+                  <label className="form-label">Nhà Cung Cấp</label>
+                <Select
+                  className="form-select-sm"
+                  options={supplierOptions}
+                  value={supplierOptions.find(opt => opt.value === (inventory?.supplierId||null))}
+                  onChange={(selected) => {
+                    // Cập nhật trực tiếp vào form qua FormData và state item
+                    formRef.current.querySelector('input[name="supplierId"]').value = selected.value;
+                  }}
+                  placeholder="Tìm nhà cung cấp..."
+                  isSearchable
+                />
+                </div>
                 <div className="col-md-6"><label className="form-label">Ngày Nhập</label><input type="date" name="importDate" defaultValue={(inventory?.importDate || new Date().toISOString()).split('T')[0]} className="form-control" required /></div>
                 <div className="col-12"><label className="form-label">Ghi Chú</label><textarea name="notes" defaultValue={inventory?.notes || ''} className="form-control" rows="2" placeholder="Thông tin thêm..."></textarea></div>
               </div><hr /><h6>Chi tiết phiếu nhập</h6>
@@ -200,6 +225,8 @@ const AdminInventory = () => {
     } catch (error) { showToast('error', 'Lỗi khi tải dữ liệu chung.'); }
   }, [suppliers.length, medicines.length, showToast]);
 
+  const supplierOptions= suppliers.map((s) => ({ value: s.supplierId, label: s.supplierName }));
+
   const fetchInventories = useCallback(async (page = 1, currentFilters = filters) => {
     setIsLoading(true);
     try {
@@ -249,19 +276,19 @@ const AdminInventory = () => {
 
   const handleFormSubmit = useCallback(async (formData, items) => {
     const isEdit = !!editInventory;
-    const userId = userHelper.getUserIdFromToken(); 
+    const userId = userHelper.getUserIdFromToken();
     const data = {
       supplierId: parseInt(formData.get('supplierId')),
       importDate: formData.get('importDate'),
       notes: formData.get('notes'),
-      createdBy:userId,
+      createdBy: userId,
       // createdBy: 1, // Lấy ID người dùng đang đăng nhập từ context hoặc local storage
       details: items.map(item => ({ medicineId: parseInt(item.medicineId), quantity: parseInt(item.quantity), importPrice: parseFloat(item.importPrice) }))
     };
     setIsLoading(true);
     try {
       console.log(data);
-      
+
       const response = isEdit
         ? null // TODO: await instance.put(`Import/UpdateImportBillAsync/${editInventory.importId}`, data)
         : await instance.post('Import/CreateImportBillAsync', data);
@@ -277,11 +304,11 @@ const AdminInventory = () => {
       <main className='main-content flex-grow-1 p-4 d-flex flex-column gap-4'>
         {toast && <CustomToast type={toast.type} message={toast.message} onClose={hideToast} />}
 
-        <InventoryList inventories={inventories} isLoading={isLoading} suppliers={suppliers} handleShowDeleteModal={handleShowDeleteModal} handleShowEditForm={() => setShowFormModal(true)}  handleShowDetail={handleShowDetail} pageCount={pageCount} currentPage={currentPage} handlePageChange={handlePageChange} filters={filters} setFilters={setFilters} applyFilters={applyFilters} clearFilters={clearFilters} />
+        <InventoryList inventories={inventories} isLoading={isLoading} suppliers={suppliers} handleShowDeleteModal={handleShowDeleteModal} handleShowEditForm={() => setShowFormModal(true)} handleShowDetail={handleShowDetail} pageCount={pageCount} currentPage={currentPage} handlePageChange={handlePageChange} filters={filters} setFilters={setFilters} applyFilters={applyFilters} clearFilters={clearFilters} />
 
         <ConfirmDeleteModal isOpen={showDeleteModal} title="Xác nhận xóa" message={`Bạn có chắc muốn xóa phiếu nhập kho mã #${inventoryToDelete}?`} onConfirm={handleDelete} onCancel={handleCancelDelete} />
 
-        <InventoryFormModal show={showFormModal} onHide={() => setShowFormModal(false)} isEditMode={!!editInventory} inventory={editInventory} onSubmit={handleFormSubmit} isLoading={isLoading} suppliers={suppliers} medicines={medicines} />
+        <InventoryFormModal supplierOptions={supplierOptions} show={showFormModal} onHide={() => setShowFormModal(false)} isEditMode={!!editInventory} inventory={editInventory} onSubmit={handleFormSubmit} isLoading={isLoading} suppliers={suppliers} medicines={medicines} />
 
         <InventoryDetailModal show={showDetailModal} onHide={() => setShowDetailModal(false)} inventory={selectedInventory} isLoading={isLoading} />
       </main>

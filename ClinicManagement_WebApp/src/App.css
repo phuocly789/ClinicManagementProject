@@ -61,11 +61,14 @@ ul {
   padding: 0;
 }
 
+
+
 /* =================================================================
    2. LAYOUT CHUNG CỦA TRANG QUẢN TRỊ
    ================================================================= */
 .main-content {
-  height: 100vh;
+  min-height: 100vh;
+
 }
 
 /* =================================================================
@@ -157,7 +160,7 @@ ul {
 .clinic-table td {
   vertical-align: middle;
   color: var(--text-secondary);
-  white-space: nowrap;
+  /* white-space: nowrap; */
 }
 
 .invoice-id,
@@ -392,3 +395,10 @@ ul {
 .event-technician .event-icon {
   color: var(--grey-color);
 }
+
+.form-select-sm{
+  z-index: 1000;
+}
+
+
+

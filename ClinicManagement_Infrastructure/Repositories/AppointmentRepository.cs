@@ -1,3 +1,4 @@
+using System.Transactions;
 using ClinicManagement_Infrastructure.Data;
 using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -73,8 +74,6 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
             .AsNoTracking()
             .ToListAsync();
     }
-
-  
 }
 
 public class AppointmentMyScheduleDto

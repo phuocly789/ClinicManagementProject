@@ -128,3 +128,5 @@ D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\obj\Debug\net9.0\
 D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\obj\Debug\net9.0\ClinicManagement_API.pdb
 D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\obj\Debug\net9.0\ClinicManagement_API.genruntimeconfig.cache
 D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\obj\Debug\net9.0\ref\ClinicManagement_API.dll
+D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\bin\Debug\net9.0\Newtonsoft.Json.dll
+D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\bin\Debug\net9.0\System.Net.WebSockets.WebSocketProtocol.dll

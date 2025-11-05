@@ -15,7 +15,6 @@ public class QueueDTO
 public class QueueCreateDTO
 {
     public int AppointmentId { get; set; }
-    public int RoomId { get; set; }
 }
 
 public class QueueStatusUpdateDTO

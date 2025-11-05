@@ -71,6 +71,30 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
+        [HttpGet("GetAllMedicalStaffAsync")]
+        public async Task<
+            ActionResult<ResponseValue<List<StaffMedicalDTO>>>
+        > GetAllMedicalStaffAsync()
+        {
+            try
+            {
+                var result = await _adminService.GetAllMedicalStaffAsync();
+
+                if (result == null)
+                    return NotFound(new { message = "Không tìm thấy dữ liệu." });
+
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi máy chủ.", detail = ex.Message });
+            }
+        }
+
         [HttpPost("CreateUser")]
         public async Task<ActionResult<ResponseValue<CreateUserResponse>>> CreateUser(
             [FromBody] CreateUserRequest request
