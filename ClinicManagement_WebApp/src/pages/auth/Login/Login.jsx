@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { Spinner } from "react-bootstrap";
+// Import thêm Button, InputGroup, Form từ react-bootstrap
+import { Spinner, InputGroup, Button, Form } from "react-bootstrap";
 import authService from "../../../services/authService";
 import { useNavigate } from "react-router-dom";
 import CustomToast from "../../../Components/CustomToast/CustomToast";
 import { path } from "../../../utils/constant";
+
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-    role: "",
+    role: "", // Khởi tạo là chuỗi rỗng
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -37,6 +39,11 @@ const LoginPage = () => {
   const validateForm = () => {
     const newErrors = {};
     const htmlTagRegex = /<[^>]*>/; // Regex phát hiện HTML tag
+
+    // ====== Kiểm tra role ======
+    if (!formData.role) {
+      newErrors.role = "Vui lòng chọn vai trò của bạn";
+    }
 
     // ====== Kiểm tra username ======
     if (!formData.username.trim()) {
@@ -68,6 +75,9 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
+    setLoading(true); // Bắt đầu loading
+
     try {
       const res = await authService.handleLogin({
         emailOrPhone: formData.username,
@@ -83,17 +93,17 @@ const LoginPage = () => {
         setTimeout(() => {
           if (role === "Admin") navigate("/admin/dashboard");
           else if (role === "Doctor") navigate("/doctor/today-appointment");
-          else if (role === "Technician") navigate("/technician");
           else navigate("/");
         }, 1000);
       }
-      
     } catch (error) {
       console.error(error);
       const message =
         error.response?.data?.message ||
-        "Đã xảy ra lỗi ở phía server. Vui lòng đăng nhập lại";
+        "Đã xảy ra lỗi. Vui lòng kiểm tra lại thông tin đăng nhập.";
       showToast("error", message);
+    } finally {
+      setLoading(false); // Dừng loading
     }
   };
 
@@ -103,99 +113,123 @@ const LoginPage = () => {
         <div className="row w-100 justify-content-center">
           <div className="col-11 col-sm-8 col-md-6 col-lg-5 col-xl-4">
             <div
-              className="card shadow-lg p-4 p-sm-6"
+              className="card shadow-lg p-4 p-sm-5" // Tăng padding
               style={{ borderRadius: "16px" }}
             >
-              <h1 className="fs-2 text-center fw-bold text-primary mb-3">
+              <div className="text-center mb-3">
+                {/* Thêm Icon Logo */}
+                <i
+                  className="bi bi-hospital text-primary"
+                  style={{ fontSize: "3.5rem" }}
+                ></i>
+              </div>
+              <h1 className="fs-2 text-center fw-bold text-primary mb-2">
                 Hệ Thống Quản Lý Phòng Khám
               </h1>
               <p className="text-center text-muted mb-4 fs-6">
                 Vui lòng đăng nhập để tiếp tục
               </p>
 
-              <form onSubmit={handleSubmit}>
-                {/* Role selection */}
+              <Form onSubmit={handleSubmit}>
+                {/* Role selection (Nâng cấp) */}
                 <div className="mb-3">
-                  <label className="form-label fw-semibold">Chọn vai trò</label>
-                  <div className="d-flex gap-4">
-                    <div>
-                      <input
-                        type="radio"
-                        id="admin"
-                        name="role"
-                        value="Admin"
-                        checked={formData.role === "Admin"}
-                        onChange={handleChange}
-                      />
-                      <label htmlFor="admin" className="ms-2">Admin</label>
-                    </div>
-
-                    <div>
-                      <input
-                        type="radio"
-                        id="doctor"
-                        name="role"
-                        value="Doctor"
-                        checked={formData.role === "Doctor"}
-                        onChange={handleChange}
-                      />
-                      <label htmlFor="doctor" className="ms-2">Doctor</label>
-                    </div>
-
-                    <div>
-                      <input
-                        type="radio"
-                        id="patient"
-                        name="role"
-                        value="Patient"
-                        checked={formData.role === "Patient"}
-                        onChange={handleChange}
-                      />
-                      <label htmlFor="patient" className="ms-2">Patient</label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Username */}
-                <div className="mb-4">
-                  <label htmlFor="username" className="form-label fw-semibold">
-                    Tên đăng nhập
+                  <label className="form-label fw-semibold">
+                    Chọn vai trò
                   </label>
-                  <input
-                    type="text"
-                    name="username"
-                    id="username"
-                    className={`form-control form-control-lg ${
-                      errors.username ? "is-invalid" : ""
-                    }`}
-                    placeholder="Nhập email hoặc số điện thoại"
-                    value={formData.username}
-                    onChange={handleChange}
-                  />
-                  {errors.username && (
-                    <div className="invalid-feedback">{errors.username}</div>
+                  {/* Sử dụng btn-group để nhóm các nút */}
+                  <div
+                    className="btn-group w-100"
+                    role="group"
+                    aria-label="Role selection"
+                  >
+                    {/* Cập nhật vai trò: Admin, Doctor, Technician */}
+                    {["Patient","Admin", "Doctor", "Reception"].map((role) => (
+                      <React.Fragment key={role}>
+                        <input
+                          type="radio"
+                          className="btn-check"
+                          name="role"
+                          id={`role-${role}`}
+                          autoComplete="off"
+                          value={role}
+                          checked={formData.role === role}
+                          onChange={handleChange}
+                        />
+                        <label
+                          className="btn btn-outline-primary"
+                          htmlFor={`role-${role}`}
+                        >
+                          {role}
+                        </label>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  {errors.role && (
+                    <div className="text-danger mt-1" style={{ fontSize: "0.875em" }}>
+                      {errors.role}
+                    </div>
                   )}
                 </div>
 
-                {/* Password */}
+                {/* Username (Nâng cấp) */}
+                <div className="mb-3">
+                  <label htmlFor="username" className="form-label fw-semibold">
+                    Tên đăng nhập
+                  </label>
+                  <InputGroup hasValidation>
+                    <InputGroup.Text id="username-icon">
+                      <i className="bi bi-person-fill"></i>
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      name="username"
+                      id="username"
+                      placeholder="Nhập email hoặc số điện thoại"
+                      value={formData.username}
+                      onChange={handleChange}
+                      isInvalid={!!errors.username}
+                      aria-describedby="username-icon"
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.username}
+                    </Form.Control.Feedback>
+                  </InputGroup>
+                </div>
+
+                {/* Password (Nâng cấp) */}
                 <div className="mb-4">
                   <label htmlFor="password" className="form-label fw-semibold">
                     Mật khẩu
                   </label>
-                  <input
-                    type="password"
-                    name="password"
-                    id="password"
-                    className={`form-control form-control-lg ${
-                      errors.password ? "is-invalid" : ""
-                    }`}
-                    placeholder="Nhập mật khẩu"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
-                  {errors.password && (
-                    <div className="invalid-feedback">{errors.password}</div>
-                  )}
+                  <InputGroup hasValidation>
+                    <InputGroup.Text id="password-icon">
+                      <i className="bi bi-lock-fill"></i>
+                    </InputGroup.Text>
+                    <Form.Control
+                      type={showPassword ? "text" : "password"} // Kích hoạt show/hide
+                      name="password"
+                      id="password"
+                      placeholder="Nhập mật khẩu"
+                      value={formData.password}
+                      onChange={handleChange}
+                      isInvalid={!!errors.password}
+                      aria-describedby="password-icon"
+                    />
+                    {/* Nút Show/Hide Password */}
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      <i
+                        className={
+                          showPassword ? "bi bi-eye-slash" : "bi bi-eye"
+                        }
+                      ></i>
+                    </Button>
+                    <Form.Control.Feedback type="invalid">
+                      {errors.password}
+                    </Form.Control.Feedback>
+                  </InputGroup>
                 </div>
 
                 <button
@@ -205,14 +239,18 @@ const LoginPage = () => {
                 >
                   {loading ? (
                     <>
-                      <Spinner animation="border" size="sm" className="me-2" />
+                      <Spinner
+                        animation="border"
+                        size="sm"
+                        className="me-2"
+                      />
                       Đang xử lý...
                     </>
                   ) : (
                     "Đăng Nhập"
                   )}
                 </button>
-              </form>
+              </Form>
 
               <div className="text-center mt-3">
                 <a href="#" className="text-decoration-none">

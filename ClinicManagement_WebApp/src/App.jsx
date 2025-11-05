@@ -1,7 +1,5 @@
-import { useState } from "react";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 
 import { path } from "./utils/constant";
@@ -21,12 +19,12 @@ import PatientLayout from "./Components/Patient/PatientLayout.jsx";
 import AdminSidebar from "./Components/Sidebar/AdminSidebar.jsx";
 import DoctorSidebar from "./Components/Sidebar/DoctorSidebar.jsx";
 import Home from "./pages/Home.jsx";
-import PDFEditorPage from './pages/Doctors/PrintsPDF/PDFPreviewEditor.jsx';
 import TechnicianDashboard from "./pages/Technician/TechnicianDashboard.jsx";
 import PrivateRoute from "./Components/PrivateRoute.jsx";
 import Logout from "./pages/auth/Logout.jsx";
 import AdminService from "./pages/Admin/AdminService.jsx";
 import AdminSupplier from "./pages/Admin/AdminSupplier.jsx";
+import DoctorSchedule from "./pages/Doctors/DoctorSchedule.jsx";
 
 function App() {
   return (
@@ -57,6 +55,8 @@ function App() {
         <Route element={<PrivateRoute allowedRoles={['Doctor']} />}>
           <Route path={path.DOCTOR.ROOT} element={<DoctorSidebar />} >
             <Route path={path.DOCTOR.TODAYAPPOINTMENT} element={<DoctorDashboard />} />
+            <Route path={path.DOCTOR.SCHEDULE} element={<DoctorSchedule />} />
+
           </Route>
         </Route>
         {/* Technician */}
@@ -81,7 +81,6 @@ function App() {
           element={<VerifyEmailPage />}
         />
         {/* Trang mặc định */}
-        <Route path="/pdf-editor" element={<PDFEditorPage />} />
         <Route path="/technician" element={<TechnicianDashboard />} />
       </Routes>
     </BrowserRouter >

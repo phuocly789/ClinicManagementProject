@@ -2,9 +2,9 @@ import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import "../../App.css";
 
-const AdminSidebar = () => {
+const DoctorSidebar = () => {
   return (
-    <div className="d-flex" style={{ minHeight: "100vh" }}>
+    <div className="d-flex" style={{ Height: "100vh" }}>
       {/* Sidebar */}
       <div className="sidebar d-flex flex-column shadow-sm">
         <h2 className="sidebar-header text-center fw-bold mb-3">
@@ -48,11 +48,11 @@ const AdminSidebar = () => {
       </div>
 
       {/* Nội dung trang con */}
-      <div className="flex-grow-1 ">
+      <div className="flex-grow-1 main-content">
         <Outlet />
       </div>
     </div>
   );
 };
 
-export default AdminSidebar;
+export default DoctorSidebar;

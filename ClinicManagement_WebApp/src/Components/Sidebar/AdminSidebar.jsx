@@ -78,7 +78,7 @@ const AdminSidebar = () => {
       </div>
 
       {/* Nội dung trang con */}
-      <div className="flex-grow-1 ">
+      <div className="flex-grow-1  ">
         <Outlet />
       </div>
     </div>

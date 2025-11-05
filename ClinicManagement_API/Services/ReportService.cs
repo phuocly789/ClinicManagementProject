@@ -334,7 +334,7 @@ public class ReportsService : IReportsService
             .CountAsync(a =>
                 a.AppointmentDate >= fromDateOnly
                 && a.AppointmentDate <= toDateOnly
-                && a.Status == "Đã khám"
+                && a.Status == "Completed"
             );
 
         // Số hóa đơn đang pending trong khoảng

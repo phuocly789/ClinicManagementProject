@@ -22,19 +22,22 @@ public class ScheduleService : IScheduleService
     private readonly IUserRepository _userRepository;
     private readonly IMedicalStaffRepository _medicalStaffRepository;
     private readonly ILogger<ScheduleService> _logger;
+    private readonly IRoomRepository _roomRepository;
 
     public ScheduleService(
         IUnitOfWork uow,
         IStaffScheduleRepository staffScheduleRepository,
         IUserRepository userRepository,
         IMedicalStaffRepository medicalStaffRepository,
-        ILogger<ScheduleService> logger
+        ILogger<ScheduleService> logger,
+        IRoomRepository roomRepository
     )
     {
         _uow = uow;
         _staffScheduleRepository = staffScheduleRepository;
         _medicalStaffRepository = medicalStaffRepository;
         _userRepository = userRepository;
+        _roomRepository = roomRepository;
         _logger = logger;
     }
 
@@ -44,6 +47,42 @@ public class ScheduleService : IScheduleService
     {
         try
         {
+            //kiểm tra phòng khám
+            var room = await _roomRepository.GetByIdAsync(request.RoomId);
+            if (room == null)
+            {
+                return new ResponseValue<CreateScheduleRequestDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Phòng không tồn tại."
+                );
+            }
+            // //kiểm tra bác sĩ có lịch trong cùng phòng vào thời gian đó không
+            // bool hasRoomConflict = await _staffScheduleRepository
+            //     .GetAll()
+            //     .AnyAsync(s =>
+            //         s.StaffId == request.StaffId
+            //         && s.WorkDate == DateOnly.Parse(request.WorkDate)
+            //         && s.RoomId == request.RoomId
+            //         && (
+            //             (
+            //                 s.StartTime < TimeOnly.Parse(request.EndTime)
+            //                 && s.EndTime > TimeOnly.Parse(request.StartTime)
+            //             )
+            //             || (
+            //                 TimeOnly.Parse(request.StartTime) < s.EndTime
+            //                 && TimeOnly.Parse(request.EndTime) > s.StartTime
+            //             )
+            //         )
+            //     );
+            // if (hasRoomConflict)
+            // {
+            //     return new ResponseValue<CreateScheduleRequestDTO>(
+            //         null,
+            //         StatusReponse.BadRequest,
+            //         "Bác sĩ đã có lịch trong cùng phòng"
+            //     );
+            // }
             var currentDate = DateTime.Now;
             //parse input
             if (
@@ -86,6 +125,7 @@ public class ScheduleService : IScheduleService
                 .AnyAsync(s =>
                     s.StaffId == request.StaffId
                     && s.WorkDate == DateOnly.FromDateTime(workDate)
+                    && s.RoomId == request.RoomId
                     && (
                         (s.StartTime < endTime && s.EndTime > startTime)
                         || (startTime < s.EndTime && endTime > s.StartTime)
@@ -118,6 +158,7 @@ public class ScheduleService : IScheduleService
                 WorkDate = DateOnly.FromDateTime(workDate),
                 StartTime = startTime,
                 EndTime = endTime,
+                RoomId = request.RoomId,
                 IsAvailable = request.IsAvailable,
             };
             //save
@@ -156,6 +197,17 @@ public class ScheduleService : IScheduleService
     {
         try
         {
+            //kiểm tra phòng khám
+            var room = await _roomRepository.GetByIdAsync(request.RoomId);
+            if (room == null)
+            {
+                return new ResponseValue<UpdateScheduleRequestDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Phòng không tồn tại."
+                );
+            }
+
             var currentDate = DateTime.Now;
             // Parse input
             if (
@@ -232,6 +284,7 @@ public class ScheduleService : IScheduleService
                     s.StaffId == schedule.StaffId
                     && s.ScheduleId != scheduleId // Loại trừ lịch hiện tại
                     && s.WorkDate == DateOnly.FromDateTime(workDate)
+                    && s.RoomId == request.RoomId
                     && (
                         (s.StartTime < endTime && s.EndTime > startTime)
                         || (startTime < s.EndTime && endTime > s.StartTime)
@@ -251,6 +304,7 @@ public class ScheduleService : IScheduleService
             schedule.WorkDate = DateOnly.FromDateTime(workDate);
             schedule.StartTime = startTime;
             schedule.EndTime = endTime;
+            schedule.RoomId = request.RoomId;
             schedule.IsAvailable = request.IsAvailable;
 
             // Transaction
@@ -306,7 +360,7 @@ public class ScheduleService : IScheduleService
                     StaffId = q.schedule.StaffId,
                     StaffName = q.user != null ? q.user.FullName : "(Không xác định)",
                     Role = q.user.UserRoles.Select(r => r.Role.RoleName).FirstOrDefault(),
-
+                    RoomId = q.schedule.RoomId,
                     WorkDate = q.schedule.WorkDate.ToString("yyyy-MM-dd"),
                     StartTime = q.schedule.StartTime.ToString("HH:mm:ss"),
                     EndTime = q.schedule.EndTime.ToString("HH:mm:ss"),
