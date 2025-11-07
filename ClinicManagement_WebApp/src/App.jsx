@@ -25,6 +25,10 @@ import Logout from "./pages/auth/Logout.jsx";
 import AdminService from "./pages/Admin/AdminService.jsx";
 import AdminSupplier from "./pages/Admin/AdminSupplier.jsx";
 import DoctorSchedule from "./pages/Doctors/DoctorSchedule.jsx";
+import ReceptionistSidebar from "./Components/Sidebar/ReceptionistSidebar.jsx";
+import AppointmentDashboard from "./pages/Receptionist/AppointmentDashboard.jsx";
+import CreateAppointment from "./pages/Receptionist/CreateAppointment.jsx";
+import UpdateAppointment from "./pages/Receptionist/UpdateAppointment.jsx";
 
 function App() {
   return (
@@ -49,7 +53,11 @@ function App() {
         </Route>
         {/* Receptionist */}
         <Route element={<PrivateRoute allowedRoles={['Receptionist']} />}>
-
+          <Route path={path.RECEPTIONIST.ROOT} element={<ReceptionistSidebar />}>
+            <Route path={path.RECEPTIONIST.APPOINTMENT.MANAGEMENT} element={<AppointmentDashboard />} />
+            <Route path={path.RECEPTIONIST.APPOINTMENT.CREATE} element={<CreateAppointment />} />
+            <Route path={path.RECEPTIONIST.APPOINTMENT.UPDATE} element={<UpdateAppointment />} />
+          </Route>
         </Route>
         {/* Doctor */}
         <Route element={<PrivateRoute allowedRoles={['Doctor']} />}>

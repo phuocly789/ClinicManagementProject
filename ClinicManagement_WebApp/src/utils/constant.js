@@ -30,21 +30,21 @@ export const path = {
             CREATE: "/admin/suppliers/create",
             UPDATE: "/admin/suppliers/update/:id",
         },
-        SERVICE: {
-            MANAGEMENT: "/admin/services",
-            CREATE: "/admin/services/create",
-            UPDATE: "/admin/services/update/:id",
-        },
         SCHEDULE:{
             MANAGEMENT: "/admin/schedule-management",
             CREATE: "/admin/schedules/create",
             UPDATE: "/admin/schedules/update/:id",
         },
         REVENUE_REPORT: "/admin/revenue-report",
-        
+
     },
     RECEPTIONIST: {
-        ROOT: "/receptionist"
+        ROOT: "/receptionist",
+        APPOINTMENT: {
+            MANAGEMENT: "/receptionist/appointment-management",
+            CREATE: "/receptionist/appointment-create",
+            UPDATE: "/receptionist/appointment-update",
+        }
     },
     USER: {
         ROOT: "/user",

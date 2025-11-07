@@ -30,6 +30,7 @@ public class JwtAuthService
         // Tạo danh sách các claims cho token
         var claims = new List<Claim>
         {
+            new Claim("UserId", userLogin.UserId.ToString()),
             new Claim("username", userLogin.Username), // Claim mặc định cho username
             new Claim("userid", userLogin.UserId.ToString()), // Claim tùy chỉnh cho userId
             new Claim("email", userLogin.Email), // Claim mặc định cho username

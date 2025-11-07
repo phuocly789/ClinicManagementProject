@@ -93,6 +93,7 @@ const LoginPage = () => {
         setTimeout(() => {
           if (role === "Admin") navigate("/admin/dashboard");
           else if (role === "Doctor") navigate("/doctor/today-appointment");
+          else if (role === "Receptionist") navigate("/receptionist/appointment-management");
           else navigate("/");
         }, 1000);
       }
@@ -143,7 +144,7 @@ const LoginPage = () => {
                     aria-label="Role selection"
                   >
                     {/* Cập nhật vai trò: Admin, Doctor, Technician */}
-                    {["Patient","Admin", "Doctor", "Reception"].map((role) => (
+                    {["Patient","Admin", "Doctor", "Receptionist"].map((role) => (
                       <React.Fragment key={role}>
                         <input
                           type="radio"
