@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj": {}
+    "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {}
   },
   "projects": {
-    "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj": {
+    "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj",
+        "projectUniqueName": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
         "projectName": "ClinicManagement_API",
-        "projectPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\ClinicManagement_API.csproj",
-        "packagesPath": "C:\\Users\\phuoc\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_API\\obj\\",
+        "projectPath": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_API\\ClinicManagement_API.csproj",
+        "packagesPath": "C:\\Users\\ntam7\\.nuget\\packages\\",
+        "outputPath": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\phuoc\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ntam7\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,14 +26,15 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
-                "projectPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj"
+              "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
+                "projectPath": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj"
               }
             }
           }
@@ -106,24 +107,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
+    "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+        "projectUniqueName": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
         "projectName": "ClinicManagement_Infrastructure",
-        "projectPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\phuoc\\.nuget\\packages\\",
-        "outputPath": "D:\\Project\\ClinicManagementProject-Dotnet\\ClinicManagement_Infrastructure\\obj\\",
+        "projectPath": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_Infrastructure\\ClinicManagement_Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\ntam7\\.nuget\\packages\\",
+        "outputPath": "D:\\Deadline\\ClinicManagementProject\\ClinicManagement_Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\phuoc\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ntam7\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -132,6 +133,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -202,7 +204,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

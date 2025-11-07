@@ -1,4 +1,3 @@
-using System.Transactions;
 using ClinicManagement_Infrastructure.Data;
 using ClinicManagement_Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +9,7 @@ public interface IAppointmentRepository : IRepository<Appointment>
         int staffId,
         DateOnly date
     );
+    Task<bool> IsDoctorAvailableAsync(int staffId, DateOnly date, TimeOnly time);
 }
 
 public class AppointmentRepository : Repository<Appointment>, IAppointmentRepository
@@ -73,6 +73,14 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
             .OrderBy(dto => dto.AppointmentTime)
             .AsNoTracking()
             .ToListAsync();
+    }
+
+    public async Task<bool> IsDoctorAvailableAsync(int staffId, DateOnly date, TimeOnly time)
+    {
+        return !await _context.Appointments.AnyAsync(a =>
+            a.StaffId == staffId &&
+            a.AppointmentDate == date &&
+            a.AppointmentTime == time);
     }
 }
 
