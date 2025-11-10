@@ -56,6 +56,8 @@ public partial class SupabaseContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserOtp> UserOtps { get; set; }
+
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -650,6 +652,29 @@ public partial class SupabaseContext : DbContext
             entity.Property(e => e.PasswordHash).HasMaxLength(256);
             entity.Property(e => e.Phone).HasMaxLength(15);
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<UserOtp>(entity =>
+        {
+            entity.HasKey(e => e.Otpid).HasName("UserOTPs_pkey");
+
+            entity.ToTable("UserOTPs");
+
+            entity.Property(e => e.Otpid).UseIdentityAlwaysColumn().HasColumnName("OTPId");
+            entity
+                .Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone");
+            entity.Property(e => e.ExpiredAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.IsUsed).HasDefaultValue(false);
+            entity.Property(e => e.Otpcode).HasMaxLength(10).HasColumnName("OTPCode");
+
+            entity
+                .HasOne(d => d.User)
+                .WithMany(p => p.UserOtps)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("UserOTPs_UserId_fkey");
         });
 
         modelBuilder.Entity<UserRole>(entity =>

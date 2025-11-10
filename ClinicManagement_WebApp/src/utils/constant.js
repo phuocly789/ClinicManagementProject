@@ -73,6 +73,9 @@ export const path = {
             MANAGEMENT: "/patient/profile-management",
             CREATE: "/patient/profile-create",
             UPDATE: "/patient/profile-update",
+        },
+        BOOKING:{
+            MANAGEMENT: "/patient/booking-management",
         }
     },
     DOCTOR:{

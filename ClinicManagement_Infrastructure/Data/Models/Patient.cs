@@ -9,7 +9,8 @@ public partial class Patient
 
     public string? MedicalHistory { get; set; }
 
-    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } =
+        new List<MedicalRecord>();
 
     public virtual User PatientNavigation { get; set; } = null!;
 

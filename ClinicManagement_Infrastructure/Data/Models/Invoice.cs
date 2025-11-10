@@ -19,7 +19,8 @@ public partial class Invoice
 
     public virtual Appointment? Appointment { get; set; }
 
-    public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+    public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } =
+        new List<InvoiceDetail>();
 
     public virtual User? Patient { get; set; }
 }

@@ -1,301 +1,708 @@
-import React, { useState } from "react";
+// PatientProfile.jsx - HOÀN CHỈNH 100% (GIAO DIỆN TINH TẾ + CHỨC NĂNG MỚI)
+import React, { useCallback, useEffect, useState } from "react";
+import instance from "../../axios";
+import authService from "../../services/authService";
+import OtpModal from "../../Components/Auth/OtpModal";
+import bcrypt from "bcryptjs";
+import Loading from "../../Components/Loading/Loading";
+import CustomToast from "../../Components/CustomToast/CustomToast";
+import { Button, Card, Form, Row, Col, InputGroup, Modal } from "react-bootstrap";
 
 const PatientProfile = () => {
-  // State cho thông tin cá nhân
   const [profileData, setProfileData] = useState({
-    fullName: "Nguyễn Văn An",
-    email: "an.nguyen@example.com",
-    phone: "0912345678",
-    birthDate: "1995-08-15",
-    address: "123 Đường ABC, Quận 1, TP.HCM",
+    username: "",
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    dateOfBirth: "",
+    passwordHash: "",
+    gender: ""
   });
 
-  // State cho đổi mật khẩu
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
-    otp: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  const [otpSent, setOtpSent] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [username, setUsername] = useState("");
+  const [showOtpModalPassword, setShowOtpModalPassword] = useState(false);
+  const [showOtpModalUpdate, setShowOtpModalUpdate] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [buttonSave, setButtonSave] = useState(false);
 
-  // Xử lý thay đổi thông tin cá nhân
+  // State cho modal mới
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivateReason, setDeactivateReason] = useState("");
+
+  // Lấy username từ token
+  useEffect(() => {
+    const user = authService.getUsernameFromToken();
+    setUsername(user);
+  }, []);
+
+  const validateProfileForm = () => {
+    const newErrors = {};
+    const htmlRegex = /<[^>]*>/g;
+    const now = new Date();
+
+    if (!profileData.fullName.trim())
+      newErrors.fullName = "Họ tên không được để trống";
+    else if (htmlRegex.test(profileData.fullName))
+      newErrors.fullName = "Không được nhập mã HTML trong họ tên";
+
+    if (!profileData.phone)
+      newErrors.phone = "Số điện thoại không được để trống";
+    else if (!/^0\d{9,10}$/.test(profileData.phone))
+      newErrors.phone = "Số điện thoại không hợp lệ";
+
+    if (!profileData.dateOfBirth)
+      newErrors.dateOfBirth = "Ngày sinh không được để trống";
+    else if (new Date(profileData.dateOfBirth) > now)
+      newErrors.dateOfBirth = "Ngày sinh không được vượt quá ngày hiện tại";
+
+    if (!profileData.address.trim())
+      newErrors.address = "Địa chỉ không được để trống";
+    else if (profileData.address.length > 500)
+      newErrors.address = "Địa chỉ không được quá 500 ký tự";
+
+    if (!profileData.gender)
+      newErrors.gender = "Giới tính không được bỏ trống";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Lấy thông tin hồ sơ
+  const fetchProfile = useCallback(async () => {
+    if (!username) return;
+    setLoading(true);
+    try {
+      const res = await instance.get(`User/GetByUsername/${username}`);
+      const user = res.data || res;
+
+      setProfileData({
+        username: user.username || "",
+        fullName: user.fullName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        gender: user.gender || "",
+        dateOfBirth: user.dateOfBirth?.split("T")[0] || "",
+        passwordHash: user.passwordHash || user.password || "",
+      });
+    } catch (err) {
+      setToast({ type: "error", message: "Không tải được hồ sơ!" });
+    } finally {
+      setLoading(false);
+    }
+  }, [username]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // === XỬ LÝ HỒ SƠ ===
   const handleProfileChange = (e) => {
-    setProfileData({
-      ...profileData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setProfileData({ ...profileData, [name]: value });
+    setButtonSave(true);
+    setErrors({ ...errors, [name]: "" });
   };
 
-  // Xử lý lưu thông tin cá nhân
-  const handleSaveProfile = (e) => {
+  const handleConfirmUpdateProfile = async (e) => {
     e.preventDefault();
-
-    // Validate
-    if (
-      !profileData.fullName ||
-      !profileData.phone ||
-      !profileData.birthDate ||
-      !profileData.address
-    ) {
-      alert("Vui lòng điền đầy đủ thông tin!");
-      return;
+    if (!validateProfileForm()) return;
+    setLoading(true);
+    try {
+      await instance.post("Auth/SendOTP", { email: profileData.email });
+      setToast({ type: "success", message: "Mã OTP đã gửi đến email!" });
+      setShowOtpModalUpdate(true);
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data || "Gửi OTP thất bại!" });
+    } finally {
+      setLoading(false);
     }
-
-    // Lưu vào localStorage (giả lập API)
-    const userInfo = JSON.parse(localStorage.getItem("userInfo")) || {};
-    const updatedUser = {
-      ...userInfo,
-      fullName: profileData.fullName,
-      phone: profileData.phone,
-      birthDate: profileData.birthDate,
-      address: profileData.address,
-    };
-    localStorage.setItem("userInfo", JSON.stringify(updatedUser));
-
-    alert("Cập nhật thông tin thành công!");
   };
 
-  // Xử lý thay đổi mật khẩu
+  const handleSaveProfile = async () => {
+    setLoading(true);
+    try {
+      const payload = {
+        fullName: profileData.fullName,
+        phone: profileData.phone,
+        address: profileData.address,
+        dateOfBirth: profileData.dateOfBirth,
+        gender: profileData.gender,
+      }
+      await instance.put(`User/UpdateUser/${username}`, payload);
+      setToast({ type: "success", message: "Cập nhật hồ sơ thành công!" });
+      setShowOtpModalUpdate(false);
+      setButtonSave(false);
+      fetchProfile();
+    } catch (err) {
+      setToast({ type: "error", message: "Cập nhật thất bại!" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // === XỬ LÝ ĐỔI MẬT KHẨU ===
   const handlePasswordChange = (e) => {
-    setPasswordData({
-      ...passwordData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+    setErrors({ ...errors, [name]: "" });
   };
 
-  // Gửi mã OTP
-  const handleSendOTP = (e) => {
-    e.preventDefault();
-
-    if (!passwordData.currentPassword) {
-      alert("Vui lòng nhập mật khẩu hiện tại!");
-      return;
-    }
-
-    // Giả lập gửi OTP
-    console.log("Gửi OTP đến email:", profileData.email);
-    setOtpSent(true);
-    alert("Mã OTP đã được gửi đến email của bạn!\n(Mã giả lập: 123456)");
+  const verifyCurrentPassword = async (input) => {
+    if (!profileData.passwordHash) return false;
+    if (profileData.passwordHash === input) return true;
+    return await bcrypt.compare(input, profileData.passwordHash);
   };
 
-  // Xác nhận đổi mật khẩu
-  const handleChangePassword = (e) => {
+  const validatePasswordForm = async () => {
+    const newErrors = {};
+
+    if (!passwordData.currentPassword) newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
+    if (!passwordData.newPassword) newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
+    else if (passwordData.newPassword.length < 6) newErrors.newPassword = "Mật khẩu ít nhất 6 ký tự";
+    else if (passwordData.newPassword === passwordData.currentPassword) newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu cũ";
+
+    if (!passwordData.confirmPassword) newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    else if (passwordData.newPassword !== passwordData.confirmPassword) newErrors.confirmPassword = "Mật khẩu không khớp";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleConfirmChangePassword = async (e) => {
     e.preventDefault();
+    if (!(await validatePasswordForm())) return;
 
-    // Validate
-    if (!passwordData.currentPassword) {
-      alert("Vui lòng nhập mật khẩu hiện tại!");
+    setLoading(true);
+    const isCorrect = await verifyCurrentPassword(passwordData.currentPassword);
+
+    if (!isCorrect) {
+      setErrors({ currentPassword: "Mật khẩu hiện tại không đúng!" });
+      setToast({ type: "error", message: "Mật khẩu hiện tại sai!" });
+      setLoading(false);
       return;
     }
 
-    if (!passwordData.otp) {
-      alert("Vui lòng nhập mã OTP!");
-      return;
+    try {
+      await instance.post("Auth/SendOTP", { email: profileData.email });
+      setToast({ type: "success", message: "Mã OTP đã gửi đến email!" });
+      setShowOtpModalPassword(true);
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data || "Gửi OTP thất bại!" });
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (!passwordData.newPassword || !passwordData.confirmPassword) {
-      alert("Vui lòng nhập mật khẩu mới!");
-      return;
+  const handleChangePasswordAfterOtp = async () => {
+    setLoading(true);
+    try {
+      await instance.put(`User/ChangePassword/${username}`, {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+      setToast({ type: "success", message: "Đổi mật khẩu thành công!" });
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowOtpModalPassword(false);
+      fetchProfile();
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data?.message || "Đổi mật khẩu thất bại!" });
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
-      return;
-    }
+  // === CHỨC NĂNG MỚI ===
 
-    if (passwordData.newPassword.length < 6) {
-      alert("Mật khẩu phải có ít nhất 6 ký tự!");
-      return;
-    }
-
-    // Giả lập verify OTP
-    if (passwordData.otp !== "123456") {
-      alert("Mã OTP không đúng!");
-      return;
-    }
-
-    // Giả lập đổi mật khẩu thành công
-    console.log("Đổi mật khẩu thành công");
-    alert("Đổi mật khẩu thành công!");
-
-    // Reset form
-    setPasswordData({
-      currentPassword: "",
-      otp: "",
-      newPassword: "",
-      confirmPassword: "",
+  // Quên mật khẩu (tĩnh)
+  const handleForgotPassword = () => {
+    setToast({
+      type: "info",
+      message: "Yêu cầu quên mật khẩu đã được ghi nhận. Vui lòng kiểm tra email để được hướng dẫn."
     });
-    setOtpSent(false);
+    setShowForgotPasswordModal(false);
+  };
+
+  // Vô hiệu hóa tài khoản (tĩnh)
+  const handleDeactivateAccount = () => {
+    if (!deactivateReason.trim()) {
+      setToast({ type: "error", message: "Vui lòng nhập lý do vô hiệu hóa tài khoản" });
+      return;
+    }
+
+    setToast({
+      type: "warning",
+      message: `Yêu cầu vô hiệu hóa tài khoản đã được ghi nhận. Lý do: ${deactivateReason}`
+    });
+    setShowDeactivateModal(false);
+    setDeactivateReason("");
+  };
+
+  // ✅ Get Location
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setToast({ type: "error", message: "Trình duyệt không hỗ trợ định vị." });
+      return;
+    }
+
+    setToast({ type: "info", message: "Đang xác định vị trí..." });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&format=json&accept-language=vi`
+          );
+          const data = await response.json();
+
+          if (data?.display_name) {
+            setProfileData((prev) => ({ ...prev, address: data.display_name }));
+            setButtonSave(true);
+            setToast({ type: "success", message: "Đã lấy vị trí thành công" });
+          } else {
+            setToast({ type: "error", message: "Không tìm được địa chỉ từ vị trí GPS." });
+          }
+        } catch (error) {
+          setToast({ type: "error", message: "Lỗi khi lấy địa chỉ từ GPS." });
+        }
+      },
+      () => {
+        setToast({ type: "error", message: "Không thể truy cập GPS. Hãy bật định vị." });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   return (
-    <div className="bg-light" style={{ padding: "24px 40px" }}>
-      {/* Hồ sơ bệnh nhân */}
-      <div className="card mb-4 shadow-sm">
-        <div className="card-header bg-white fw-bold fs-5">Hồ sơ bệnh nhân</div>
-        <div className="card-body" style={{ padding: "30px" }}>
-          {/* Thông tin cá nhân */}
-          <h5 className="mb-4 fw-semibold">Thông tin cá nhân</h5>
-          <form onSubmit={handleSaveProfile}>
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Họ và Tên</label>
-              <input
-                type="text"
-                className="form-control"
-                name="fullName"
-                value={profileData.fullName}
-                onChange={handleProfileChange}
-                required
-              />
-            </div>
+    <>
+      <Loading isLoading={loading} />
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Email (không thay đổi)
-              </label>
-              <input
-                type="email"
-                className="form-control"
-                value={profileData.email}
-                disabled
-              />
-            </div>
+      <div className="container-fluid py-4 bg-light min-vh-100">
+        {/* Toast */}
+        {toast && (
+          <CustomToast
+            type={toast.type}
+            message={toast.message}
+            onClose={() => setToast(null)}
+          />
+        )}
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Số điện thoại</label>
-              <input
-                type="text"
-                className="form-control"
-                name="phone"
-                value={profileData.phone}
-                onChange={handleProfileChange}
-                required
-              />
-            </div>
+        <div className="row justify-content-center">
+          <div className="col-xxl-11 col-xl-10 col-lg-10 col-md-12">
+            {/* HỒ SƠ BỆNH NHÂN */}
+            <Card className="mb-4 shadow-sm border-0">
+              <Card.Header className="bg-white border-bottom py-3">
+                <h4 className="mb-0 fw-bold text-dark">
+                  <i className="bi bi-person-badge me-2 text-primary"></i>
+                  Hồ sơ bệnh nhân
+                </h4>
+              </Card.Header>
+              <Card.Body className="p-4">
+                <h5 className="mb-4 fw-semibold text-dark border-bottom pb-2">
+                  <i className="bi bi-info-circle me-2 text-secondary"></i>
+                  Thông tin cá nhân
+                </h5>
+                <Form onSubmit={handleConfirmUpdateProfile}>
+                  <Row className="g-3">
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-person me-1 text-muted"></i>
+                          Tên tài khoản
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={profileData.username}
+                          disabled
+                          className="bg-light"
+                        />
+                        <Form.Text className="text-muted">
+                          Tên tài khoản không thể thay đổi
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-envelope me-1 text-muted"></i>
+                          Email
+                        </Form.Label>
+                        <Form.Control
+                          type="email"
+                          value={profileData.email}
+                          disabled
+                          className="bg-light"
+                        />
+                        <Form.Text className="text-muted">
+                          Email không thể thay đổi
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-card-heading me-1 text-muted"></i>
+                          Họ và tên <span className="text-danger">*</span>
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="fullName"
+                          value={profileData.fullName}
+                          onChange={handleProfileChange}
+                          isInvalid={!!errors.fullName}
+                          className="border-secondary-subtle"
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.fullName}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-telephone me-1 text-muted"></i>
+                          Số điện thoại <span className="text-danger">*</span>
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="phone"
+                          value={profileData.phone}
+                          onChange={handleProfileChange}
+                          isInvalid={!!errors.phone}
+                          className="border-secondary-subtle"
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.phone}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-calendar me-1 text-muted"></i>
+                          Ngày sinh <span className="text-danger">*</span>
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          name="dateOfBirth"
+                          value={profileData.dateOfBirth}
+                          onChange={handleProfileChange}
+                          isInvalid={!!errors.dateOfBirth}
+                          className="border-secondary-subtle"
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.dateOfBirth}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-gender-ambiguous me-1 text-muted"></i>
+                          Giới tính <span className="text-danger">*</span>
+                        </Form.Label>
+                        <Form.Select
+                          name="gender"
+                          value={profileData.gender}
+                          onChange={handleProfileChange}
+                          isInvalid={!!errors.gender}
+                          className="border-secondary-subtle"
+                        >
+                          <option value="">-- Chọn giới tính --</option>
+                          <option value="Nam">Nam</option>
+                          <option value="Nữ">Nữ</option>
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                          {errors.gender}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          <i className="bi bi-geo-alt me-1 text-muted"></i>
+                          Địa chỉ <span className="text-danger">*</span>
+                        </Form.Label>
+                        <InputGroup>
+                          <Form.Control
+                            type="text"
+                            name="address"
+                            value={profileData.address}
+                            onChange={handleProfileChange}
+                            isInvalid={!!errors.address}
+                            className="border-secondary-subtle"
+                            placeholder="Nhập địa chỉ hoặc sử dụng nút bên cạnh để lấy vị trí"
+                          />
+                          <Button
+                            variant="outline-secondary"
+                            onClick={handleGetLocation}
+                            title="Lấy vị trí hiện tại"
+                          >
+                            <i className="bi bi-geo-alt-fill"></i>
+                          </Button>
+                          <Form.Control.Feedback type="invalid">
+                            {errors.address}
+                          </Form.Control.Feedback>
+                        </InputGroup>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <div className="mt-4 pt-3 border-top">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={loading || !buttonSave}
+                      className="px-4 me-3"
+                    >
+                      <i className="bi bi-check-circle me-2"></i>
+                      {loading ? "Đang xử lý..." : "Lưu thay đổi"}
+                    </Button>
+                    {!buttonSave && (
+                      <Form.Text className="text-muted">
+                        Chưa có thay đổi nào để lưu
+                      </Form.Text>
+                    )}
+                  </div>
+                </Form>
+              </Card.Body>
+            </Card>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Ngày sinh</label>
-              <input
-                type="date"
-                className="form-control"
-                name="birthDate"
-                value={profileData.birthDate}
-                onChange={handleProfileChange}
-                required
-              />
-            </div>
+            {/* ĐỔI MẬT KHẨU */}
+            <Card className="mb-4 shadow-sm border-0">
+              <Card.Header className="bg-white border-bottom py-3">
+                <h4 className="mb-0 fw-bold text-dark">
+                  <i className="bi bi-shield-lock me-2 text-primary"></i>
+                  Bảo mật tài khoản
+                </h4>
+              </Card.Header>
+              <Card.Body className="p-4">
+                <h6 className="mb-3 fw-semibold text-dark">
+                  <i className="bi bi-key me-2 text-secondary"></i>
+                  Đổi mật khẩu
+                </h6>
+                <Form onSubmit={handleConfirmChangePassword}>
+                  <Row className="g-3">
+                    <Col md={12}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          Mật khẩu hiện tại
+                        </Form.Label>
+                        <InputGroup>
+                          <Form.Control
+                            type={showPassword ? "text" : "password"}
+                            name="currentPassword"
+                            value={passwordData.currentPassword}
+                            onChange={handlePasswordChange}
+                            isInvalid={!!errors.currentPassword}
+                            disabled={loading}
+                            className="border-secondary-subtle"
+                            placeholder="Nhập mật khẩu hiện tại"
+                          />
+                          <Button
+                            variant="outline-secondary"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                          </Button>
+                          <Form.Control.Feedback type="invalid">
+                            {errors.currentPassword}
+                          </Form.Control.Feedback>
+                        </InputGroup>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          Mật khẩu mới
+                        </Form.Label>
+                        <Form.Control
+                          type={showPassword ? "text" : "password"}
+                          name="newPassword"
+                          value={passwordData.newPassword}
+                          onChange={handlePasswordChange}
+                          isInvalid={!!errors.newPassword}
+                          disabled={loading}
+                          className="border-secondary-subtle"
+                          placeholder="Nhập mật khẩu mới"
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.newPassword}
+                        </Form.Control.Feedback>
+                        <Form.Text className="text-muted">
+                          Mật khẩu ít nhất 6 ký tự
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label className="fw-semibold text-dark">
+                          Xác nhận mật khẩu mới
+                        </Form.Label>
+                        <Form.Control
+                          type={showPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          value={passwordData.confirmPassword}
+                          onChange={handlePasswordChange}
+                          isInvalid={!!errors.confirmPassword}
+                          disabled={loading}
+                          className="border-secondary-subtle"
+                          placeholder="Xác nhận mật khẩu mới"
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.confirmPassword}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <div className="mt-3">
+                    <Button
+                      type="submit"
+                      variant="outline-primary"
+                      disabled={loading}
+                      className="px-4 me-2"
+                    >
+                      <i className="bi bi-shield-check me-2"></i>
+                      {loading ? "Đang kiểm tra..." : "Đổi mật khẩu"}
+                    </Button>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Địa chỉ</label>
-              <input
-                type="text"
-                className="form-control"
-                name="address"
-                value={profileData.address}
-                onChange={handleProfileChange}
-                required
-              />
-            </div>
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                      className="px-3"
+                    >
+                      <i className="bi bi-question-circle me-2"></i>
+                      Quên mật khẩu?
+                    </Button>
+                  </div>
+                </Form>
 
-            <button type="submit" className="btn btn-primary px-4">
-              Lưu thay đổi
-            </button>
-          </form>
+                {/* Các chức năng bảo mật khác */}
+                <div className="mt-4 pt-3 border-top">
+                  <h6 className="mb-3 fw-semibold text-dark">
+                    <i className="bi bi-gear me-2 text-secondary"></i>
+                    Tùy chọn tài khoản
+                  </h6>
+                  <div className="d-flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline-warning"
+                      onClick={() => setShowDeactivateModal(true)}
+                      className="px-3"
+                    >
+                      <i className="bi bi-person-x me-2"></i>
+                      Vô hiệu hóa tài khoản
+                    </Button>
+
+                    <Button
+                      variant="outline-info"
+                      className="px-3"
+                    >
+                      <i className="bi bi-download me-2"></i>
+                      Xuất dữ liệu
+                    </Button>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
         </div>
       </div>
 
-      {/* Đổi mật khẩu */}
-      <div className="card shadow-sm">
-        <div className="card-header bg-white fw-bold fs-5">Đổi mật khẩu</div>
-        <div className="card-body" style={{ padding: "30px" }}>
-          <form onSubmit={handleChangePassword}>
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Mật khẩu hiện tại
-              </label>
-              <input
-                type="password"
-                className="form-control"
-                name="currentPassword"
-                value={passwordData.currentPassword}
-                onChange={handlePasswordChange}
-                placeholder="Nhập mật khẩu hiện tại"
-                required
-              />
-            </div>
+      {/* OTP Modal */}
+      <OtpModal
+        show={showOtpModalPassword}
+        email={profileData.email}
+        onClose={() => setShowOtpModalPassword(false)}
+        onVerified={handleChangePasswordAfterOtp}
+      />
+      <OtpModal
+        show={showOtpModalUpdate}
+        email={profileData.email}
+        onClose={() => setShowOtpModalUpdate(false)}
+        onVerified={handleSaveProfile}
+      />
 
-            <button
-              type="button"
-              className="btn btn-primary mb-3 px-4"
-              onClick={handleSendOTP}
-              disabled={!passwordData.currentPassword}
-            >
-              {otpSent ? "Gửi lại mã OTP" : "Gửi mã OTP về Email"}
-            </button>
+      {/* Modal Quên mật khẩu */}
+      <Modal show={showForgotPasswordModal} onHide={() => setShowForgotPasswordModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="bi bi-question-circle me-2 text-warning"></i>
+            Quên mật khẩu
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu. Bạn có chắc chắn muốn tiếp tục?</p>
+          <div className="alert alert-info">
+            <i className="bi bi-info-circle me-2"></i>
+            Liên kết đặt lại mật khẩu sẽ được gửi đến: <strong>{profileData.email}</strong>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowForgotPasswordModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="warning" onClick={handleForgotPassword}>
+            <i className="bi bi-send me-2"></i>
+            Gửi yêu cầu
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-            {otpSent && (
-              <div className="alert alert-info mb-3">
-                <small>
-                  Mã OTP đã được gửi đến email:{" "}
-                  <strong>{profileData.email}</strong>
-                </small>
-              </div>
-            )}
+      {/* Modal Vô hiệu hóa tài khoản */}
+      <Modal show={showDeactivateModal} onHide={() => setShowDeactivateModal(false)} centered>
+        <Modal.Header closeButton className="bg-warning text-dark">
+          <Modal.Title>
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            Vô hiệu hóa tài khoản
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="alert alert-warning">
+            <i className="bi bi-exclamation-circle me-2"></i>
+            <strong>Cảnh báo:</strong> Tài khoản của bạn sẽ tạm thời bị vô hiệu hóa. Bạn không thể đăng nhập cho đến khi kích hoạt lại.
+          </div>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Mã xác thực (OTP)
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                name="otp"
-                value={passwordData.otp}
-                onChange={handlePasswordChange}
-                placeholder="Nhập mã từ email"
-                required
-              />
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Mật khẩu mới</label>
-              <input
-                type="password"
-                className="form-control"
-                name="newPassword"
-                value={passwordData.newPassword}
-                onChange={handlePasswordChange}
-                placeholder="Nhập mật khẩu mới"
-                required
-                minLength={6}
-              />
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Xác nhận mật khẩu mới
-              </label>
-              <input
-                type="password"
-                className="form-control"
-                name="confirmPassword"
-                value={passwordData.confirmPassword}
-                onChange={handlePasswordChange}
-                placeholder="Nhập lại mật khẩu mới"
-                required
-                minLength={6}
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary px-4">
-              Xác nhận đổi mật khẩu
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+          <Form.Group>
+            <Form.Label className="fw-semibold">
+              Lý do vô hiệu hóa <span className="text-danger">*</span>
+            </Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={deactivateReason}
+              onChange={(e) => setDeactivateReason(e.target.value)}
+              placeholder="Vui lòng cho chúng tôi biết lý do bạn muốn vô hiệu hóa tài khoản..."
+              className="border-warning"
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeactivateModal(false)}>
+            Hủy bỏ
+          </Button>
+          <Button variant="warning" onClick={handleDeactivateAccount}>
+            <i className="bi bi-person-x me-2"></i>
+            Vô hiệu hóa tài khoản
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

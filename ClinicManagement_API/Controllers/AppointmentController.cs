@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,17 +15,15 @@ namespace ClinicManagement_API.Controllers
         }
 
         [HttpGet("staff/{staffId}")]
-        public async Task<IActionResult> GetAppointmentsAsync(int staffId, [FromQuery] DateOnly? date = null)
+        public async Task<IActionResult> GetAppointmentsAsync(
+            int staffId,
+            [FromQuery] DateOnly? date = null
+        )
         {
             try
             {
                 var result = await _appointmentService.GetAppointmentsAsync(staffId, date);
-                return Ok(
-                    new
-                    {
-                        success = true,
-                        data = result
-                    });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
@@ -36,14 +33,17 @@ namespace ClinicManagement_API.Controllers
                     {
                         success = false,
                         message = "Có lỗi xảy ra khi lấy danh sách lịch hẹn.",
-                        error = ex.Message
-                    });
+                        error = ex.Message,
+                    }
+                );
             }
         }
 
         [Authorize(Roles = "Receptionist, Patient")]
         [HttpPost]
-        public async Task<ActionResult<ResponseValue<AppointmentDTO>>> CreateAppointmentAsync([FromBody] AppointmentCreateDTO request)
+        public async Task<ActionResult<ResponseValue<AppointmentDTO>>> CreateAppointmentAsync(
+            [FromBody] AppointmentCreateDTO request
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -52,7 +52,9 @@ namespace ClinicManagement_API.Controllers
             var userIdClaim = User.FindFirst("UserId")?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
             {
-                return Unauthorized(new { success = false, message = "Token không hợp lệ hoặc thiếu UserId." });
+                return Unauthorized(
+                    new { success = false, message = "Token không hợp lệ hoặc thiếu UserId." }
+                );
             }
 
             int createdBy = int.Parse(userIdClaim);
@@ -74,10 +76,12 @@ namespace ClinicManagement_API.Controllers
             return StatusCode(500, result);
         }
 
-
         [Authorize(Roles = "Receptionist")]
         [HttpPut("AppointmentUpdateStatusAsync/{id}")]
-        public async Task<ActionResult<ResponseValue<AppointmentDTO>>> AppointmentUpdateStatusAsync(int id, [FromBody] AppointmentStatusDTO request)
+        public async Task<ActionResult<ResponseValue<AppointmentDTO>>> AppointmentUpdateStatusAsync(
+            int id,
+            [FromBody] AppointmentStatusDTO request
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -102,15 +106,19 @@ namespace ClinicManagement_API.Controllers
         }
 
         [Authorize(Roles = "Patient")]
-        [HttpPut("AppointmentCancelAsync/{id}")]
-        public async Task<ActionResult<ResponseValue<AppointmentDTO>>> AppointmentCancelAsync(int id, [FromBody] AppointmentStatusDTO request)
+        [HttpPut("AppointmentCancelAsync/{appointmentId}")]
+        public async Task<ActionResult<ResponseValue<AppointmentDTO>>> AppointmentCancelAsync(
+            int appointmentId
+        )
         {
+            var patientId = int.Parse(User.FindFirst("userid")!.Value);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var result = await _appointmentService.AppointmentUpdateStatusAsync(id, request);
+            var result = await _appointmentService.AppointmentCancelAsync(appointmentId, patientId);
 
             if (result.Status == StatusReponse.Success)
             {

@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import CustomToast from "../../../Components/CustomToast/CustomToast";
 import { path } from "../../../utils/constant";
 import authService from "../../../services/authService";
+import OtpModal from "../../../Components/Auth/OtpModal";
+import instance from "../../../axios";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -26,6 +28,7 @@ const Register = () => {
   // Thêm state cho show/hide password
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -104,32 +107,33 @@ const Register = () => {
     setErrors(temp);
     return Object.keys(temp).length === 0;
   };
-
-  // ✅ Submit (Giữ nguyên)
-  const handleSubmit = async (e) => {
+  //xác nhận otp
+  const handleConfirmOTP = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
     setLoading(true);
     try {
+      //1. đăng ký nhưng chưa kích hoạt
       const payload = { ...form };
       const res = await authService.handleRegister(payload);
 
-      if (res?.status === "Success") {
-        showToast(
-          "success",
-          res.message || "Đăng ký thành công. Vui lòng kiểm tra email để xác thực."
-        );
-        setTimeout(() => navigate(path.LOGIN), 1500); // Tăng thời gian chờ
-      } else {
+      if (res?.status !== "Success") {
         showToast("error", res?.message || "Đăng ký thất bại!");
+        return; // ✅ Dừng ngay nếu lỗi
       }
+      // 2. gửi otp
+      await instance.post("Auth/SendOTP", { email: form.email });
+      setShowOtpModal(true);
+      setToast({ type: "success", message: "Mã OTP đã gửi đến email!" });
     } catch (err) {
-      showToast("error", err.response?.data?.message || "Lỗi máy chủ. Vui lòng thử lại.");
+      console.log("Lỗi OTP:", err.response?.data);
+      setToast({ type: "error", message: err.response?.data || "Gửi OTP thất bại!" });
+
     } finally {
       setLoading(false);
     }
-  };
+  }
+
 
   // ✅ Get Location (Giữ nguyên)
   const handleGetLocation = () => {
@@ -146,7 +150,8 @@ const Register = () => {
 
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=vi`
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&format=json&accept-language=vi`
+
           );
           const data = await response.json();
 
@@ -162,6 +167,11 @@ const Register = () => {
       },
       () => {
         showToast("error", "Không thể truy cập GPS. Hãy bật định vị.");
+      },
+      {
+        enableHighAccuracy: true,   // ✅ Bắt buộc định vị GPS thay vì IP
+        timeout: 15000,             // ⏱ Tối đa 15 giây
+        maximumAge: 0               // 🚫 Không dùng vị trí cache cũ
       }
     );
   };
@@ -176,10 +186,7 @@ const Register = () => {
               style={{ borderRadius: "16px" }}
             >
               <div className="text-center mb-3">
-                <i
-                  className="bi bi-hospital text-primary"
-                  style={{ fontSize: "3.5rem" }}
-                ></i>
+                <img src="/logo1.png" alt="logo" className="sidebar-logo" />
               </div>
               <h1 className="fs-3 text-center fw-bold text-primary mb-2">
                 Đăng ký tài khoản Bệnh nhân
@@ -189,7 +196,7 @@ const Register = () => {
               </p>
 
               {/* Thay thế <form> bằng <Form> của react-bootstrap */}
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleConfirmOTP}>
                 <div className="row">
                   {/* Cột trái */}
                   <div className="col-md-6">
@@ -422,6 +429,18 @@ const Register = () => {
           onClose={() => setToast(null)}
         />
       )}
+      <OtpModal
+        show={showOtpModal}
+        email={form.email}
+        onClose={() => setShowOtpModal(false)}
+        onVerified={() => {
+          showToast("success", "Đăng ký thành công! Vui lòng đăng nhập.");
+
+          setTimeout(() => {
+            navigate(path.LOGIN);
+          }, 1200);
+        }}
+      />
     </>
   );
 };

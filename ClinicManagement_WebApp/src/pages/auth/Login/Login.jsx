@@ -94,6 +94,7 @@ const LoginPage = () => {
           if (role === "Admin") navigate("/admin/dashboard");
           else if (role === "Doctor") navigate("/doctor/today-appointment");
           else if (role === "Receptionist") navigate("/receptionist/appointment-management");
+          else if (role === "Patient") navigate(path.PATIENT.PROFILE.MANAGEMENT);
           else navigate("/");
         }, 1000);
       }
@@ -119,10 +120,7 @@ const LoginPage = () => {
             >
               <div className="text-center mb-3">
                 {/* Thêm Icon Logo */}
-                <i
-                  className="bi bi-hospital text-primary"
-                  style={{ fontSize: "3.5rem" }}
-                ></i>
+                <img src="/logo1.png" alt="logo" className="sidebar-logo" />
               </div>
               <h1 className="fs-2 text-center fw-bold text-primary mb-2">
                 Hệ Thống Quản Lý Phòng Khám

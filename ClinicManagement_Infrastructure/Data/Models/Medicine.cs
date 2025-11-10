@@ -21,7 +21,9 @@ public partial class Medicine
 
     public virtual ICollection<ImportDetail> ImportDetails { get; set; } = new List<ImportDetail>();
 
-    public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+    public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } =
+        new List<InvoiceDetail>();
 
-    public virtual ICollection<PrescriptionDetail> PrescriptionDetails { get; set; } = new List<PrescriptionDetail>();
+    public virtual ICollection<PrescriptionDetail> PrescriptionDetails { get; set; } =
+        new List<PrescriptionDetail>();
 }

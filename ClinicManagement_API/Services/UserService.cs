@@ -1,6 +1,7 @@
 // using ClinicManagement_API.Models;
 // using ClinicManagement_Infrastructure.Infrastructure.Data.Models;
 
+using System.Text.RegularExpressions;
 using ClinicManagement_Infrastructure.Data.Models;
 using dotnet03WebApi_EbayProject.Helper;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,14 @@ using Microsoft.EntityFrameworkCore;
 public interface IUserService : IServiceBase<User>
 {
     Task<User?> GetByUsernameAsync(string username);
+    Task<User?> GetByEmailAsync(string email);
+    Task<ResponseValue<UserDTO>> ChangePasswordAsync(
+        string username,
+        string currentPassword,
+        string newPassword
+    );
+    Task<ResponseValue<UserUpdateDTO>> UpdateUserAsync(UserUpdateDTO request, string username);
+
     Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model);
     // Task<(bool Success, string Message)> RegisterBuyer(UserBuyerRegister registerBuyer);
     // Task<(bool Success, string Message)> RegisterSeller(UserSellerRegister registerSeller);
@@ -42,6 +51,11 @@ public class UserService : ServiceBase<User>, IUserService
         return await _repository.SingleOrDefaultAsync(u => u.Username == username);
     }
 
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _repository.SingleOrDefaultAsync(u => u.Email == email);
+    }
+
     public async Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model)
     {
         // Lấy repository cho User1
@@ -60,14 +74,14 @@ public class UserService : ServiceBase<User>, IUserService
             return new ResponseValue<LoginResponseDTO>(
                 null,
                 StatusReponse.NotFound,
-                "User not found"
+                "Không tìm thấy người dùng trong hệ thống"
             );
 
         if (!PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
             return new ResponseValue<LoginResponseDTO>(
                 null,
                 StatusReponse.BadRequest,
-                "Invalid password"
+                "Mật khẩu không đúng"
             );
 
         // Kiểm tra role
@@ -76,9 +90,16 @@ public class UserService : ServiceBase<User>, IUserService
             return new ResponseValue<LoginResponseDTO>(
                 null,
                 StatusReponse.BadRequest,
-                "User does not have the required role"
+                "Vui lòng chọn vai trò phù hợp"
             );
-
+        if (!(user.IsActive ?? false))
+        {
+            return new ResponseValue<LoginResponseDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Tài khoản chưa được kích hoạt"
+            );
+        }
         // Tạo token với role được chọn
         var token = _jwtAuthService.GenerateToken(user, new List<string> { model.Role });
 
@@ -93,53 +114,162 @@ public class UserService : ServiceBase<User>, IUserService
         );
     }
 
-    // public async Task<(bool Success, string Message)> Register(UserRegisterDTO registerBuyer)
-    // {
-    //     // Kiểm tra dữ liệu đầu vào
-    //     if (string.IsNullOrWhiteSpace(registerBuyer.userName))
-    //         return (false, "Username is required.");
+    public async Task<ResponseValue<UserDTO>> ChangePasswordAsync(
+        string username,
+        string currentPassword,
+        string newPassword
+    )
+    {
+        var user = await GetByUsernameAsync(username);
 
-    //     if (string.IsNullOrWhiteSpace(registerBuyer.email))
-    //         return (false, "Email is required.");
+        if (user == null)
+        {
+            return new ResponseValue<UserDTO>(
+                null,
+                StatusReponse.NotFound,
+                "Không tìm thấy người dùng"
+            );
+        }
+        if (!PasswordHelper.VerifyPassword(currentPassword, user.PasswordHash))
+        {
+            return new ResponseValue<UserDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Mật khẩu hiện tại không đúng"
+            );
+        }
+        if (currentPassword == newPassword)
+        {
+            return new ResponseValue<UserDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Mật khẩu mới không được trùng với mật khẩu cũ"
+            );
+        }
+        //mã khóa mật khẩu mới
+        using var transaction = await _uow.BeginTransactionAsync();
+        try
+        {
+            user.PasswordHash = PasswordHelper.HashPassword(newPassword);
+            user.MustChangePassword = false;
+            await _userRepository.Update(user);
 
-    //     if (string.IsNullOrWhiteSpace(registerBuyer.password))
-    //         return (false, "Password is required.");
+            await transaction.CommitAsync();
+            await _uow.SaveChangesAsync();
 
-    //     // Kiểm tra trùng username
-    //     var existingUserByUsername = await _userRepository.SingleOrDefaultAsync(u =>
-    //         u.Username == registerBuyer.userName
-    //     );
-    //     if (existingUserByUsername != null)
-    //         return (false, "Username already exists.");
+            return new ResponseValue<UserDTO>(
+                null,
+                StatusReponse.Success,
+                "Đổi mật khẩu thành công"
+            );
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return new ResponseValue<UserDTO>(null, StatusReponse.Error, ex.Message);
+        }
+    }
 
-    //     // Kiểm tra trùng email
-    //     var existingUserByEmail = await _userRepository.SingleOrDefaultAsync(u =>
-    //         u.Email == registerBuyer.email
-    //     );
-    //     if (existingUserByEmail != null)
-    //         return (false, "Email already exists.");
+    public async Task<ResponseValue<UserUpdateDTO>> UpdateUserAsync(
+        UserUpdateDTO request,
+        string username
+    )
+    {
+        var user = await GetByUsernameAsync(username);
 
-    //     try
-    //     {
-    //         var user = new User
-    //         {
-    //             Username = registerBuyer.userName,
-    //             PasswordHash = PasswordHelper.HashPassword(registerBuyer.password),
-    //             Email = registerBuyer.email,
-    //             FullName = registerBuyer.fullName,
-    //             UserRoles = new List<UserRole>
-    //             {
-    //                 new UserRole { RoleId = registerBuyer.getRoleId() },
-    //             },
-    //         };
+        if (user == null)
+        {
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.NotFound,
+                "Không tìm thấy người dùng."
+            );
+        }
 
-    //         await _userRepository.AddAsync(user);
-    //         await _unitOfWork.SaveChangesAsync();
-    //         return (true, "Registration successful.");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         return (false, $"Registration failed: {ex.Message}");
-    //     }
-    // }
+        // === VALIDATE INPUT ===
+        if (string.IsNullOrWhiteSpace(request.FullName))
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Họ tên không được để trống."
+            );
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Số điện thoại không được để trống."
+            );
+
+        if (!Regex.IsMatch(request.Phone, @"^0\d{9,10}$"))
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Số điện thoại không hợp lệ."
+            );
+
+        if (request.DateOfBirth > DateTime.UtcNow.Date)
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Ngày sinh không hợp lệ."
+            );
+
+        if (string.IsNullOrWhiteSpace(request.Gender))
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Giới tính không được để trống."
+            );
+
+        // === Check phone có bị user khác dùng không ===
+        var phoneOwner = await _userRepository.SingleOrDefaultAsync(x => x.Phone == request.Phone);
+        if (phoneOwner != null && phoneOwner.UserId != user.UserId)
+        {
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.BadRequest,
+                "Số điện thoại này đã được sử dụng bởi tài khoản khác."
+            );
+        }
+
+        await using var transaction = await _uow.BeginTransactionAsync();
+        try
+        {
+            user.FullName = request.FullName;
+            user.Phone = request.Phone;
+            user.Gender = request.Gender;
+            user.Address = request.Address;
+            user.DateOfBirth = DateOnly.FromDateTime(request.DateOfBirth);
+
+            await _userRepository.Update(user);
+
+            await _uow.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return new ResponseValue<UserUpdateDTO>(
+                new UserUpdateDTO
+                {
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    Gender = user.Gender,
+                    Address = user.Address,
+                    DateOfBirth = user.DateOfBirth.HasValue
+                        ? user.DateOfBirth.Value.ToDateTime(TimeOnly.MinValue)
+                        : default,
+                },
+                StatusReponse.Success,
+                "Cập nhật thông tin thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.Error,
+                "Lỗi hệ thống: " + ex.Message
+            );
+        }
+    }
 }

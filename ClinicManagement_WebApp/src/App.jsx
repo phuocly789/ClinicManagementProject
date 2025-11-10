@@ -14,8 +14,6 @@ import AdminScheduleManagement from "./pages/Admin/AdminScheduleManagement.jsx";
 import AdminUserManagement from "./pages/Admin/AdminUserManagement.jsx";
 import AdminSuppliers from "./pages/Admin/AdminSuppliers";
 import VerifyEmailPage from "./pages/auth/VerifyEmail/EmailVerification.jsx";
-import PatientProfile from "./pages/Patient/PatientProfile.jsx";
-import PatientLayout from "./Components/Patient/PatientLayout.jsx";
 import AdminSidebar from "./Components/Sidebar/AdminSidebar.jsx";
 import DoctorSidebar from "./Components/Sidebar/DoctorSidebar.jsx";
 import Home from "./pages/Home.jsx";
@@ -29,6 +27,10 @@ import ReceptionistSidebar from "./Components/Sidebar/ReceptionistSidebar.jsx";
 import AppointmentDashboard from "./pages/Receptionist/AppointmentDashboard.jsx";
 import CreateAppointment from "./pages/Receptionist/CreateAppointment.jsx";
 import UpdateAppointment from "./pages/Receptionist/UpdateAppointment.jsx";
+import PatientSidebar from "./Components/Sidebar/PatientSidebar.jsx";
+import PatientProfile from "./pages/Patient/PatientProfile.jsx";
+import RedirectIfLoggedIn from "./pages/auth/RedirectIfLoggedIn.jsx";
+import PatientBooking from "./pages/Patient/PatientBooking.jsx";
 
 function App() {
   return (
@@ -64,25 +66,25 @@ function App() {
           <Route path={path.DOCTOR.ROOT} element={<DoctorSidebar />} >
             <Route path={path.DOCTOR.TODAYAPPOINTMENT} element={<DoctorDashboard />} />
             <Route path={path.DOCTOR.SCHEDULE} element={<DoctorSchedule />} />
-
           </Route>
-        </Route>
-        {/* Technician */}
-        <Route element={<PrivateRoute allowedRoles={['Technician']} />}>
         </Route>
         {/* Patient */}
         <Route element={<PrivateRoute allowedRoles={['Patient']} />}>
-          <Route path={path.PATIENT.ROOT} element={<PatientLayout />}>
+          <Route path={path.PATIENT.ROOT} element={<PatientSidebar />}>
             <Route
               path={path.PATIENT.PROFILE.MANAGEMENT}
               element={<PatientProfile />}
             />
+            <Route path={path.PATIENT.BOOKING.MANAGEMENT} element={<PatientBooking />} />
             {/* <Route path={path.PATIENT.BOOKING} element={<PatientBooking />} />
           <Route path={path.PATIENT.HISTORY} element={<PatientHistory />} /> */}
           </Route>
         </Route>
-        <Route path={path.LOGIN} element={<LoginPage />} />{" "}
-        <Route path={path.REGISTER} element={<Register />} />{" "}
+        {/* Auth */}
+        <Route element={<RedirectIfLoggedIn />}>
+          <Route path={path.LOGIN} element={<LoginPage />} />{" "}
+          <Route path={path.REGISTER} element={<Register />} />{" "}
+        </Route>
         <Route path={path.LOGOUT} element={<Logout />} />{" "}
         <Route
           path={path.VERIFICATION_EMAIL}

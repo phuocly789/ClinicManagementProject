@@ -15,7 +15,8 @@ public partial class Service
 
     public string? Description { get; set; }
 
-    public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } = new List<InvoiceDetail>();
+    public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; } =
+        new List<InvoiceDetail>();
 
     public virtual ICollection<ServiceOrder> ServiceOrders { get; set; } = new List<ServiceOrder>();
 }

@@ -4,6 +4,7 @@ export default function ConfirmDeleteModal({
   isOpen,
   title = "Xác nhận xóa",
   message = "Bạn có chắc chắn muốn xóa mục này?",
+  buttonLabel = "Xóa",
   onConfirm,
   onCancel,
 }) {
@@ -32,7 +33,7 @@ export default function ConfirmDeleteModal({
               className="btn btn-danger"
               onClick={onConfirm}
             >
-              Xóa
+              {buttonLabel}
             </button>
           </div>
         </div>

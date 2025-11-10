@@ -1,10 +1,17 @@
 using ClinicManagement_API.Models;
 using ClinicManagement_Infrastructure.Data.Models;
 using ClinicManagementSystem.Application.DTOs.Auth;
+using Microsoft.EntityFrameworkCore;
 
 public interface IPatinetService
 {
     Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(PatientRegisterDto patientDto);
+    Task<ResponseValue<AppointmentDTO>> CreateAppointmentByPatientAsync(
+        AppointmentDTO request,
+        int patientId
+    );
+    Task<ResponseValue<List<TimeSlotDTO>>> GetAvailableTimeSlotsAsync(DateOnly date);
+    Task<ResponseValue<List<MyAppointmentDTO>>> GetMyAppointmentAsync(int patientId);
 }
 
 public class PatinetService : IPatinetService
@@ -13,6 +20,7 @@ public class PatinetService : IPatinetService
     private readonly IPatientRepository _patientRepository;
     private readonly IUnitOfWork _uow;
     private readonly IRoleRepository _roleRepository;
+    private readonly IAppointmentRepository _appointmentRepository;
     private readonly IUserRoleRepository _userRoleRepository;
 
     public PatinetService(
@@ -20,7 +28,8 @@ public class PatinetService : IPatinetService
         IUserRepository userRepository,
         IRoleRepository roleRepository,
         IPatientRepository patientRepository,
-        IUserRoleRepository userRoleRepository
+        IUserRoleRepository userRoleRepository,
+        IAppointmentRepository appointmentRepository
     )
     {
         _uow = uow;
@@ -28,6 +37,7 @@ public class PatinetService : IPatinetService
         _patientRepository = patientRepository;
         _userRoleRepository = userRoleRepository;
         _roleRepository = roleRepository;
+        _appointmentRepository = appointmentRepository;
     }
 
     public async Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(
@@ -49,14 +59,47 @@ public class PatinetService : IPatinetService
         {
             // Kiểm tra SĐT hoặc Email đã tồn tại chưa
             var existingUsers = await _userRepository.WhereAsync(u =>
-                u.Username == registerDto.PhoneNumber || u.Email == registerDto.Email
+                (u.Username == registerDto.PhoneNumber || u.Email == registerDto.Email)
             );
-            if (existingUsers.Any())
+            if (existingUsers.Any(u => u.IsActive == true))
             {
                 return new ResponseValue<PatientRegisterDto>(
                     null,
                     StatusReponse.BadRequest,
                     "Số điện thoại hoặc email đã tồn tại."
+                );
+            }
+            var existingUser = existingUsers.FirstOrDefault(u => u.IsActive == false);
+            if (existingUser != null)
+            {
+                //Kiểm tra email đã tồn tại chưa
+                var emailOwner = await _userRepository.SingleOrDefaultAsync(u =>
+                    u.Email == registerDto.Email
+                );
+                if (emailOwner != null && emailOwner.UserId != existingUser.UserId)
+                {
+                    await transaction.RollbackAsync();
+                    return new ResponseValue<PatientRegisterDto>(
+                        null,
+                        StatusReponse.BadRequest,
+                        "Email đã tồn tại."
+                    );
+                }
+
+                existingUser.FullName = registerDto.FullName;
+                existingUser.Email = registerDto.Email;
+                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password);
+                existingUser.Phone = registerDto.PhoneNumber;
+                existingUser.Address = registerDto.Address;
+                existingUser.DateOfBirth = registerDto.DateOfBirth;
+                existingUser.Gender = registerDto.Gender.ToString();
+                await _userRepository.Update(existingUser);
+                await _uow.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return new ResponseValue<PatientRegisterDto>(
+                    registerDto,
+                    StatusReponse.Success,
+                    "Vui lòng xác thực email để kích hoạt tài khoản."
                 );
             }
 
@@ -74,7 +117,7 @@ public class PatinetService : IPatinetService
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
                 // Không bắt buộc đổi mật khẩu vì người dùng đã tự đặt
                 MustChangePassword = false,
-                IsActive = true,
+                IsActive = false,
                 CreatedAt = DateTime.UtcNow,
             };
             await _userRepository.AddAsync(user);
@@ -125,4 +168,196 @@ public class PatinetService : IPatinetService
             );
         }
     }
+
+    public async Task<ResponseValue<AppointmentDTO>> CreateAppointmentByPatientAsync(
+        AppointmentDTO request,
+        int patientId
+    )
+    {
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var nowTime = TimeOnly.FromDateTime(DateTime.Now);
+            // 1. Không cho đặt ngày quá khứ
+            if (request.AppointmentDate < today)
+            {
+                return new ResponseValue<AppointmentDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Không thể tạo lịch hẹn trong quá khứ."
+                );
+            }
+
+            // 2. Nếu đặt đúng hôm nay → giờ phải lớn hơn thời gian hiện tại
+            if (request.AppointmentDate == today && request.AppointmentTime <= nowTime)
+            {
+                return new ResponseValue<AppointmentDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Giờ hẹn không hợp lệ."
+                );
+            }
+            //đã có lịch đặt trong ngày hôm nay
+            var existingAppointment = await _appointmentRepository
+                .GetAll()
+                .Where(a =>
+                    a.PatientId == patientId && a.AppointmentDate == request.AppointmentDate
+                )
+                .FirstOrDefaultAsync();
+            if (existingAppointment != null)
+            {
+                return new ResponseValue<AppointmentDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Bạn đã có lịch hẹn trong ngày này."
+                );
+            }
+
+            using var transaction = await _uow.BeginTransactionAsync();
+
+            var appointment = new Appointment
+            {
+                PatientId = patientId,
+                AppointmentDate = request.AppointmentDate,
+                AppointmentTime = request.AppointmentTime,
+                Status = "Ordered",
+                Notes = request.Notes,
+                CreatedAt = DateTime.Now,
+            };
+            await _appointmentRepository.AddAsync(appointment);
+            await _uow.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return new ResponseValue<AppointmentDTO>(
+                new AppointmentDTO
+                {
+                    PatientId = appointment.PatientId,
+                    AppointmentDate = appointment.AppointmentDate,
+                    AppointmentTime = appointment.AppointmentTime,
+                    Status = appointment.Status,
+                    Notes = appointment.Notes,
+                    CreatedAt = appointment.CreatedAt,
+                },
+                StatusReponse.Success,
+                "Tạo lịch hẹn thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            return new ResponseValue<AppointmentDTO>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi tạo lịch hẹn: " + ex.Message
+            );
+        }
+    }
+
+    //lấy lịch hẹn hợp lệ
+    public async Task<ResponseValue<List<TimeSlotDTO>>> GetAvailableTimeSlotsAsync(DateOnly date)
+    {
+        var timeSlots = new List<TimeOnly>
+        {
+            // lấy từ 7am đến 16:30pm
+            new(7, 0),
+            new(7, 30),
+            new(8, 0),
+            new(8, 30),
+            new(9, 0),
+            new(9, 30),
+            new(10, 0),
+            new(10, 30),
+            new(11, 0),
+            new(13, 0),
+            new(13, 30),
+            new(14, 0),
+            new(14, 30),
+            new(15, 0),
+            new(15, 30),
+            new(16, 0),
+        };
+        const int MaxPerSlot = 10;
+
+        var appointments = await _appointmentRepository
+            .GetAll()
+            .Where(a =>
+                a.AppointmentDate == date && a.Status != "Cancelled" && a.Status != "Completed"
+            )
+            .ToListAsync();
+        var result = timeSlots
+            .Select(slot =>
+            {
+                var count = appointments.Count(a => a.AppointmentTime == slot);
+
+                return new TimeSlotDTO
+                {
+                    Time = slot.ToString("HH:mm"),
+                    BookedCount = count,
+                    Available = count < MaxPerSlot,
+                };
+            })
+            .ToList();
+
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var now = TimeOnly.FromDateTime(DateTime.Now);
+        if (date == today)
+        {
+            result = result.Where(r => TimeOnly.Parse(r.Time) > now).ToList();
+        }
+        return new ResponseValue<List<TimeSlotDTO>>(
+            result,
+            StatusReponse.Success,
+            "Lấy danh sách lịch hẹn thành công."
+        );
+    }
+
+    public async Task<ResponseValue<List<MyAppointmentDTO>>> GetMyAppointmentAsync(int patientId)
+    {
+        try
+        {
+            var appointments = await _appointmentRepository
+                .GetAll()
+                .Where(q => q.PatientId == patientId)
+                .AsNoTracking()
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a => new MyAppointmentDTO
+                {
+                    AppointmentId = a.AppointmentId,
+                    StaffName = a.Staff != null ? a.Staff.FullName : "Không rõ",
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentTime = a.AppointmentTime,
+                    Status = a.Status,
+                    Notes = a.Notes,
+                })
+                .ToListAsync();
+            return new ResponseValue<List<MyAppointmentDTO>>(
+                appointments,
+                StatusReponse.Success,
+                "Lấy danh sách lịch hẹn thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            return new ResponseValue<List<MyAppointmentDTO>>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy danh sách lịch hẹn: " + ex.Message
+            );
+        }
+    }
+}
+
+public class TimeSlotDTO
+{
+    public string Time { get; set; }
+    public int BookedCount { get; set; }
+    public bool Available { get; set; }
+}
+
+public class MyAppointmentDTO
+{
+    public int AppointmentId { get; set; }
+    public string StaffName { get; set; }
+    public DateOnly AppointmentDate { get; set; }
+    public TimeOnly AppointmentTime { get; set; }
+    public string Status { get; set; }
+    public string Notes { get; set; }
 }

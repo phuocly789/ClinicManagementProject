@@ -62,5 +62,7 @@ public partial class User
     public virtual ICollection<StaffSchedule> StaffSchedules { get; set; } =
         new List<StaffSchedule>();
 
+    public virtual ICollection<UserOtp> UserOtps { get; set; } = new List<UserOtp>();
+
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }
