@@ -40,9 +40,9 @@ const PatientSidebar = () => {
                             </NavLink>
                         </li>
                         <li>
-                            <NavLink to="/patient/prescription-management" className="nav-item">
+                            <NavLink to={path.PATIENT.MEDICALHISTORY.MANAGEMENT} className="nav-item">
                                 <i className="fa-solid fa-file-medical"></i>
-                                Đơn thuốc
+                                Lịch sử khám bệnh
                             </NavLink>
                         </li>
 

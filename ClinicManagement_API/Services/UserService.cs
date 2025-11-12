@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IUserService : IServiceBase<User>
 {
-    Task<User?> GetByUsernameAsync(string username);
-    Task<User?> GetByEmailAsync(string email);
+    Task<User> GetByUsernameAsync(string username);
+    Task<User> GetByEmailAsync(string email);
     Task<ResponseValue<UserDTO>> ChangePasswordAsync(
         string username,
         string currentPassword,
@@ -18,8 +18,10 @@ public interface IUserService : IServiceBase<User>
     Task<ResponseValue<UserUpdateDTO>> UpdateUserAsync(UserUpdateDTO request, string username);
 
     Task<ResponseValue<LoginResponseDTO>> Login(UserLoginDTO model);
-    // Task<(bool Success, string Message)> RegisterBuyer(UserBuyerRegister registerBuyer);
-    // Task<(bool Success, string Message)> RegisterSeller(UserSellerRegister registerSeller);
+
+    //Vô hiệu hóa tài khoản
+    Task<ResponseValue<UserDTO>> DeactivateAccountAsync(string username);
+    //quên mật khẩu
 }
 
 public class UserService : ServiceBase<User>, IUserService
@@ -97,7 +99,7 @@ public class UserService : ServiceBase<User>, IUserService
             return new ResponseValue<LoginResponseDTO>(
                 null,
                 StatusReponse.BadRequest,
-                "Tài khoản chưa được kích hoạt"
+                "Tài khoản chưa được kích hoạt. Vui lòng liên hệ bộ phận hỗ trợ"
             );
         }
         // Tạo token với role được chọn
@@ -266,6 +268,44 @@ public class UserService : ServiceBase<User>, IUserService
         {
             await transaction.RollbackAsync();
             return new ResponseValue<UserUpdateDTO>(
+                null,
+                StatusReponse.Error,
+                "Lỗi hệ thống: " + ex.Message
+            );
+        }
+    }
+
+    public async Task<ResponseValue<UserDTO>> DeactivateAccountAsync(string username)
+    {
+        var user = await GetByUsernameAsync(username);
+
+        if (user == null)
+        {
+            return new ResponseValue<UserDTO>(
+                null,
+                StatusReponse.NotFound,
+                "Không tìm thấy người dùng."
+            );
+        }
+        using var transaction = await _uow.BeginTransactionAsync();
+        try
+        {
+            user.IsActive = false;
+            await _userRepository.Update(user);
+
+            await _uow.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return new ResponseValue<UserDTO>(
+                new UserDTO { IsActive = user.IsActive },
+                StatusReponse.Success,
+                "Tài khoản đã bị vô hiệu hóa."
+            );
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return new ResponseValue<UserDTO>(
                 null,
                 StatusReponse.Error,
                 "Lỗi hệ thống: " + ex.Message

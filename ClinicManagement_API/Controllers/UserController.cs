@@ -123,6 +123,15 @@ namespace ClinicManagement_API.Controllers
             }
             return BadRequest(result);
         }
+
+        //get all medical record
+        [HttpGet("GetMedicalRecordByPatient")]
+        public async Task<ActionResult> GetMedicalRecordByPatient()
+        {
+            var patientId = int.Parse(User.FindFirst("userid")!.Value);
+            var result = await _patientService.GetMedicalRecordByPatientAsync(patientId);
+            return Ok(result);
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-// PatientProfile.jsx - HOÀN CHỈNH 100% (GIAO DIỆN TINH TẾ + CHỨC NĂNG MỚI)
+// PatientProfile.jsx - HOÀN CHỈNH VỚI API MỚI
 import React, { useCallback, useEffect, useState } from "react";
 import instance from "../../axios";
 import authService from "../../services/authService";
@@ -17,7 +17,8 @@ const PatientProfile = () => {
     address: "",
     dateOfBirth: "",
     passwordHash: "",
-    gender: ""
+    gender: "",
+    mustChangePassword: false
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -32,13 +33,16 @@ const PatientProfile = () => {
   const [username, setUsername] = useState("");
   const [showOtpModalPassword, setShowOtpModalPassword] = useState(false);
   const [showOtpModalUpdate, setShowOtpModalUpdate] = useState(false);
+  const [showOtpModalDeactivate, setShowOtpModalDeactivate] = useState(false);
+  const [showOtpModalForgotPassword, setShowOtpModalForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [buttonSave, setButtonSave] = useState(false);
 
-  // State cho modal mới
+  // State cho modal
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState("");
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
 
   // Lấy username từ token
   useEffect(() => {
@@ -95,7 +99,13 @@ const PatientProfile = () => {
         gender: user.gender || "",
         dateOfBirth: user.dateOfBirth?.split("T")[0] || "",
         passwordHash: user.passwordHash || user.password || "",
+        mustChangePassword: user.mustChangePassword || false
       });
+
+      // Kiểm tra nếu phải đổi mật khẩu bắt buộc
+      if (user.mustChangePassword) {
+        setShowForceChangePasswordModal(true);
+      }
     } catch (err) {
       setToast({ type: "error", message: "Không tải được hồ sơ!" });
     } finally {
@@ -215,6 +225,11 @@ const PatientProfile = () => {
       setToast({ type: "success", message: "Đổi mật khẩu thành công!" });
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setShowOtpModalPassword(false);
+
+      // Reset mustChangePassword sau khi đổi mật khẩu thành công
+      setProfileData(prev => ({ ...prev, mustChangePassword: false }));
+      setShowForceChangePasswordModal(false);
+
       fetchProfile();
     } catch (err) {
       setToast({ type: "error", message: err.response?.data?.message || "Đổi mật khẩu thất bại!" });
@@ -223,30 +238,89 @@ const PatientProfile = () => {
     }
   };
 
-  // === CHỨC NĂNG MỚI ===
+  // === CHỨC NĂNG MỚI VỚI API ===
 
-  // Quên mật khẩu (tĩnh)
-  const handleForgotPassword = () => {
-    setToast({
-      type: "info",
-      message: "Yêu cầu quên mật khẩu đã được ghi nhận. Vui lòng kiểm tra email để được hướng dẫn."
-    });
-    setShowForgotPasswordModal(false);
+  // Quên mật khẩu - Gửi OTP trước
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    try {
+      await instance.post("Auth/SendOTP", { email: profileData.email });
+      setToast({ type: "success", message: "Mã OTP đã gửi đến email!" });
+      setShowForgotPasswordModal(false);
+      setShowOtpModalForgotPassword(true);
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data || "Gửi OTP thất bại!" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Vô hiệu hóa tài khoản (tĩnh)
-  const handleDeactivateAccount = () => {
+  // Xác nhận quên mật khẩu sau OTP
+  const handleForgotPasswordAfterOtp = async () => {
+    setLoading(true);
+    try {
+      await instance.post("Auth/ResetPassword", { email: profileData.email });
+      setToast({
+        type: "success",
+        message: "Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra và đăng nhập lại."
+      });
+      setShowOtpModalForgotPassword(false);
+
+      // Đăng xuất sau khi reset mật khẩu
+      setTimeout(() => {
+        authService.logout();
+        window.location.href = "/login";
+      }, 3000);
+
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data || "Reset mật khẩu thất bại!" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Vô hiệu hóa tài khoản - Gửi OTP trước
+  const handleDeactivateAccount = async () => {
     if (!deactivateReason.trim()) {
       setToast({ type: "error", message: "Vui lòng nhập lý do vô hiệu hóa tài khoản" });
       return;
     }
 
-    setToast({
-      type: "warning",
-      message: `Yêu cầu vô hiệu hóa tài khoản đã được ghi nhận. Lý do: ${deactivateReason}`
-    });
-    setShowDeactivateModal(false);
-    setDeactivateReason("");
+    setLoading(true);
+    try {
+      await instance.post("Auth/SendOTP", { email: profileData.email });
+      setToast({ type: "success", message: "Mã OTP đã gửi đến email!" });
+      setShowDeactivateModal(false);
+      setShowOtpModalDeactivate(true);
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data || "Gửi OTP thất bại!" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Xác nhận vô hiệu hóa sau OTP
+  const handleDeactivateAfterOtp = async () => {
+    setLoading(true);
+    try {
+      await instance.put("Auth/DeactivateAccount");
+      setToast({
+        type: "warning",
+        message: "Tài khoản đã được vô hiệu hóa. Bạn sẽ đăng xuất."
+      });
+      setShowOtpModalDeactivate(false);
+
+      // Đăng xuất sau khi vô hiệu hóa
+      setTimeout(() => {
+        authService.logout();
+        window.location.href = "/login";
+      }, 3000);
+
+    } catch (err) {
+      setToast({ type: "error", message: err.response?.data || "Vô hiệu hóa tài khoản thất bại!" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ✅ Get Location
@@ -288,6 +362,12 @@ const PatientProfile = () => {
         maximumAge: 0
       }
     );
+  };
+
+  // Xử lý đăng xuất
+  const handleLogout = () => {
+    authService.logout();
+    window.location.href = "/login";
   };
 
   return (
@@ -608,14 +688,6 @@ const PatientProfile = () => {
                       <i className="bi bi-person-x me-2"></i>
                       Vô hiệu hóa tài khoản
                     </Button>
-
-                    <Button
-                      variant="outline-info"
-                      className="px-3"
-                    >
-                      <i className="bi bi-download me-2"></i>
-                      Xuất dữ liệu
-                    </Button>
                   </div>
                 </div>
               </Card.Body>
@@ -624,7 +696,7 @@ const PatientProfile = () => {
         </div>
       </div>
 
-      {/* OTP Modal */}
+      {/* OTP Modal cho các chức năng */}
       <OtpModal
         show={showOtpModalPassword}
         email={profileData.email}
@@ -637,6 +709,18 @@ const PatientProfile = () => {
         onClose={() => setShowOtpModalUpdate(false)}
         onVerified={handleSaveProfile}
       />
+      <OtpModal
+        show={showOtpModalDeactivate}
+        email={profileData.email}
+        onClose={() => setShowOtpModalDeactivate(false)}
+        onVerified={handleDeactivateAfterOtp}
+      />
+      <OtpModal
+        show={showOtpModalForgotPassword}
+        email={profileData.email}
+        onClose={() => setShowOtpModalForgotPassword(false)}
+        onVerified={handleForgotPasswordAfterOtp}
+      />
 
       {/* Modal Quên mật khẩu */}
       <Modal show={showForgotPasswordModal} onHide={() => setShowForgotPasswordModal(false)} centered>
@@ -647,10 +731,10 @@ const PatientProfile = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu. Bạn có chắc chắn muốn tiếp tục?</p>
+          <p>Bạn sẽ nhận được OTP xác nhận và sau đó hệ thống sẽ gửi mật khẩu mới đến email của bạn. Bạn có chắc chắn muốn tiếp tục?</p>
           <div className="alert alert-info">
             <i className="bi bi-info-circle me-2"></i>
-            Liên kết đặt lại mật khẩu sẽ được gửi đến: <strong>{profileData.email}</strong>
+            Mã OTP và mật khẩu mới sẽ được gửi đến: <strong>{profileData.email}</strong>
           </div>
         </Modal.Body>
         <Modal.Footer>
@@ -701,6 +785,37 @@ const PatientProfile = () => {
             Vô hiệu hóa tài khoản
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Modal bắt buộc đổi mật khẩu */}
+      <Modal show={showForceChangePasswordModal} onHide={() => { }} centered backdrop="static" keyboard={false}>
+        <Modal.Header className="bg-danger text-white">
+          <Modal.Title>
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            Bắt buộc đổi mật khẩu
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="alert alert-danger">
+            <i className="bi bi-shield-exclamation me-2"></i>
+            <strong>Bảo mật quan trọng:</strong> Bạn cần phải đổi mật khẩu để tiếp tục sử dụng hệ thống.
+          </div>
+          <p className="mb-3">Vui lòng đổi mật khẩu ngay bây giờ để đảm bảo an toàn cho tài khoản của bạn.</p>
+
+          <div className="d-grid gap-2">
+            <Button
+              variant="danger"
+              onClick={() => {
+                setShowForceChangePasswordModal(false);
+                // Focus vào phần đổi mật khẩu
+                document.getElementById('security-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <i className="bi bi-key me-2"></i>
+              Đổi mật khẩu ngay
+            </Button>
+          </div>
+        </Modal.Body>
       </Modal>
     </>
   );

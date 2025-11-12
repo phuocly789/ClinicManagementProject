@@ -482,6 +482,8 @@ public class AdminService : IAdminService
             //cập nhật passwordHash và reset
             user.PasswordHash = hashedPassword;
             user.MustChangePassword = true;
+
+            await _userRepository.Update(user);
             await _uow.SaveChangesAsync();
             await transaction.CommitAsync();
             return new ResponseValue<ResetPasswordResponse>(

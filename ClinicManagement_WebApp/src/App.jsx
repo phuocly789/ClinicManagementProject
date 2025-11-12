@@ -31,6 +31,7 @@ import PatientSidebar from "./Components/Sidebar/PatientSidebar.jsx";
 import PatientProfile from "./pages/Patient/PatientProfile.jsx";
 import RedirectIfLoggedIn from "./pages/auth/RedirectIfLoggedIn.jsx";
 import PatientBooking from "./pages/Patient/PatientBooking.jsx";
+import PatientMedicalHistory from "./pages/Patient/PatientMedicalHistory.jsx";
 
 function App() {
   return (
@@ -76,8 +77,8 @@ function App() {
               element={<PatientProfile />}
             />
             <Route path={path.PATIENT.BOOKING.MANAGEMENT} element={<PatientBooking />} />
-            {/* <Route path={path.PATIENT.BOOKING} element={<PatientBooking />} />
-          <Route path={path.PATIENT.HISTORY} element={<PatientHistory />} /> */}
+            <Route path={path.PATIENT.MEDICALHISTORY.MANAGEMENT} element={<PatientMedicalHistory />} />
+
           </Route>
         </Route>
         {/* Auth */}

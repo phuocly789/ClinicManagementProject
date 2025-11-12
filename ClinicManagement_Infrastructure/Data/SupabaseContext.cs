@@ -26,6 +26,8 @@ public partial class SupabaseContext : DbContext
 
     public virtual DbSet<MedicalRecord> MedicalRecords { get; set; }
 
+    public virtual DbSet<MedicalRecordDetail> MedicalRecordDetails { get; set; }
+
     public virtual DbSet<MedicalStaff> MedicalStaffs { get; set; }
 
     public virtual DbSet<Medicine> Medicines { get; set; }
@@ -348,6 +350,16 @@ public partial class SupabaseContext : DbContext
                 .HasForeignKey(d => d.PatientId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("MedicalRecords_PatientId_fkey");
+        });
+
+        modelBuilder.Entity<MedicalRecordDetail>(entity =>
+        {
+            entity.HasNoKey().ToView("MedicalRecordDetails");
+
+            entity.Property(e => e.Appointments).HasColumnType("json");
+            entity.Property(e => e.PatientName).HasMaxLength(100);
+            entity.Property(e => e.RecordNumber).HasMaxLength(50);
+            entity.Property(e => e.RecordStatus).HasMaxLength(20);
         });
 
         modelBuilder.Entity<MedicalStaff>(entity =>

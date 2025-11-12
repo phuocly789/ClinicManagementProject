@@ -1,4 +1,6 @@
+using System.Text.Json;
 using ClinicManagement_API.Models;
+using ClinicManagement_Infrastructure.Data;
 using ClinicManagement_Infrastructure.Data.Models;
 using ClinicManagementSystem.Application.DTOs.Auth;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +14,7 @@ public interface IPatinetService
     );
     Task<ResponseValue<List<TimeSlotDTO>>> GetAvailableTimeSlotsAsync(DateOnly date);
     Task<ResponseValue<List<MyAppointmentDTO>>> GetMyAppointmentAsync(int patientId);
+    Task<ResponseValue<List<MedicalRecordDetailDTO>>> GetMedicalRecordByPatientAsync(int patientId);
 }
 
 public class PatinetService : IPatinetService
@@ -22,6 +25,8 @@ public class PatinetService : IPatinetService
     private readonly IRoleRepository _roleRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IUserRoleRepository _userRoleRepository;
+    private readonly IMedicalRecordDetailRepository _medicalRecordDetailRepository;
+    private readonly SupabaseContext _context;
 
     public PatinetService(
         IUnitOfWork uow,
@@ -29,7 +34,9 @@ public class PatinetService : IPatinetService
         IRoleRepository roleRepository,
         IPatientRepository patientRepository,
         IUserRoleRepository userRoleRepository,
-        IAppointmentRepository appointmentRepository
+        IMedicalRecordDetailRepository medicalRecordDetailRepository,
+        IAppointmentRepository appointmentRepository,
+        SupabaseContext context
     )
     {
         _uow = uow;
@@ -38,6 +45,8 @@ public class PatinetService : IPatinetService
         _userRoleRepository = userRoleRepository;
         _roleRepository = roleRepository;
         _appointmentRepository = appointmentRepository;
+        _medicalRecordDetailRepository = medicalRecordDetailRepository;
+        _context = context;
     }
 
     public async Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(
@@ -340,6 +349,67 @@ public class PatinetService : IPatinetService
                 null,
                 StatusReponse.Error,
                 "Đã xảy ra lỗi khi lấy danh sách lịch hẹn: " + ex.Message
+            );
+        }
+    }
+
+    public async Task<ResponseValue<List<MedicalRecordDetailDTO>>> GetMedicalRecordByPatientAsync(
+        int patientId
+    )
+    {
+        try
+        {
+            var rawRecords = await _medicalRecordDetailRepository
+                .GetAll()
+                .Where(mr => mr.PatientId == patientId)
+                .Select(mr => new
+                {
+                    mr.RecordId,
+                    mr.RecordNumber,
+                    mr.IssuedDate,
+                    mr.PatientId,
+                    mr.PatientName,
+                    mr.RecordStatus,
+                    mr.Appointments,
+                })
+                .ToListAsync();
+
+            // THÊM CONVERTER VÀO ĐÂY
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            jsonOptions.Converters.Add(new DateOnlyJsonConverter());
+
+            var result = rawRecords
+                .Select(r => new MedicalRecordDetailDTO
+                {
+                    RecordId = r.RecordId,
+                    RecordNumber = r.RecordNumber,
+                    IssuedDate = r.IssuedDate,
+                    PatientId = r.PatientId,
+                    PatientName = r.PatientName,
+                    RecordStatus = r.RecordStatus,
+
+                    Appointments =
+                        !string.IsNullOrWhiteSpace(r.Appointments) && r.Appointments != "[]"
+                            ? JsonSerializer.Deserialize<List<AppointmentForPatientDTO>>(
+                                r.Appointments,
+                                jsonOptions
+                            ) ?? new()
+                            : new(),
+                })
+                .ToList();
+
+            return new ResponseValue<List<MedicalRecordDetailDTO>>(
+                result,
+                StatusReponse.Success,
+                "Lấy danh sách hồ sơ bệnh án thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            return new ResponseValue<List<MedicalRecordDetailDTO>>(
+                null,
+                StatusReponse.Error,
+                "Lỗi: " + ex.Message
             );
         }
     }

@@ -76,6 +76,9 @@ export const path = {
         },
         BOOKING:{
             MANAGEMENT: "/patient/booking-management",
+        },
+        MEDICALHISTORY: {
+            MANAGEMENT: "/patient/medical-history-management",
         }
     },
     DOCTOR:{
