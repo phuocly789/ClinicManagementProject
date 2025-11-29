@@ -2,6 +2,7 @@ using ClinicManagement_Infrastructure.Data.Models;
 
 public interface IAppointmentService
 {
+    Task<List<AppointmentDTO>> GetAllAppointmentsAsync();
     Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null);
     Task<ResponseValue<AppointmentDTO>> AddToAppointmentAsync(
         AppointmentCreateDTO request,
@@ -38,10 +39,42 @@ public class AppointmentService : IAppointmentService
         _uow = uow;
     }
 
+<<<<<<< HEAD
+    public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
+    {
+        try
+        {
+            var appointments = await _appointmentRepository.GetAllAppointmentsAsync();
+
+            var appointmentList = appointments.Select(a => new AppointmentDTO
+            {
+                AppointmentId = a.AppointmentId,
+                PatientId = a.PatientId,
+                PatientName = a.Patient?.FullName,
+                StaffId = a.StaffId,
+                StaffName =  a.Staff?.FullName,
+                AppointmentDate = a.AppointmentDate,
+                AppointmentTime = a.AppointmentTime,
+                Status = a.Status,
+                Notes = a.Notes
+            }).ToList();
+
+            return appointmentList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching appointment list");
+            throw;
+        }
+    }
+
+    public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null)
+=======
     public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(
         int staffId,
         DateOnly? date = null
     )
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
     {
         try
         {

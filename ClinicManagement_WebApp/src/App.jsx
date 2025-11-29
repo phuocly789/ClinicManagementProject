@@ -27,11 +27,18 @@ import ReceptionistSidebar from "./Components/Sidebar/ReceptionistSidebar.jsx";
 import AppointmentDashboard from "./pages/Receptionist/AppointmentDashboard.jsx";
 import CreateAppointment from "./pages/Receptionist/CreateAppointment.jsx";
 import UpdateAppointment from "./pages/Receptionist/UpdateAppointment.jsx";
+<<<<<<< HEAD
+import ReceptionistScheduleManagement from "./pages/Receptionist/ReceptionistScheduleManagement.jsx";
+import AppointmentManagement from "./pages/Receptionist/AppointmentManagement.jsx";
+import CreatePatient from "./pages/Receptionist/CreatePatient.jsx";
+import CreateMedicalRecord from "./pages/Receptionist/CreateMedicalRecord.jsx";
+=======
 import PatientSidebar from "./Components/Sidebar/PatientSidebar.jsx";
 import PatientProfile from "./pages/Patient/PatientProfile.jsx";
 import RedirectIfLoggedIn from "./pages/auth/RedirectIfLoggedIn.jsx";
 import PatientBooking from "./pages/Patient/PatientBooking.jsx";
 import PatientMedicalHistory from "./pages/Patient/PatientMedicalHistory.jsx";
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
 
 function App() {
   return (
@@ -57,9 +64,12 @@ function App() {
         {/* Receptionist */}
         <Route element={<PrivateRoute allowedRoles={['Receptionist']} />}>
           <Route path={path.RECEPTIONIST.ROOT} element={<ReceptionistSidebar />}>
-            <Route path={path.RECEPTIONIST.APPOINTMENT.MANAGEMENT} element={<AppointmentDashboard />} />
+            <Route path={path.RECEPTIONIST.APPOINTMENT.MANAGEMENT} element={<AppointmentManagement />} />
             <Route path={path.RECEPTIONIST.APPOINTMENT.CREATE} element={<CreateAppointment />} />
             <Route path={path.RECEPTIONIST.APPOINTMENT.UPDATE} element={<UpdateAppointment />} />
+            <Route path={path.RECEPTIONIST.APPOINTMENT.SCHEDULE} element={<ReceptionistScheduleManagement />} />
+            <Route path={path.RECEPTIONIST.MEDICALRECORD.CREATE} element={<CreateMedicalRecord />} />
+            <Route path={path.RECEPTIONIST.USER.CREATE} element={<CreatePatient />} />
           </Route>
         </Route>
         {/* Doctor */}

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 public interface IAppointmentRepository : IRepository<Appointment>
 {
     // Add custom methods for Appointment here if needed
+    Task<List<Appointment>> GetAllAppointmentsAsync();
     Task<List<AppointmentMyScheduleDto>> GetAppointmentsByStaffIdAnddDateAsync(
         int staffId,
         DateOnly date
@@ -16,6 +17,14 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
 {
     public AppointmentRepository(SupabaseContext context)
         : base(context) { }
+
+    public async Task<List<Appointment>> GetAllAppointmentsAsync()
+    {
+        return await _context.Appointments
+            .Include(a => a.Patient)
+            .Include(a => a.Staff)
+            .ToListAsync();
+    }
 
     public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsByStaffIdAnddDateAsync(
         int staffId,

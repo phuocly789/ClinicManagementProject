@@ -43,6 +43,7 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
+        [Authorize(Roles = "Receptionist")]
         [HttpPost("CreateQueueAsync")]
         public async Task<ActionResult<ResponseValue<QueueDTO>>> CreateQueueAsync(
             [FromBody] QueueCreateDTO request
@@ -52,7 +53,15 @@ namespace ClinicManagement_API.Controllers
             {
                 return BadRequest(ModelState);
             }
-            var result = await _queueService.AddToQueueAsync(request);
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized(new { success = false, message = "Token không hợp lệ hoặc thiếu UserId." });
+            }
+
+            int createdBy = int.Parse(userIdClaim);
+
+            var result = await _queueService.AddToQueueAsync(request, createdBy);
 
             if (result.Status == StatusReponse.Success)
             {

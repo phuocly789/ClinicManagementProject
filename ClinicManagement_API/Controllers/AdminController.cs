@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagement_API.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
@@ -24,7 +24,7 @@ namespace ClinicManagement_API.Controllers
             _logger = logger;
         }
 
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Receptionist")]
         [HttpGet("GetAllUsersAsync")]
         public async Task<ActionResult<ResponseValue<PagedResult<UserDTO>>>> GetAllUsersAsync(
             [FromQuery] string role = null,
@@ -71,10 +71,11 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAllMedicalStaffAsync")]
         public async Task<
-            ActionResult<ResponseValue<List<StaffMedicalDTO>>>
-        > GetAllMedicalStaffAsync()
+                    ActionResult<ResponseValue<List<StaffMedicalDTO>>>
+                > GetAllMedicalStaffAsync()
         {
             try
             {
@@ -95,10 +96,11 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("CreateUser")]
         public async Task<ActionResult<ResponseValue<CreateUserResponse>>> CreateUser(
-            [FromBody] CreateUserRequest request
-        )
+                    [FromBody] CreateUserRequest request
+                )
         {
             if (!ModelState.IsValid)
             {
@@ -120,11 +122,12 @@ namespace ClinicManagement_API.Controllers
             return StatusCode(500, result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("UpdateUser/{id}")]
         public async Task<ActionResult<ResponseValue<UpdateUserResponse>>> UpdateUser(
-            int id,
-            [FromBody] UpdateUserRequest request
-        )
+                    int id,
+                    [FromBody] UpdateUserRequest request
+                )
         {
             if (!ModelState.IsValid)
             {
@@ -152,6 +155,7 @@ namespace ClinicManagement_API.Controllers
             return StatusCode(500, result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("ResetPassword/{id}")]
         public async Task<ActionResult<ResponseValue<ResetPasswordResponse>>> ResetPassword(int id)
         {
@@ -171,6 +175,7 @@ namespace ClinicManagement_API.Controllers
             return StatusCode(500, result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("toggle-active/{id}")]
         public async Task<IActionResult> ToggleUserActive(
             int id,
@@ -201,6 +206,7 @@ namespace ClinicManagement_API.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("User/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
