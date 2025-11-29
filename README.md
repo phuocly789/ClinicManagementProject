@@ -93,11 +93,22 @@ Hệ thống phân quyền chặt chẽ cho 4 vai trò:
 - Báo cáo, biểu đồ doanh thu chi tiết
 
 ---
+### Tài khoản đăng nhập mẫu (đã được seed sẵn trong database)
 
+| Vai trò       | Email                       | Mật khẩu |
+|---------------|-----------------------------|----------|
+| Admin         | admin@phongkham.com         | 123456   |
+| Bác sĩ        | bs.khang@phongkham.com      | 123456   |
+| Lễ tân        | lt.hang@phongkham.com       | 123456   |
+| Bệnh nhân     | bn.an@gmail.com             | 123456   |
+
+> Lưu ý: Tất cả mật khẩu đều đã được mã hóa bằng Bcrypt trong database.  
+> Bạn có thể đăng nhập ngay sau khi chạy xong dự án mà không cần đăng ký thêm.
+---
 ## 🚀 Hướng dẫn cài đặt & chạy dự án
 
 ### Yêu cầu
-- .NET 8 SDK
+- .NET 9 SDK
 - Node.js ≥ 18
 - PostgreSQL ≥ 13
 - Git
@@ -134,15 +145,5 @@ cd ../Frontend
 npm install
 npm run dev
 # Frontend sẽ chạy tại: http://localhost:5173  
-  
-### Tài khoản đăng nhập mẫu (đã được seed sẵn trong database)
 
-| Vai trò       | Email                       | Mật khẩu |
-|---------------|-----------------------------|----------|
-| Admin         | admin@phongkham.com         | 123456   |
-| Bác sĩ        | bs.khang@phongkham.com      | 123456   |
-| Lễ tân        | lt.hang@phongkham.com       | 123456   |
-| Bệnh nhân     | bn.an@gmail.com             | 123456   |
 
-> Lưu ý: Tất cả mật khẩu đều đã được mã hóa bằng Bcrypt trong database.  
-> Bạn có thể đăng nhập ngay sau khi chạy xong dự án mà không cần đăng ký thêm.
