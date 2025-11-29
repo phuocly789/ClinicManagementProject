@@ -130,12 +130,12 @@ D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\obj\Debug\net9.0\
 D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\obj\Debug\net9.0\ref\ClinicManagement_API.dll
 D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\bin\Debug\net9.0\Newtonsoft.Json.dll
 D:\Project\ClinicManagementProject-Dotnet\ClinicManagement_API\bin\Debug\net9.0\System.Net.WebSockets.WebSocketProtocol.dll
-D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\appsettings.Development.json
-D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\appsettings.json
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_Infrastructure.deps.json
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_Infrastructure.runtimeconfig.json
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_Infrastructure.staticwebassets.endpoints.json
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_Infrastructure.exe
+D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\appsettings.Development.json
+D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\appsettings.json
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_API.staticwebassets.endpoints.json
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_API.exe
 D:\Deadline\ClinicManagementProject\ClinicManagement_API\bin\Debug\net9.0\ClinicManagement_API.deps.json

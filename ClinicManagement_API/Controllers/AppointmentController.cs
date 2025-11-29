@@ -15,6 +15,32 @@ namespace ClinicManagement_API.Controllers
             _appointmentService = appointmentService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllAppointmentsAsync()
+        {
+            try
+            {
+                var result = await _appointmentService.GetAllAppointmentsAsync();
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        data = result
+                    });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        success = false,
+                        message = "Có lỗi xảy ra khi lấy danh sách lịch hẹn.",
+                        error = ex.Message
+                    });
+            }
+        }
+
         [HttpGet("staff/{staffId}")]
         public async Task<IActionResult> GetAppointmentsAsync(int staffId, [FromQuery] DateOnly? date = null)
         {

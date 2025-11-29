@@ -4,6 +4,8 @@ using ClinicManagementSystem.Application.DTOs.Auth;
 
 public interface IPatinetService
 {
+    Task<List<PatientDTO>> GetAllPatientsAsync();
+    Task<PatientDTO?> GetPatientByIdAsync(int id);
     Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(PatientRegisterDto patientDto);
 }
 
@@ -14,13 +16,15 @@ public class PatinetService : IPatinetService
     private readonly IUnitOfWork _uow;
     private readonly IRoleRepository _roleRepository;
     private readonly IUserRoleRepository _userRoleRepository;
+    private readonly ILogger<PatinetService> _logger;
 
     public PatinetService(
         IUnitOfWork uow,
         IUserRepository userRepository,
         IRoleRepository roleRepository,
         IPatientRepository patientRepository,
-        IUserRoleRepository userRoleRepository
+        IUserRoleRepository userRoleRepository,
+        ILogger<PatinetService> logger
     )
     {
         _uow = uow;
@@ -28,6 +32,54 @@ public class PatinetService : IPatinetService
         _patientRepository = patientRepository;
         _userRoleRepository = userRoleRepository;
         _roleRepository = roleRepository;
+        _logger = logger;
+    }
+
+    public async Task<List<PatientDTO>> GetAllPatientsAsync()
+    {
+        try
+        {
+            var patients = await _patientRepository.GetAllAsync();
+
+            var patientList = patients.Select(p => new PatientDTO
+            {
+                PatientId = p.PatientId,
+                MedicalHistory = p.MedicalHistory
+            }).ToList();
+
+            return patientList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching medical record list");
+            throw;
+        }
+    }
+
+    public async Task<PatientDTO?> GetPatientByIdAsync(int id)
+    {
+        try
+        {
+            var patient = await _patientRepository.GetByIdAsync(id);
+
+            if (patient == null)
+            {
+                throw new InvalidOperationException("Bệnh nhân không tồn tại.");
+            }
+
+            var patientDto = new PatientDTO
+            {
+                PatientId = patient.PatientId,
+                MedicalHistory = patient.MedicalHistory,
+            };
+
+            return patientDto;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching patient with PatientId: {PatientId}", id);
+            throw;
+        }
     }
 
     public async Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(

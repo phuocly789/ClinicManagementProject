@@ -2,6 +2,7 @@ using ClinicManagement_Infrastructure.Data.Models;
 
 public interface IAppointmentService
 {
+    Task<List<AppointmentDTO>> GetAllAppointmentsAsync();
     Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null);
     Task<ResponseValue<AppointmentDTO>> AddToAppointmentAsync(AppointmentCreateDTO request, int createdBy);
     Task<ResponseValue<AppointmentDTO>> AppointmentUpdateStatusAsync(int appointmentId, AppointmentStatusDTO request);
@@ -29,6 +30,34 @@ public class AppointmentService : IAppointmentService
         _medicalRecordRepository = medicalRecordRepository;
         _logger = logger;
         _uow = uow;
+    }
+
+    public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
+    {
+        try
+        {
+            var appointments = await _appointmentRepository.GetAllAppointmentsAsync();
+
+            var appointmentList = appointments.Select(a => new AppointmentDTO
+            {
+                AppointmentId = a.AppointmentId,
+                PatientId = a.PatientId,
+                PatientName = a.Patient?.FullName,
+                StaffId = a.StaffId,
+                StaffName =  a.Staff?.FullName,
+                AppointmentDate = a.AppointmentDate,
+                AppointmentTime = a.AppointmentTime,
+                Status = a.Status,
+                Notes = a.Notes
+            }).ToList();
+
+            return appointmentList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching appointment list");
+            throw;
+        }
     }
 
     public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null)

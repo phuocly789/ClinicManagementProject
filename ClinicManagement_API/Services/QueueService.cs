@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 public interface IQueueService
 {
     Task<List<QueueDto>> GetQueuesAsync(int roomId, DateOnly? date = null);
-    Task<ResponseValue<QueueDTO>> AddToQueueAsync(QueueCreateDTO request);
+    Task<ResponseValue<QueueDTO>> AddToQueueAsync(QueueCreateDTO request, int createdBy);
     Task<ResponseValue<QueueDTO>> QueueUpdateStatusAsync(int queueId, QueueStatusUpdateDTO request);
 }
 
@@ -50,7 +50,7 @@ public class QueueService : IQueueService
         }
     }
 
-    public async Task<ResponseValue<QueueDTO>> AddToQueueAsync(QueueCreateDTO request)
+    public async Task<ResponseValue<QueueDTO>> AddToQueueAsync(QueueCreateDTO request, int createdBy)
     {
         try
         {
@@ -92,6 +92,7 @@ public class QueueService : IQueueService
                 QueueDate = today,
                 QueueTime = new TimeOnly(now.Hour, now.Minute, now.Second),
                 Status = "Waiting",
+                CreatedBy = createdBy
             };
 
             await _queueRepository.AddAsync(queue);
@@ -110,6 +111,7 @@ public class QueueService : IQueueService
                     QueueDate = queue.QueueDate,
                     QueueTime = queue.QueueTime,
                     Status = queue.Status,
+                    CreatedBy = queue.CreatedBy
                 },
                 StatusReponse.Success,
                 "Tạo hàng chờ thành công."
