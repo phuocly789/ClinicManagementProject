@@ -10,6 +10,7 @@ public class AppointmentDTO
     public TimeOnly AppointmentTime { get; set; }
     public string? Notes { get; set; }
     public string? Status { get; set; }
+    public DateTime? CreatedAt { get; set; }
 }
 
 public class AppointmentCreateDTO

@@ -4,9 +4,16 @@ public interface IAppointmentService
 {
     Task<List<AppointmentDTO>> GetAllAppointmentsAsync();
     Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null);
-    Task<ResponseValue<AppointmentDTO>> AddToAppointmentAsync(AppointmentCreateDTO request, int createdBy);
-    Task<ResponseValue<AppointmentDTO>> AppointmentUpdateStatusAsync(int appointmentId, AppointmentStatusDTO request);
+    Task<ResponseValue<AppointmentDTO>> AddToAppointmentAsync(
+        AppointmentCreateDTO request,
+        int createdBy
+    );
+    Task<ResponseValue<AppointmentDTO>> AppointmentUpdateStatusAsync(
+        int appointmentId,
+        AppointmentStatusDTO request
+    );
     Task<ResponseValue<AppointmentDTO>> AppointmentCancelAsync(int appointmentId, int patientId);
+
 }
 
 public class AppointmentService : IAppointmentService
@@ -32,6 +39,7 @@ public class AppointmentService : IAppointmentService
         _uow = uow;
     }
 
+<<<<<<< HEAD
     public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
     {
         try
@@ -61,12 +69,21 @@ public class AppointmentService : IAppointmentService
     }
 
     public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null)
+=======
+    public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(
+        int staffId,
+        DateOnly? date = null
+    )
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
     {
         try
         {
             var selectedDate = date ?? DateOnly.FromDateTime(DateTime.Now);
 
-            return await _appointmentRepository.GetAppointmentsByStaffIdAnddDateAsync(staffId, selectedDate);
+            return await _appointmentRepository.GetAppointmentsByStaffIdAnddDateAsync(
+                staffId,
+                selectedDate
+            );
         }
         catch (Exception ex)
         {
@@ -75,16 +92,30 @@ public class AppointmentService : IAppointmentService
         }
     }
 
-    public async Task<ResponseValue<AppointmentDTO>> AddToAppointmentAsync(AppointmentCreateDTO request, int createdBy)
+    public async Task<ResponseValue<AppointmentDTO>> AddToAppointmentAsync(
+        AppointmentCreateDTO request,
+        int createdBy
+    )
     {
         try
         {
-            if (!await _staffScheduleRepository.HasScheduleAsync(request.StaffId, request.AppointmentDate))
+            if (
+                !await _staffScheduleRepository.HasScheduleAsync(
+                    request.StaffId,
+                    request.AppointmentDate
+                )
+            )
             {
                 throw new InvalidOperationException("Bác sĩ không có lịch làm việc.");
             }
 
-            if (!await _appointmentRepository.IsDoctorAvailableAsync(request.StaffId, request.AppointmentDate, request.AppointmentTime))
+            if (
+                !await _appointmentRepository.IsDoctorAvailableAsync(
+                    request.StaffId,
+                    request.AppointmentDate,
+                    request.AppointmentTime
+                )
+            )
             {
                 throw new InvalidOperationException("Bác sĩ không khả dụng.");
             }
@@ -108,7 +139,7 @@ public class AppointmentService : IAppointmentService
                 Notes = request.Notes,
                 Status = "Waiting",
                 CreatedBy = createdBy,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
             };
 
             await _appointmentRepository.AddAsync(appointment);
@@ -122,7 +153,7 @@ public class AppointmentService : IAppointmentService
                     PatientId = appointment.PatientId,
                     StaffId = appointment.StaffId,
                     AppointmentDate = appointment.AppointmentDate,
-                    AppointmentTime = appointment.AppointmentTime
+                    AppointmentTime = appointment.AppointmentTime,
                 },
                 StatusReponse.Success,
                 "Tạo lịch hẹn thành công."
@@ -130,12 +161,20 @@ public class AppointmentService : IAppointmentService
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Validation error while adding to appoitment: {@Request}", request);
+            _logger.LogWarning(
+                ex,
+                "Validation error while adding to appoitment: {@Request}",
+                request
+            );
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while adding to appointment: {@Request}", request);
+            _logger.LogError(
+                ex,
+                "Unexpected error while adding to appointment: {@Request}",
+                request
+            );
             return new ResponseValue<AppointmentDTO>(
                 null,
                 StatusReponse.Error,
@@ -144,7 +183,10 @@ public class AppointmentService : IAppointmentService
         }
     }
 
-    public async Task<ResponseValue<AppointmentDTO>> AppointmentUpdateStatusAsync(int appointmentId, AppointmentStatusDTO request)
+    public async Task<ResponseValue<AppointmentDTO>> AppointmentUpdateStatusAsync(
+        int appointmentId,
+        AppointmentStatusDTO request
+    )
     {
         try
         {
@@ -202,7 +244,10 @@ public class AppointmentService : IAppointmentService
         }
     }
 
-    public async Task<ResponseValue<AppointmentDTO>> AppointmentCancelAsync(int appointmentId, int patientId)
+    public async Task<ResponseValue<AppointmentDTO>> AppointmentCancelAsync(
+        int appointmentId,
+        int patientId
+    )
     {
         try
         {
@@ -222,18 +267,22 @@ public class AppointmentService : IAppointmentService
                 return new ResponseValue<AppointmentDTO>(
                     null,
                     StatusReponse.Unauthorized,
-                    "Không thể hủy lịch hẹn của người khác.");
+                    "Không thể hủy lịch hẹn của người khác."
+                );
             }
 
-            var diff = appointment.AppointmentDate.ToDateTime(TimeOnly.MinValue) - DateTime.Now;
+            var appointmentDateTime = appointment.AppointmentDate.ToDateTime(
+                appointment.AppointmentTime
+            );
+            var diff = appointmentDateTime - DateTime.Now;
             var hoursUntil = diff.TotalHours;
 
-            if (hoursUntil < 24)
+            if (hoursUntil < 2)
             {
                 return new ResponseValue<AppointmentDTO>(
                     null,
                     StatusReponse.Error,
-                    "Không thể hủy lịch hẹn trong vòng 24 giờ"
+                    "Không thể hủy lịch hẹn trong vòng 2 giờ"
                 );
             }
 
@@ -241,7 +290,7 @@ public class AppointmentService : IAppointmentService
 
             try
             {
-                appointment.Status = "Hủy";
+                appointment.Status = "Cancelled";
 
                 await _appointmentRepository.Update(appointment);
                 await _uow.SaveChangesAsync();
@@ -250,7 +299,8 @@ public class AppointmentService : IAppointmentService
                 return new ResponseValue<AppointmentDTO>(
                     null,
                     StatusReponse.Success,
-                    "Hủy lịch hẹn thành công.");
+                    "Hủy lịch hẹn thành công."
+                );
             }
             catch (Exception ex)
             {
@@ -271,4 +321,5 @@ public class AppointmentService : IAppointmentService
             );
         }
     }
+
 }

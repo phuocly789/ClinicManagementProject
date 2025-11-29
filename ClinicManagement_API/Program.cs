@@ -18,8 +18,10 @@ builder.Services.AddDbContext<SupabaseContext>(options =>
 
 // Đăng ký repository services
 builder.Services.AddRepositoryServices();
+
 // cache
 builder.Services.AddMemoryCache();
+<<<<<<< HEAD
 // Đăng ký các dịch vụ khác (nếu có)
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
@@ -40,6 +42,10 @@ builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+=======
+
+
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
 builder.Services.AddSignalR();
 
 // Thêm dịch vụ controller
@@ -104,6 +110,26 @@ builder.Services.AddCors(options =>
     );
 });
 
+// Đăng ký các dịch vụ khác (nếu có)
+builder.Services.AddScoped<UnitOfWork>();
+builder.Services.AddScoped(typeof(IServiceBase<>), typeof(ServiceBase<>));
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPatinetService, PatinetService>();
+builder.Services.AddScoped<IReceptionistService, ReceptionistService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IMedicineService, MedicineService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<ISuplierService, SuplierService>();
+builder.Services.AddScoped<IReportsService, ReportsService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<ITechnicianService, TechnicianService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IQueueService, QueueService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddSignalR();
+
 //cài đặt jwt
 //Service jwt
 //Thêm middleware authentication
@@ -139,6 +165,12 @@ builder
             ValidateLifetime = true,
         };
     });
+
+// Email Authentication
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddScoped<IOtpService, OtpService>();
 
 // Thêm dịch vụ Authorization để hỗ trợ phân quyền người dùng
 builder.Services.AddAuthorization();

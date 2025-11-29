@@ -1,97 +1,337 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  memo,
-  useRef,
-} from 'react';
-import {
-  Calendar,
-  CheckSquare,
-  Clock,
-  List,
-  Stethoscope,
-  User,
-  X,
-  Printer,
-  Plus,
-  Trash2,
-  Search,
-} from 'lucide-react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { Clock, Stethoscope, Printer, Plus, Trash2, User, CheckCircle, PlayCircle } from 'lucide-react';
 import Loading from '../../Components/Loading/Loading';
 import CustomToast from '../../Components/CustomToast/CustomToast';
-import ConfirmDeleteModal from '../../Components/CustomToast/DeleteConfirmModal';
-import Pagination from '../../Components/Pagination/Pagination';
+import ConfirmModal from '../../Components/CustomToast/DeleteConfirmModal';
 import instance from '../../axios';
-// import queueConnection from '../signalr/queueConnection';
-// import { queueConnection } from '../../signalr/queueConnection';
-import '../../App.css';
 import queueConnection from '../../signalr/queueHub';
 import Select from "react-select";
 
-// --- Helper Functions ---
-const formatVND = (value) => {
-  if (value === null || value === undefined) return 'N/A';
-  return Number(value).toLocaleString('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  });
+// Helper functions
+const formatTime = (timeString) => {
+  if (!timeString) return 'N/A';
+  return timeString.substring(0, 5);
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  return new Date(dateString).toLocaleDateString('vi-VN');
 };
 
-// --- COMPONENT CON 2: Lịch làm việc (FullCalendar) ---
-const ScheduleSection = memo(({ events, isLoading }) => (
-  <div className="card shadow-sm border-0 table-panel">
-    {isLoading ? (
-      <Loading isLoading={true} />
-    ) : (
-      <div className="card-body calendar-panel p-4">
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          events={events}
-          locale="vi"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,dayGridWeek',
-          }}
-          eventBackgroundColor="#0d6efd"
-          eventBorderColor="#0d6efd"
-        />
+// Queue Patient Item Component
+const QueuePatientItem = memo(({ patient, isSelected, onSelect, onPrint }) => {
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case 'Completed':
+        return { variant: 'success', icon: CheckCircle, text: 'Hoàn thành' };
+      case 'InProgress':
+        return { variant: 'info', icon: PlayCircle, text: 'Đang khám' };
+      case 'Waiting':
+      default:
+        return { variant: 'warning', icon: Clock, text: 'Đang chờ' };
+    }
+  };
+
+  const statusConfig = getStatusConfig(patient.status);
+  const StatusIcon = statusConfig.icon;
+
+  return (
+    <div
+      className={`card mb-2 border-0 shadow-sm queue-item ${isSelected ? 'border-primary' : ''} ${patient.status === 'Completed' ? 'opacity-75' : 'hover-shadow'
+        }`}
+      style={{
+        cursor: patient.status !== 'Completed' ? 'pointer' : 'default',
+        borderLeft: isSelected ? '4px solid #0d6efd' : '4px solid transparent'
+      }}
+      onClick={() => patient.status !== 'Completed' && onSelect(patient)}
+    >
+      <div className="card-body py-3">
+        <div className="row align-items-center">
+          <div className="col-8">
+            <div className="d-flex align-items-center mb-2">
+              <span className="badge bg-primary me-2 fs-6">#{patient.queueNumber}</span>
+              <h6 className="mb-0 fw-bold text-dark">{patient.patientName}</h6>
+            </div>
+            <div className="d-flex align-items-center text-muted">
+              <Clock size={14} className="me-1" />
+              <small>Giờ vào: {formatTime(patient.queueTime)}</small>
+            </div>
+          </div>
+          <div className="col-4 text-end">
+            <div className="d-flex flex-column align-items-end gap-2">
+              <span className={`badge bg-${statusConfig.variant} text-white`}>
+                <StatusIcon size={12} className="me-1" />
+                {statusConfig.text}
+              </span>
+              {patient.status === "Completed" && (
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPrint(patient);
+                  }}
+                  title="In đơn thuốc"
+                >
+                  <Printer size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    )}
-  </div>
-));
-
-// --- COMPONENT CON 3: Lịch sử bệnh nhân ---
-const HistorySection = memo(() => (
-  <div className="card shadow-sm border-0">
-    <div className="card-body text-center p-5">
-      <List size={48} className="mx-auto text-muted" />
-      <h5 className="mt-3 text-muted">
-        Chức năng Lịch sử bệnh nhân đang được phát triển.
-      </h5>
     </div>
-  </div>
-));
+  );
+});
 
-// --- COMPONENT CHÍNH: DoctorDashboard ---
+// Examination Form Component
+const ExaminationForm = memo(({
+  patient,
+  examinationData,
+  allServices,
+  allMedicines,
+  onClose,
+  onDataChange,
+  onSubmit,
+  isProcessing
+}) => {
+  const medicineOptions = allMedicines.map(m => ({
+    value: m.medicineId,
+    label: `${m.medicineName} (${m.medicineType}) - Tồn kho: ${m.stockQuantity}`
+  }));
+
+  const handleServiceChange = (serviceId) => {
+    const newServiceIds = examinationData.serviceIds.includes(serviceId)
+      ? examinationData.serviceIds.filter(id => id !== serviceId)
+      : [...examinationData.serviceIds, serviceId];
+    onDataChange('serviceIds', newServiceIds);
+  };
+
+  const handleAddPrescription = () => {
+    const newPrescriptions = [
+      ...examinationData.prescriptions,
+      { medicineId: '', quantity: 1, dosageInstruction: '' }
+    ];
+    onDataChange('prescriptions', newPrescriptions);
+  };
+
+  const handleRemovePrescription = (index) => {
+    const newPrescriptions = examinationData.prescriptions.filter((_, i) => i !== index);
+    onDataChange('prescriptions', newPrescriptions);
+  };
+
+  const handlePrescriptionChange = (index, field, value) => {
+    const newPrescriptions = [...examinationData.prescriptions];
+    newPrescriptions[index][field] = field === "medicineId" || field === "quantity"
+      ? Number(value)
+      : value;
+    onDataChange('prescriptions', newPrescriptions);
+  };
+
+  return (
+    <div className="card border-0 shadow-lg">
+      <div className="card-header bg-primary text-white py-3">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 className="mb-0">
+              <Stethoscope className="me-2" size={20} />
+              Phiếu Khám Bệnh
+            </h5>
+            <small>
+              Bệnh nhân: <strong>{patient.patientName}</strong> • Số thứ tự: <strong>#{patient.queueNumber}</strong>
+            </small>
+          </div>
+          <button
+            className="btn-close btn-close-white"
+            onClick={onClose}
+            disabled={isProcessing}
+          ></button>
+        </div>
+      </div>
+
+      <div className="card-body">
+        {/* Symptoms and Diagnosis */}
+        <div className="row g-3 mb-4">
+          <div className="col-md-6">
+            <label className="form-label fw-semibold text-dark">
+              <i className="bi bi-clipboard-pulse me-1"></i>
+              Triệu chứng
+            </label>
+            <textarea
+              className="form-control border-2"
+              rows="4"
+              placeholder="Nhập triệu chứng của bệnh nhân..."
+              value={examinationData.symptoms}
+              onChange={(e) => onDataChange('symptoms', e.target.value)}
+              disabled={isProcessing}
+              style={{ borderColor: '#e9ecef' }}
+            />
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label fw-semibold text-dark">
+              <i className="bi bi-clipboard-check me-1"></i>
+              Chẩn đoán
+            </label>
+            <textarea
+              className="form-control border-2"
+              rows="4"
+              placeholder="Nhập kết luận chẩn đoán..."
+              value={examinationData.diagnosis}
+              onChange={(e) => onDataChange('diagnosis', e.target.value)}
+              disabled={isProcessing}
+              style={{ borderColor: '#e9ecef' }}
+            />
+          </div>
+        </div>
+
+        {/* Services Section */}
+        <div className="mb-4">
+          <label className="form-label fw-semibold text-dark mb-3">
+            <i className="bi bi-heart-pulse me-1"></i>
+            Dịch vụ chỉ định
+          </label>
+          <div className="row g-2">
+            {allServices.map(service => (
+              <div key={service.serviceId} className="col-md-6 col-lg-4">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`service-${service.serviceId}`}
+                    checked={examinationData.serviceIds.includes(service.serviceId)}
+                    onChange={() => handleServiceChange(service.serviceId)}
+                    disabled={isProcessing}
+                  />
+                  <label className="form-check-label card-body py-2" htmlFor={`service-${service.serviceId}`}>
+                    <div className="fw-semibold">{service.serviceName}</div>
+                    <small className="text-muted">{service.serviceType}</small>
+                  </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Prescriptions Section */}
+        <div className="mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <label className="form-label fw-semibold text-dark mb-0">
+              <i className="bi bi-capsule me-1"></i>
+              Đơn thuốc
+            </label>
+            <button
+              type="button"
+              className="btn btn-success btn-sm"
+              onClick={handleAddPrescription}
+              disabled={isProcessing}
+            >
+              <Plus size={14} className="me-1" />
+              Thêm thuốc
+            </button>
+          </div>
+
+          {examinationData.prescriptions.length === 0 ? (
+            <div className="text-center py-4 border rounded bg-light">
+              <i className="bi bi-capsule text-muted fs-1 d-block mb-2"></i>
+              <p className="text-muted mb-0">Chưa có thuốc nào được kê đơn</p>
+            </div>
+          ) : (
+            examinationData.prescriptions.map((row, index) => (
+              <div key={index} className="card border mb-2 prescription-item">
+                <div className="card-body">
+                  <div className="row g-3 align-items-center">
+                    <div className="col-md-5">
+                      <label className="form-label small fw-semibold">Tên thuốc</label>
+                      <Select
+                        options={medicineOptions}
+                        value={medicineOptions.find(opt => opt.value === row.medicineId)}
+                        onChange={(selected) => handlePrescriptionChange(index, "medicineId", selected?.value || '')}
+                        placeholder="Chọn thuốc..."
+                        isSearchable={true}
+                        isDisabled={isProcessing}
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label small fw-semibold">Số lượng</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={row.quantity}
+                        onChange={(e) => handlePrescriptionChange(index, 'quantity', e.target.value)}
+                        min="1"
+                        disabled={isProcessing}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label small fw-semibold">Hướng dẫn sử dụng</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Liều dùng, thời gian..."
+                        value={row.dosageInstruction}
+                        onChange={(e) => handlePrescriptionChange(index, 'dosageInstruction', e.target.value)}
+                        disabled={isProcessing}
+                      />
+                    </div>
+                    <div className="col-md-1">
+                      <label className="form-label small text-white">.</label>
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger w-100"
+                        onClick={() => handleRemovePrescription(index)}
+                        disabled={isProcessing}
+                        title="Xóa thuốc"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="d-flex gap-3 justify-content-end pt-4 border-top">
+          <button
+            className="btn btn-lg btn-outline-secondary"
+            onClick={() => onSubmit(false)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" />
+                Đang xử lý...
+              </>
+            ) : (
+              'Lưu tạm'
+            )}
+          </button>
+          <button
+            className="btn btn-lg btn-success"
+            onClick={() => onSubmit(true)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={18} className="me-2" />
+                Hoàn tất khám
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Main Doctor Dashboard Component
 const DoctorDashboard = () => {
-  const [currentSection, setCurrentSection] = useState('today');
   const [queuePatients, setQueuePatients] = useState([]);
-  const [scheduleEvents, setScheduleEvents] = useState([]);
   const [allServices, setAllServices] = useState([]);
   const [allMedicines, setAllMedicines] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -108,6 +348,8 @@ const DoctorDashboard = () => {
     serviceIds: [],
   });
 
+  const showToast = (type, message) => setToast({ type, message });
+
   const fetchRoomId = useCallback(async () => {
     try {
       const res = await instance.get('Doctor/current-room');
@@ -116,14 +358,6 @@ const DoctorDashboard = () => {
       setRoomId(null);
     }
   }, []);
-
-  const showToast = (type, message) => setToast({ type, message });
-
-  
-
-  useEffect(() => {
-    fetchRoomId();
-  }, [fetchRoomId]);
 
   const fetchQueue = useCallback(async () => {
     if (!roomId) return;
@@ -135,11 +369,26 @@ const DoctorDashboard = () => {
       });
       setQueuePatients(res.data || []);
     } catch (error) {
-      showToast('error', 'Lỗi khi tải hàng chờ.');
+      showToast('error', 'Lỗi khi tải danh sách hàng chờ');
     } finally {
       setIsLoading(false);
     }
   }, [roomId]);
+
+  const fetchServicesAndMedicines = useCallback(async () => {
+    try {
+      const [servicesRes, medicinesRes] = await Promise.all([
+        instance.get('Doctor/GetAllServicesByDoctorAsync'),
+        instance.get('Doctor/GetAllMedicinesByDoctorAsync'),
+      ]);
+      setAllServices(servicesRes.content?.items || []);
+      setAllMedicines(medicinesRes.content?.items || []);
+    } catch (error) {
+      showToast('error', 'Lỗi khi tải danh sách dịch vụ/thuốc');
+    }
+  }, []);
+
+  // SignalR Connection
   useEffect(() => {
     if (!roomId) return;
 
@@ -157,75 +406,32 @@ const DoctorDashboard = () => {
     });
 
     return () => {
-      
       queueConnection.off('QueueUpdated');
       queueConnection.stop();
     };
   }, [roomId, fetchQueue]);
 
-  const medicineOptions = allMedicines.map(m => ({
-    value: m.medicineId,
-    label: m.medicineName,
-  }))
-
-  const fetchServicesAndMedicines = useCallback(async () => {
-    if (allServices.length > 0 && allMedicines.length > 0) return;
-    try {
-      const [servicesRes, medicinesRes] = await Promise.all([
-        instance.get('Doctor/GetAllServicesByDoctorAsync'),
-        instance.get('Doctor/GetAllMedicinesByDoctorAsync'),
-      ]);
-      setAllServices(servicesRes.content?.items || []);
-      setAllMedicines(medicinesRes.content?.items || []);
-    } catch (error) {
-      showToast('error', 'Lỗi khi tải danh sách dịch vụ/thuốc.');
-    }
-  }, [allServices.length, allMedicines.length]);
-
-  const fetchSchedule = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await instance.get('Doctor/GetMySchedule');
-      const formattedEvents = (res.content || []).map((item) => ({
-        title: item.patientName,
-        start: `${item.appointmentDate}T${item.appointmentTime}`,
-        extendedProps: item,
-      }));
-      setScheduleEvents(formattedEvents);
-    } catch (error) {
-      showToast('error', 'Lỗi khi tải lịch làm việc.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  // Initial data fetch
+  useEffect(() => {
+    fetchRoomId();
+    fetchServicesAndMedicines();
+  }, [fetchRoomId, fetchServicesAndMedicines]);
 
   useEffect(() => {
-    if (currentSection === 'today') {
+    if (roomId) {
       fetchQueue();
-      fetchServicesAndMedicines();
-    } else if (currentSection === 'schedule') {
-      fetchSchedule();
     }
-    setSelectedPatient(null);
-  }, [
-    currentSection,
-    fetchQueue,
-    fetchSchedule,
-    fetchServicesAndMedicines,
-  ]);
+  }, [roomId, fetchQueue]);
 
   const handleSelectPatient = async (patient) => {
     if (patient.status === 'Waiting') {
       try {
         setIsLoading(true);
         await instance.put(`Queue/start/${patient.queueId}`);
-        showToast(
-          'info',
-          `Bắt đầu khám cho bệnh nhân ${patient.patientName}`
-        );
+        showToast('success', `Đã bắt đầu khám cho ${patient.patientName}`);
         fetchQueue();
       } catch (error) {
-        showToast('error', 'Không thể bắt đầu phiên khám.');
+        showToast('error', 'Không thể bắt đầu phiên khám');
         return;
       } finally {
         setIsLoading(false);
@@ -240,7 +446,14 @@ const DoctorDashboard = () => {
     });
   };
 
-  const handleConfirmSubmit = (isComplete) => {
+  const handleExaminationDataChange = (field, value) => {
+    setExaminationData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmitExamination = (isComplete) => {
     setConfirm({ show: true, isComplete });
   };
 
@@ -248,7 +461,6 @@ const DoctorDashboard = () => {
     if (!selectedPatient) return;
 
     setIsProcessing(true);
-
     try {
       const payload = {
         queueId: selectedPatient.queueId,
@@ -256,222 +468,370 @@ const DoctorDashboard = () => {
         diagnosis: examinationData.diagnosis,
         serviceIds: examinationData.serviceIds,
         prescriptions: examinationData.prescriptions,
-        isComplete: confirm.isComplete // ✅ Gửi trạng thái hoàn tất/tạm lưu
+        isComplete: confirm.isComplete
       };
 
       await instance.post("Doctor/SubmitExamination", payload);
 
       showToast(
         "success",
-        confirm.isComplete
-          ? "Hoàn tất khám thành công!"
-          : "Đã lưu tạm hồ sơ."
+        confirm.isComplete ? "Hoàn tất khám thành công!" : "Đã lưu tạm hồ sơ"
       );
 
       fetchQueue();
       setSelectedPatient(null);
     } catch (error) {
-      showToast("error", "Không thể lưu khám bệnh.");
+      showToast("error", "Không thể lưu thông tin khám bệnh");
     } finally {
       setIsProcessing(false);
       setConfirm({ show: false, isComplete: false });
     }
   };
 
-  const handleServiceChange = (serviceId) => {
-    setExaminationData((prev) => {
-      const newServiceIds = prev.serviceIds.includes(serviceId)
-        ? prev.serviceIds.filter((id) => id !== serviceId)
-        : [...prev.serviceIds, serviceId];
-      return { ...prev, serviceIds: newServiceIds };
-    });
-  };
-
-  const handleAddPrescriptionRow = () => {
-    setExaminationData((prev) => ({
-      ...prev,
-      prescriptions: [
-        ...prev.prescriptions,
-        { medicineId: '', quantity: 1, dosageInstruction: '' },
-      ],
-    }));
-  };
-
-  const handleRemovePrescriptionRow = (index) => {
-    setExaminationData((prev) => ({
-      ...prev,
-      prescriptions: prev.prescriptions.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handlePrescriptionChange = (index, field, value) => {
-    setExaminationData((prev) => {
-      const newPrescriptions = [...prev.prescriptions];
-
-      newPrescriptions[index][field] =
-        field === "medicineId" || field === "quantity"
-          ? Number(value)   // ✅ Ép kiểu số
-          : value;
-
-      return { ...prev, prescriptions: newPrescriptions };
-    });
-  };
-
+  
   const handlePrintPrescription = async (patient) => {
     try {
-      console.log(patient);
-
-      const res = await instance.get(`Prescription/GetPrescriptionDetailsAsync/${patient.appoinmentId}`);
+      const res = await instance.get(
+        `Prescription/GetPrescriptionDetailsAsync/${patient.appoinmentId}`,
+      );
       const data = res.content;
+
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
 
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-      <html>
-<head>
-    <title>Đơn thuốc - Phòng Khám VitaCare</title>
-    <style>
-        body {
-            /* Sử dụng màu nền xám nhạt để làm nổi bật tờ đơn thuốc */
-            background-color: #f4f7f6;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            color: #333; /* Màu chữ chính đậm hơn */
+      <!DOCTYPE html>
+      <html lang="vi">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>ĐƠN THUỐC - PHÒNG KHÁM VITACARE</title>
+          
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+          
+          <style>
+              body {
+                  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+                  background: white;
+                  color: black;
+                  padding: 10px;
+                  line-height: 1.3;
+                  font-size: 12px;
+                  margin: 0;
+                  position: relative;
+              }
+              
+              /* Watermark cho tất cả các trang khi in */
+              @media print {
+                  @page {
+                      size: A5;
+                      margin: 10mm;
+                  }
+                  
+                  body::before {
+                      content: "";
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      right: 0;
+                      bottom: 0;
+                      background-image: url('/logo.png');
+                      background-position: center;
+                      background-repeat: no-repeat;
+                      background-size: 300px auto;
+                      opacity: 0.1;
+                      z-index: -1;
+                      pointer-events: none;
+                  }
+                  
+                  body {
+                      padding: 0 !important;
+                      background: white !important;
+                      font-size: 11px !important;
+                      position: relative;
+                  }
+                  
+                  .prescription-container {
+                      width: 100% !important;
+                      min-height: auto !important;
+                      margin: 0 !important;
+                      padding: 0;
+                      box-shadow: none !important;
+                      position: relative;
+                      z-index: 1;
+                      background: transparent !important;
+                  }
+                  
+                  /* Đảm bảo tất cả nội dung đều có nền trong suốt */
+                  .header, .patient-info, .prescription-details, 
+                  .medicines-section, .instructions, .footer {
+                      background: transparent !important;
+                  }
+                  
+                  .bg-light {
+                      background-color: rgba(248, 249, 250, 0.8) !important;
+                  }
+                  
+                  /* Ẩn watermark trên màn hình khi in */
+                  .watermark-screen {
+                      display: none;
+                  }
+              }
+              
+              /* Watermark hiển thị trên màn hình */
+              @media screen {
+                  .watermark-screen {
+                      position: fixed;
+                      top: 50%;
+                      left: 50%;
+                      transform: translate(-50%, -50%) rotate(-30deg);
+                      opacity: 0.1;
+                      z-index: 1;
+                      pointer-events: none;
+                  }
+                  
+                  .watermark-logo {
+                      width: 300px;
+                      height: auto;
+                      filter: grayscale(100%) brightness(1.2);
+                  }
+              }
+              
+              .prescription-container {
+                  width: 148mm;
+                  min-height: 210mm;
+                  margin: 0 auto;
+                  background: white;
+                  position: relative;
+                  z-index: 2;
+                  padding: 10mm;
+              }
+              
+              .logo {
+                  height: 40px;
+                  width: auto;
+              }
+
+              .info-label {
+                  font-weight: 600;
+                  min-width: 90px;
+                  color: #333;
+                  font-size: 11px;
+              }
+              .info-value {
+                  font-weight: 500;
+                  flex: 1;
+                  font-size: 11px;
+              }
+              .detail-label {
+                  font-weight: 600;
+                  min-width: 80px;
+                  font-size: 10px;
+              }
+              .detail-value {
+                  flex: 1;
+                  font-size: 10px;
+              }
+
+              .instructions-list li {
+                  margin-bottom: 3px;
+                  position: relative;
+                  font-size: 9px;
+              }
+              .instructions-list li:before {
+                  content: "•";
+                  position: absolute;
+                  left: -15px;
+                  font-weight: bold;
+              }
+              
+              /* Đảm bảo nội dung hiển thị rõ */
+              .content-wrapper {
+                  position: relative;
+                  z-index: 2;
+              }
+              
+              /* Tăng độ tương phản cho các phần quan trọng */
+              .medicines-table {
+                  background-color: rgba(255, 255, 255, 0.9) !important;
+              }
+              
+              .table-light {
+                  background-color: rgba(248, 249, 250, 0.9) !important;
+              }
+          </style>
+      </head>
+      <body>
+          <!-- Watermark cho màn hình -->
+          <div class="watermark-screen">
+              <img src="/logo.png" alt="VitaCare Watermark" class="watermark-logo">
+          </div>
+          
+          <div class="prescription-container">
+              <div class="content-wrapper">
+                  <div class="header text-center border-bottom pb-3 mb-3">
+                      <div class="logo-container mb-2">
+                          <img src="/logo.png" alt="VitaCare Logo" class="logo">
+                      </div>
+                      <div class="clinic-name h5 fw-bold text-uppercase">Phòng Khám Đa Khoa VitaCare</div>
+                      <div class="clinic-address small">123 Đường Sức Khỏe, Quận 1, TP.HCM</div>
+                      <div class="clinic-phone small">ĐT: 028 1234 5678</div>
+                      <div class="prescription-title h4 fw-bolder text-uppercase mt-2">Đơn Thuốc</div>
+                  </div>
+                  
+                  <div class="date-info text-end small text-muted mb-2">
+                      Ngày: ${formattedDate} | Mã đơn: DT-${Date.now().toString().slice(-6)}
+                  </div>
+                  
+                  <div class="patient-info mb-3">
+                      <div class="row">
+                          <div class="col-6">
+                              <h6 class="section-title border-bottom pb-1 mb-2 text-uppercase fw-bold fs-6">Bệnh nhân</h6>
+                              <div class="d-flex mb-1">
+                                  <span class="info-label">Họ tên:</span>
+                                  <span class="info-value">${data.patientName}</span>
+                              </div>
+                              <div class="d-flex mb-1">
+                                  <span class="info-label">Mã HS:</span>
+                                  <span class="info-value">HS-${patient.appoinmentId.toString().padStart(6, "0")}</span>
+                              </div>
+                          </div>
+                          
+                          <div class="col-6">
+                              <h6 class="section-title border-bottom pb-1 mb-2 text-uppercase fw-bold fs-6">Bác sĩ</h6>
+                              <div class="d-flex mb-1">
+                                  <span class="info-label">Bác sĩ:</span>
+                                  <span class="info-value">${data.doctorName}</span>
+                              </div>
+                              <div class="d-flex mb-1">
+                                  <span class="info-label">Chuyên khoa:</span>
+                                  <span class="info-value">Nội tổng quát</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="prescription-details bg-light p-2 border rounded my-3">
+                      <h6 class="section-title border-bottom pb-1 mb-2 text-uppercase fw-bold fs-6">Chẩn đoán</h6>
+                      <div class="d-flex mb-1">
+                          <span class="detail-label">Triệu chứng:</span>
+                          <span class="detail-value">${data.symptoms || "Không có thông tin"}</span>
+                      </div>
+                      <div class="d-flex">
+                          <span class="detail-label">Chẩn đoán:</span>
+                          <span class="detail-value">${data.diagnosis || "Không có thông tin"}</span>
+                      </div>
+                  </div>
+                  
+                  <div class="medicines-section my-3">
+                      <h6 class="section-title border-bottom pb-1 mb-2 text-uppercase fw-bold fs-6">Đơn thuốc điều trị</h6>
+                      
+                      <table class="medicines-table table table-bordered table-sm" style="font-size: 10px;">
+                          <thead class="table-light text-uppercase">
+                              <tr>
+                                  <th style="width: 8%">STT</th>
+                                  <th style="width: 42%">Tên thuốc</th>
+                                  <th style="width: 15%">SL</th>
+                                  <th style="width: 35%">Hướng dẫn sử dụng</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              ${data.medicines && data.medicines.length > 0
+          ? data.medicines
+            .map(
+              (m, index) => `
+                                      <tr>
+                                          <td class="text-center">${index + 1}</td>
+                                          <td>
+                                              <div class="medicine-name fw-bold">${m.name || "Không xác định"}</div>
+                                          </td>
+                                          <td class="medicine-quantity text-center fw-bold">${m.quantity || "1"}</td>
+                                          <td class="medicine-usage">${m.usage || "Theo chỉ dẫn của bác sĩ"}</td>
+                                      </tr>
+                                  `,
+            )
+            .join("")
+          : `
+                                      <tr>
+                                          <td colspan="4" class="text-center p-3 text-muted">
+                                              Không có thuốc nào được kê đơn
+                                          </td>
+                                      </tr>
+                                  `
         }
-        .container {
-            /* Tạo một container trắng giống tờ giấy */
-            max-width: 800px;
-            margin: 20px auto; /* Tự động căn giữa */
-            padding: 30px;
-            background-color: #ffffff;
-            border-radius: 10px; /* Bo góc nhẹ */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Đổ bóng mềm */
-            border: 1px solid #eee;
-        }
-
-        .header {
-            text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0; /* Đường kẻ phân cách */
-            margin-bottom: 20px;
-        }
-
-        .clinic-name {
-            /* Định dạng màu và kích thước cho tên phòng khám */
-            color: #005a9c; /* Màu xanh dương chuyên nghiệp */
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        h2 {
-            text-align: center;
-            color: #111; /* Màu đen cho tiêu đề chính */
-            font-size: 24px;
-            margin-top: 10px;
-            text-transform: uppercase; /* VIẾT HOA */
-        }
-
-        .info p {
-            font-size: 16px;
-            line-height: 1.7; /* Tăng dãn dòng cho dễ đọc */
-            margin: 10px 0;
-        }
-
-        .info p strong {
-            display: inline-block;
-            width: 120px; /* Cố định độ rộng của nhãn (Bệnh nhân, Bác sĩ...) */
-            color: #555;
-        }
-
-        /* --- Định dạng bảng --- */
-        table {
-            width: 100%;
-            border-collapse: collapse; /* Gộp viền */
-            margin-top: 25px;
-        }
-
-        th, td {
-            border: 1px solid #ddd; /* Viền xám nhạt */
-            padding: 12px; /* Tăng padding cho thoáng */
-            text-align: left;
-        }
-
-        th {
-            /* Nền xám nhạt cho tiêu đề cột */
-            background-color: #f9f9f9;
-            font-weight: bold;
-            color: #444;
-        }
-
-        /* --- Phần ký tên --- */
-        .signature {
-            margin-top: 60px;
-            text-align: right;
-            width: 50%;
-            margin-left: auto; /* Đẩy sang bên phải */
-        }
-
-        .signature p {
-            margin: 5px 0;
-        }
-
-        .doctor-sign-name {
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 class="clinic-name">Phòng Khám VitaCare</h1>
-            <h2>ĐƠN THUỐC</h2>
-        </div>
-
-        <div class="info">
-            <p><strong>Bệnh nhân:</strong> ${data.patientName}</p>
-            <p><strong>Bác sĩ:</strong> ${data.doctorName}</p>
-            <p><strong>Triệu chứng:</strong> ${data.symptoms}</p>
-            <p><strong>Chẩn đoán:</strong> ${data.diagnosis}</p>
-        </div>
-
-        <table>
-            <thead> <tr>
-                    <th>Thuốc</th>
-                    <th>Số lượng</th>
-                    <th>Hướng dẫn</th>
-                </tr>
-            </thead>
-            <tbody> ${data.medicines.map(m =>
-        `<tr><td>${m.name}</td><td>${m.quantity}</td><td>${m.usage}</td></tr>`
-      ).join("")}
-            </tbody>
-        </table>
-
-        <div class="signature">
-            <p><i>Ngày..... tháng..... năm.....</i></p>
-            <p class="doctor-sign-name">Bác sĩ điều trị</p>
-            <br><br><br>
-            <p>(Ký và ghi rõ họ tên)</p>
-        </div>
-    </div>
-</body>
-</html>
+                          </tbody>
+                      </table>
+                  </div>
+                  
+                  <div class="instructions bg-light p-2 border rounded my-3">
+                      <h6 class="instructions-title fw-bold text-uppercase fs-6">HƯỚNG DẪN SỬ DỤNG</h6>
+                      <ul class="instructions-list list-unstyled ps-3">
+                          <li>Uống thuốc đúng liều lượng và thời gian</li>
+                          <li>Không tự ý ngưng thuốc</li>
+                          <li>Bảo quản thuốc nơi khô ráo</li>
+                          <li>Thông báo ngay nếu có tác dụng phụ</li>
+                          <li>Tái khám đúng hẹn</li>
+                      </ul>
+                  </div>
+                  
+                  <div class="footer border-top pt-3 mt-4">
+                      <div class="row">
+                          <div class="col-6 text-center">
+                              <div class="signature-space border-bottom mb-2" style="height: 60px;"></div>
+                              <div class="signature-name fw-bold small text-uppercase">BÁC SĨ ĐIỀU TRỊ</div>
+                              <div class="signature-title fst-italic small text-muted">(Ký, ghi rõ họ tên và đóng mộc)</div>
+                          </div>
+                          <div class="col-6 text-center">
+                              <div class="signature-space border-bottom mb-2" style="height: 60px;"></div>
+                              <div class="signature-name fw-bold small text-uppercase">BỆNH NHÂN/Người nhà</div>
+                              <div class="signature-title fst-italic small text-muted">(Ký và ghi rõ họ tên)</div>
+                          </div>
+                      </div>
+                      
+                      <div class="footer-info text-center text-muted small mt-3">
+                          <div class="footer-links mb-1">
+                              <span class="footer-link mx-2">Hotline: 028 1234 5678</span>
+                              <span class="footer-link mx-2">www.vitacare.com</span>
+                          </div>
+                          <div>
+                              Đơn thuốc có hiệu lực trong 30 ngày
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+          
+          <script>
+              setTimeout(() => {
+                  window.print();
+              }, 500);
+          </script>
+      </body>
+      </html>
     `);
-
       printWindow.document.close();
-      printWindow.print();
-
-    } catch {
-      showToast("error", "Không thể tải đơn thuốc.");
+    } catch (error) {
+      console.error("Error printing prescription:", error);
+      showToast("error", "Không thể tải đơn thuốc");
     }
   };
 
+  const stats = {
+    total: queuePatients.length,
+    waiting: queuePatients.filter(p => p.status === 'Waiting').length,
+    inProgress: queuePatients.filter(p => p.status === 'InProgress').length,
+    completed: queuePatients.filter(p => p.status === 'Completed').length
+  };
 
   return (
-
-    <main className="flex-grow-1 p-4 d-flex flex-column gap-4">
+    <div className="container-fluid py-4 bg-light min-vh-100">
       {toast && (
         <CustomToast
           type={toast.type}
@@ -479,292 +839,138 @@ const DoctorDashboard = () => {
           onClose={() => setToast(null)}
         />
       )}
-      {isProcessing && (
-        <div className="loading-overlay">
-          <Loading isLoading={true} />
-        </div>
-      )}
-      <header className="d-flex justify-content-between align-items-center flex-shrink-0">
-        <h1 className="h4 mb-0">Bảng Điều Khiển Bác Sĩ</h1>
-      </header>
 
-      {isLoading && queuePatients.length === 0 && <Loading isLoading={true} />}
+      {isProcessing && <Loading isLoading={true} />}
 
-      {currentSection === 'today' && (
-        <div className="row g-4">
-          {/* Cột hàng chờ */}
-          <div className="col-lg-4">
-            <div className="card shadow-sm border-0 h-100">
-              <div className="card-header fw-bold bg-light">
-                Hàng chờ khám ({formatDate(new Date())})
-              </div>
-              <div
-                className="list-group list-group-flush"
-                style={{ maxHeight: '75vh', overflowY: 'auto' }}
-              >
-                {queuePatients.length > 0 ? (
-                  queuePatients
-                    // .filter((p) => p.status !== 'Completed')
-                    .map((p) => (
-                      <a
-                        href="#"
-                        key={p.queueId}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (p.status !== "Completed") {
-                            handleSelectPatient(p);
-                          }
-                        }}
-                        className={`list-group-item list-group-item-action d-flex justify-content-between align-items-start ${selectedPatient?.queueId === p.queueId ? 'active' : ''
-                          }`}
-                      >
-                        <div className={`ms-2 me-auto ${p.status === "Completed" ? 'disabled opacity-50' : ''}`}>
-                          <div className="fw-bold">
-                            {p.queueNumber}. {p.patientName}
-                          </div>
-                          <small>Giờ vào chờ: {p.queueTime}</small>
-                        </div>
-
-
-                        <div className="text-end d-flex flex-column align-items-end">
-                          <span
-                            className={`badge mb-1 rounded-pill ${p.status === 'Completed'
-                              ? 'bg-success'
-                              : p.status === 'In Progress'
-                                ? 'bg-info'
-                                : 'bg-warning'
-                              }`}
-                          >
-                            {p.status}
-                          </span>
-
-                          {p.status === "Completed" && (
-                            <button
-                              className="btn btn-light btn-sm border"
-                              title="In đơn thuốc"
-                              onClick={() => handlePrintPrescription(p)}
-                            >
-                              <Printer size={16} />
-                            </button>
-                          )}
-                        </div>
-
-                      </a>
-                    ))
-                ) : (
-                  <div className="text-center p-5 text-muted">
-                    Không có bệnh nhân trong hàng chờ.
+      {/* Header */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body py-4">
+              <div className="row align-items-center">
+                <div className="col-md-6">
+                  <div className="d-flex align-items-center">
+                    <div className="bg-primary rounded-circle p-3 me-3">
+                      <User size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h1 className="h3 fw-bold text-dark mb-1">Bác Sĩ Khám Bệnh</h1>
+                      <p className="text-muted mb-0">Quản lý hàng chờ và khám bệnh</p>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Cột form khám bệnh */}
-          <div className="col-lg-8">
-            {selectedPatient ? (
-              <div className="card shadow-sm border-0">
-                <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                  <span className="fw-bold">
-                    Bệnh án: {selectedPatient.patientName} (Số{' '}
-                    {selectedPatient.queueNumber})
-                  </span>
-
-                  <button
-                    className="btn-close"
-                    onClick={() => setSelectedPatient(null)}
-                  ></button>
                 </div>
-                <div className="card-body p-4">
-                  {/* Chẩn đoán */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Chẩn đoán</label>
-                    <textarea
-                      className="form-control mb-2"
-                      rows="3"
-                      placeholder="Triệu chứng của bệnh nhân..."
-                      value={examinationData.symptoms}
-                      onChange={(e) =>
-                        setExaminationData({
-                          ...examinationData,
-                          symptoms: e.target.value,
-                        })
-                      }
-                    ></textarea>
-                    <textarea
-                      className="form-control"
-                      rows="3"
-                      placeholder="Kết luận chẩn đoán của bác sĩ..."
-                      value={examinationData.diagnosis}
-                      onChange={(e) =>
-                        setExaminationData({
-                          ...examinationData,
-                          diagnosis: e.target.value,
-                        })
-                      }
-                    ></textarea>
-                  </div>
-
-                  <hr />
-
-                  {/* Chỉ định dịch vụ */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">
-                      Chỉ định dịch vụ
-                    </label>
-                    <div
-                      className="bg-light p-3 rounded border"
-                      style={{ maxHeight: '200px', overflowY: 'auto' }}
-                    >
-                      <div className="row">
-                        {allServices.map((service) => (
-                          <div key={service.serviceId} className="col-md-6">
-                            <div className="form-check">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                id={`service-${service.serviceId}`}
-                                checked={examinationData.serviceIds.includes(
-                                  service.serviceId
-                                )}
-                                onChange={() =>
-                                  handleServiceChange(service.serviceId)
-                                }
-                              />
-                              <label
-                                className="form-check-label"
-                                htmlFor={`service-${service.serviceId}`}
-                              >
-                                {service.serviceName}
-                              </label>
-                            </div>
-                          </div>
-                        ))}
+                <div className="col-md-6">
+                  <div className="row text-center">
+                    <div className="col-3">
+                      <div className="border-end">
+                        <div className="h4 fw-bold text-primary">{stats.total}</div>
+                        <small className="text-muted">Tổng số</small>
+                      </div>
+                    </div>
+                    <div className="col-3">
+                      <div className="border-end">
+                        <div className="h4 fw-bold text-warning">{stats.waiting}</div>
+                        <small className="text-muted">Đang chờ</small>
+                      </div>
+                    </div>
+                    <div className="col-3">
+                      <div className="border-end">
+                        <div className="h4 fw-bold text-info">{stats.inProgress}</div>
+                        <small className="text-muted">Đang khám</small>
+                      </div>
+                    </div>
+                    <div className="col-3">
+                      <div>
+                        <div className="h4 fw-bold text-success">{stats.completed}</div>
+                        <small className="text-muted">Hoàn thành</small>
                       </div>
                     </div>
                   </div>
-
-                  <hr />
-
-                  {/* Kê đơn thuốc */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">
-                      Kê đơn thuốc
-                    </label>
-                    {examinationData.prescriptions.map((row, index) => (
-                      <div
-                        key={index}
-                        className="row g-2 align-items-center mb-2"
-                      >
-                        <div className="col-md-5">
-                          <Select
-                            className="form-select-sm"
-                            options={medicineOptions}
-                            value={medicineOptions.find(opt => opt.value === row.medicineId)}
-                            onChange={(selected) =>
-                              handlePrescriptionChange(index, "medicineId", selected.value)
-                            }
-                            placeholder="Tìm thuốc..."
-                            isSearchable={true}
-                          />
-                        </div>
-                        <div className="col-md-2">
-                          <input
-                            type="number"
-                            className="form-control form-control-sm"
-                            placeholder="SL"
-                            value={row.quantity}
-                            onChange={(e) =>
-                              handlePrescriptionChange(
-                                index,
-                                'quantity',
-                                e.target.value
-                              )
-                            }
-                            min="1"
-                          />
-                        </div>
-                        <div className="col-md-4">
-                          <input
-                            type="text"
-                            className="form-control form-control-sm"
-                            placeholder="Hướng dẫn sử dụng"
-                            value={row.dosageInstruction}
-                            onChange={(e) =>
-                              handlePrescriptionChange(
-                                index,
-                                'dosageInstruction',
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="col-md-1">
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => handleRemovePrescriptionRow(index)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="btn btn-success btn-sm mt-2 d-flex align-items-center gap-1"
-                      onClick={handleAddPrescriptionRow}
-                    >
-                      <Plus size={14} /> Thêm thuốc
-                    </button>
-                  </div>
-
-                  <hr />
-
-                  <div className="d-flex justify-content-end gap-2">
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => handleConfirmSubmit(false)}
-                      disabled={isProcessing}
-                    >
-                      Tạm lưu
-                    </button>
-                    <button
-                      className="btn btn-success"
-                      onClick={() => handleConfirmSubmit(true)}
-                      disabled={isProcessing}
-                    >
-                      Hoàn tất khám
-                    </button>
-
-                  </div>
                 </div>
               </div>
-            ) : (
-              <div
-                className="card shadow-sm border-0 d-flex justify-content-center align-items-center"
-                style={{ minHeight: '300px' }}
-              >
-                <div className="text-center p-5">
-                  <Stethoscope size={48} className="mx-auto text-muted" />
-                  <p className="mt-3 text-muted">
-                    Vui lòng chọn một bệnh nhân từ hàng chờ để bắt đầu khám.
-                  </p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {currentSection === 'schedule' && (
-        <ScheduleSection events={scheduleEvents} isLoading={isLoading} />
-      )}
-      {currentSection === 'history' && <HistorySection />}
+      {/* Main Content */}
+      <div className="row g-4">
+        {/* Queue Panel */}
+        <div className="col-lg-4">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-header bg-white border-bottom py-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="mb-0 fw-bold text-dark">
+                  <Clock className="me-2" size={20} />
+                  Hàng Chờ Khám
+                </h5>
+                <span className="badge bg-primary">{stats.total}</span>
+              </div>
+              <small className="text-muted">{formatDate(new Date())} • Phòng {roomId || 'N/A'}</small>
+            </div>
+            <div className="card-body p-3">
+              {isLoading && queuePatients.length === 0 ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="text-muted mt-2">Đang tải danh sách...</p>
+                </div>
+              ) : queuePatients.length > 0 ? (
+                <div className="queue-list" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+                  {queuePatients.map(patient => (
+                    <QueuePatientItem
+                      key={patient.queueId}
+                      patient={patient}
+                      isSelected={selectedPatient?.queueId === patient.queueId}
+                      onSelect={handleSelectPatient}
+                      onPrint={handlePrintPrescription}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-5 text-muted">
+                  <Clock size={48} className="mb-3 opacity-50" />
+                  <h6>Không có bệnh nhân</h6>
+                  <p className="mb-0">Hàng chờ trống</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-      <ConfirmDeleteModal
+        {/* Examination Panel */}
+        <div className="col-lg-8">
+          {selectedPatient ? (
+            <ExaminationForm
+              patient={selectedPatient}
+              examinationData={examinationData}
+              allServices={allServices}
+              allMedicines={allMedicines}
+              onClose={() => setSelectedPatient(null)}
+              onDataChange={handleExaminationDataChange}
+              onSubmit={handleSubmitExamination}
+              isProcessing={isProcessing}
+            />
+          ) : (
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-body d-flex flex-column justify-content-center align-items-center text-center py-5">
+                <div className="bg-light rounded-circle p-4 mb-3">
+                  <Stethoscope size={48} className="text-muted" />
+                </div>
+                <h4 className="text-muted mb-3">Chưa chọn bệnh nhân</h4>
+                <p className="text-muted mb-0 text-center">
+                  Vui lòng chọn một bệnh nhân từ danh sách hàng chờ <br /> để bắt đầu quá trình khám bệnh
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmModal
         isOpen={confirm.show}
-        title={confirm.isComplete ? 'Xác nhận hoàn tất' : 'Xác nhận tạm lưu'}
+        title={confirm.isComplete ? 'Xác nhận hoàn tất khám' : 'Xác nhận lưu tạm'}
         message={
           confirm.isComplete
             ? 'Bạn có chắc muốn hoàn tất và lưu vĩnh viễn hồ sơ khám bệnh này?'
@@ -775,7 +981,39 @@ const DoctorDashboard = () => {
         confirmText="Xác nhận"
         isProcessing={isProcessing}
       />
-    </main>
+
+      <style jsx>{`
+        .hover-shadow:hover {
+          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .queue-item {
+          transition: all 0.2s ease-in-out;
+        }
+        
+        .prescription-item {
+          background-color: #f8f9fa;
+        }
+        
+        .queue-list::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .queue-list::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+        
+        .queue-list::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 3px;
+        }
+        
+        .queue-list::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
+        }
+      `}</style>
+    </div>
   );
 };
 

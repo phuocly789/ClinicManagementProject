@@ -120,6 +120,18 @@ ul {
   border-left-color: #fff;
 }
 
+/* Hình logo */
+.sidebar-logo {
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.15);
+  /* padding: 10px; */
+  margin: 0 auto;
+  display: block;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+}
 
 /* =================================================================
    4. COMPONENT TÙY CHỈNH
@@ -396,9 +408,6 @@ ul {
   color: var(--grey-color);
 }
 
-.form-select-sm{
+.form-select-sm {
   z-index: 1000;
 }
-
-
-

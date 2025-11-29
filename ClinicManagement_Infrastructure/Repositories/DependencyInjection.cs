@@ -28,6 +28,8 @@ public static class RepositoryServiceRegistration
         services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
         services.AddScoped<IPrescriptionDetailRepository, PrescriptionDetailRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IUserOtpRepository, UserOtpRepository>();
+        services.AddScoped<IMedicalRecordDetailRepository, MedicalRecordDetailRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }

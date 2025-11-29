@@ -26,6 +26,8 @@ public partial class SupabaseContext : DbContext
 
     public virtual DbSet<MedicalRecord> MedicalRecords { get; set; }
 
+    public virtual DbSet<MedicalRecordDetail> MedicalRecordDetails { get; set; }
+
     public virtual DbSet<MedicalStaff> MedicalStaffs { get; set; }
 
     public virtual DbSet<Medicine> Medicines { get; set; }
@@ -55,6 +57,8 @@ public partial class SupabaseContext : DbContext
     public virtual DbSet<Supplier> Suppliers { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserOtp> UserOtps { get; set; }
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
@@ -346,6 +350,16 @@ public partial class SupabaseContext : DbContext
                 .HasForeignKey(d => d.PatientId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("MedicalRecords_PatientId_fkey");
+        });
+
+        modelBuilder.Entity<MedicalRecordDetail>(entity =>
+        {
+            entity.HasNoKey().ToView("MedicalRecordDetails");
+
+            entity.Property(e => e.Appointments).HasColumnType("json");
+            entity.Property(e => e.PatientName).HasMaxLength(100);
+            entity.Property(e => e.RecordNumber).HasMaxLength(50);
+            entity.Property(e => e.RecordStatus).HasMaxLength(20);
         });
 
         modelBuilder.Entity<MedicalStaff>(entity =>
@@ -650,6 +664,29 @@ public partial class SupabaseContext : DbContext
             entity.Property(e => e.PasswordHash).HasMaxLength(256);
             entity.Property(e => e.Phone).HasMaxLength(15);
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<UserOtp>(entity =>
+        {
+            entity.HasKey(e => e.Otpid).HasName("UserOTPs_pkey");
+
+            entity.ToTable("UserOTPs");
+
+            entity.Property(e => e.Otpid).UseIdentityAlwaysColumn().HasColumnName("OTPId");
+            entity
+                .Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone");
+            entity.Property(e => e.ExpiredAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.IsUsed).HasDefaultValue(false);
+            entity.Property(e => e.Otpcode).HasMaxLength(10).HasColumnName("OTPCode");
+
+            entity
+                .HasOne(d => d.User)
+                .WithMany(p => p.UserOtps)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("UserOTPs_UserId_fkey");
         });
 
         modelBuilder.Entity<UserRole>(entity =>
