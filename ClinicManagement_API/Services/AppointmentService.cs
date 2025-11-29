@@ -13,7 +13,6 @@ public interface IAppointmentService
         AppointmentStatusDTO request
     );
     Task<ResponseValue<AppointmentDTO>> AppointmentCancelAsync(int appointmentId, int patientId);
-
 }
 
 public class AppointmentService : IAppointmentService
@@ -39,25 +38,26 @@ public class AppointmentService : IAppointmentService
         _uow = uow;
     }
 
-<<<<<<< HEAD
     public async Task<List<AppointmentDTO>> GetAllAppointmentsAsync()
     {
         try
         {
             var appointments = await _appointmentRepository.GetAllAppointmentsAsync();
 
-            var appointmentList = appointments.Select(a => new AppointmentDTO
-            {
-                AppointmentId = a.AppointmentId,
-                PatientId = a.PatientId,
-                PatientName = a.Patient?.FullName,
-                StaffId = a.StaffId,
-                StaffName =  a.Staff?.FullName,
-                AppointmentDate = a.AppointmentDate,
-                AppointmentTime = a.AppointmentTime,
-                Status = a.Status,
-                Notes = a.Notes
-            }).ToList();
+            var appointmentList = appointments
+                .Select(a => new AppointmentDTO
+                {
+                    AppointmentId = a.AppointmentId,
+                    PatientId = a.PatientId,
+                    PatientName = a.Patient?.FullName,
+                    StaffId = a.StaffId,
+                    StaffName = a.Staff?.FullName,
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentTime = a.AppointmentTime,
+                    Status = a.Status,
+                    Notes = a.Notes,
+                })
+                .ToList();
 
             return appointmentList;
         }
@@ -68,13 +68,10 @@ public class AppointmentService : IAppointmentService
         }
     }
 
-    public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(int staffId, DateOnly? date = null)
-=======
     public async Task<List<AppointmentMyScheduleDto>> GetAppointmentsAsync(
         int staffId,
         DateOnly? date = null
     )
->>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
     {
         try
         {
@@ -321,5 +318,4 @@ public class AppointmentService : IAppointmentService
             );
         }
     }
-
 }
