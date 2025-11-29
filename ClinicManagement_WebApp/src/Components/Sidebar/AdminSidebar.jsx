@@ -1,20 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import "../../App.css";
+import authService from "../../services/authService";
 
 const AdminSidebar = () => {
-  return (
-    <div className="d-flex" style={{ minHeight: "100vh" }}>
-      {/* Sidebar */}
-      <div className="sidebar d-flex flex-column shadow-sm">
-        <h2 className="sidebar-header text-center fw-bold mb-3">
-          Phòng Khám XYZ
-        </h2>
-
-        <div className="user-info text-center border-bottom pb-3 mb-3">
-          <p className="mb-0 opacity-75">Xin chào,</p>
-          <strong>Admin</strong>
-        </div>
+   const [fullName, setFullName] = useState("");
+    
+        useEffect(() => {
+            const user = authService.getFullNameFromToken();
+            setFullName(user);
+        })
+    return (
+      <div className="d-flex" style={{ Height: "100vh" }}>
+        {/* Sidebar */}
+        <div className="sidebar d-flex flex-column shadow-sm">
+          <h2 className="sidebar-header text-center fw-bold mb-3">
+            Phòng Khám XYZ
+          </h2>
+  
+          <div className="user-info text-center border-bottom pb-3 mb-3">
+            <p className="mb-0 opacity-75">Xin chào,</p>
+            <strong>{fullName}</strong>
+          </div>
 
         <nav>
           <ul className="nav flex-column nav-list">

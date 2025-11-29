@@ -107,24 +107,28 @@ namespace ClinicManagement_API.Controllers
             return StatusCode(500, new { success = false, message = result.Message });
         }
 
-        [HttpGet("GetDashBoardStaticAsync")]
-        public async Task<
-            ActionResult<ResponseValue<DashboardStatisticsDTO>>
-        > GetDashBoardStaticAsync(DateTime? startDate = null, DateTime? endDate = null)
+        [HttpGet("RevenueForecast")]
+        public async Task<IActionResult> GetRevenueForecast()
         {
-            try
-            {
-                var result = await _reportService.GetDashBoardStaticAsync(startDate, endDate);
-                return new ResponseValue<DashboardStatisticsDTO>(
-                    result,
-                    StatusReponse.Success,
-                    "Lấy thống kê thành công."
-                );
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = ex.Message });
-            }
+            var result = await _reportService.GetRevenueForecastAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("PrescriptionAnalytics")]
+        public async Task<IActionResult> GetPrescriptionAnalytics()
+        {
+            var result = await _reportService.GetPrescriptionAnalyticsAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("CombinedRevenue")]
+        public async Task<IActionResult> GetCombinedRevenueReport(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate
+        )
+        {
+            var result = await _reportService.GetCombinedRevenueReportAsync(startDate, endDate);
+            return Ok(result);
         }
     }
 }

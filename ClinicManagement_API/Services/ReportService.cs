@@ -20,10 +20,12 @@ public interface IReportsService
         DateTime? startDate = null,
         DateTime? endDate = null
     );
-    Task<DashboardStatisticsDTO> GetDashBoardStaticAsync(
+    Task<ResponseValue<CombinedRevenueReportDTO>> GetCombinedRevenueReportAsync(
         DateTime? startDate = null,
         DateTime? endDate = null
     );
+    Task<ResponseValue<PrescriptionAnalyticsDTO>> GetPrescriptionAnalyticsAsync();
+    Task<ResponseValue<RevenueForecastDTO>> GetRevenueForecastAsync();
 }
 
 public class ReportsService : IReportsService
@@ -309,48 +311,278 @@ public class ReportsService : IReportsService
         }
     }
 
-    public async Task<DashboardStatisticsDTO> GetDashBoardStaticAsync(
+    // Thêm vào ReportsService
+    public async Task<ResponseValue<CombinedRevenueReportDTO>> GetCombinedRevenueReportAsync(
         DateTime? startDate = null,
         DateTime? endDate = null
     )
     {
-        // Nếu không truyền vào thì mặc định lấy 1 tháng gần nhất
-        var fromDate = startDate ?? DateTime.UtcNow.AddDays(-6);
-        var toDate = endDate ?? DateTime.UtcNow;
-
-        // Chuyển về DateOnly để so sánh đúng kiểu trong DB
-        var fromDateOnly = DateOnly.FromDateTime(fromDate.Date);
-        var toDateOnly = DateOnly.FromDateTime(toDate.Date);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        // Tổng số lịch hẹn hôm nay
-        var totalAppointments = await _appointmentRepository
-            .GetAll()
-            .CountAsync(a => a.AppointmentDate == today);
-
-        // Số lịch hẹn đã khám trong khoảng thời gian
-        var completedAppointments = await _appointmentRepository
-            .GetAll()
-            .CountAsync(a =>
-                a.AppointmentDate >= fromDateOnly
-                && a.AppointmentDate <= toDateOnly
-                && a.Status == "Completed"
-            );
-
-        // Số hóa đơn đang pending trong khoảng
-        var pendingInvoicesCount = await _invoiceRepository
-            .GetAll()
-            .CountAsync(i => i.InvoiceDate.HasValue && i.Status == "Pending");
-
-        // Kết quả trả về
-        var statistics = new DashboardStatisticsDTO
+        try
         {
-            TotalAppointmentsToday = totalAppointments,
-            CompletedAppointmentsToday = completedAppointments,
-            PendingInvoicesCount = pendingInvoicesCount,
-        };
+            // Validate dates
+            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+            {
+                return new ResponseValue<CombinedRevenueReportDTO>(
+                    null,
+                    StatusReponse.BadRequest,
+                    "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc."
+                );
+            }
 
-        return statistics;
+            // Default date range
+            var fromDate = startDate ?? DateTime.UtcNow.AddDays(-6);
+            var toDate = endDate ?? DateTime.UtcNow;
+
+            // Chuyển về DateOnly để so sánh appointment
+            var fromDateOnly = DateOnly.FromDateTime(fromDate.Date);
+            var toDateOnly = DateOnly.FromDateTime(toDate.Date);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            // Lấy dữ liệu doanh thu
+            var revenueQuery = _invoiceRepository
+                .GetAll()
+                .AsNoTracking()
+                .Where(i =>
+                    i.Status == "Paid" && i.InvoiceDate >= fromDate && i.InvoiceDate <= toDate
+                );
+
+            var totalRevenue = await revenueQuery.SumAsync(i => i.TotalAmount);
+
+            var revenueByDateRaw = await revenueQuery
+                .GroupBy(i => i.InvoiceDate.HasValue ? i.InvoiceDate.Value.Date : DateTime.MinValue)
+                .Select(g => new { Date = g.Key, Revenue = g.Sum(i => i.TotalAmount) })
+                .ToListAsync();
+
+            var revenueByDate = revenueByDateRaw
+                .Select(g => new RevenueByDateDTO
+                {
+                    Date =
+                        g.Date == DateTime.MinValue ? string.Empty : g.Date.ToString("yyyy-MM-dd"),
+                    Revenue = g.Revenue,
+                })
+                .OrderBy(x => x.Date)
+                .ToList();
+
+            // Lấy thống kê appointments
+            var totalAppointmentsToday = await _appointmentRepository
+                .GetAll()
+                .CountAsync(a => a.AppointmentDate == today);
+
+            var completedAppointmentsToday = await _appointmentRepository
+                .GetAll()
+                .CountAsync(a =>
+                    a.AppointmentDate >= fromDateOnly
+                    && a.AppointmentDate <= toDateOnly
+                    && a.Status == "Completed"
+                );
+
+            var pendingInvoicesCount = await _invoiceRepository
+                .GetAll()
+                .CountAsync(i => i.InvoiceDate.HasValue && i.Status == "Pending");
+
+            var combinedReport = new CombinedRevenueReportDTO
+            {
+                TotalRevenue = totalRevenue,
+                RevenueByDate = revenueByDate,
+                TotalAppointmentsToday = totalAppointmentsToday,
+                CompletedAppointmentsToday = completedAppointmentsToday,
+                PendingInvoicesCount = pendingInvoicesCount,
+            };
+
+            return new ResponseValue<CombinedRevenueReportDTO>(
+                combinedReport,
+                StatusReponse.Success,
+                "Lấy báo cáo tổng hợp thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy báo cáo tổng hợp");
+            return new ResponseValue<CombinedRevenueReportDTO>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy báo cáo tổng hợp: " + ex.Message
+            );
+        }
+    }
+
+    public async Task<ResponseValue<RevenueForecastDTO>> GetRevenueForecastAsync()
+    {
+        try
+        {
+            // Lấy 6 tháng gần nhất
+            var endDate = DateTime.UtcNow;
+            var startDate = endDate.AddMonths(-6);
+
+            var historicalData = await _context
+                .Invoices.Where(i =>
+                    i.Status == "Paid" && i.InvoiceDate >= startDate && i.InvoiceDate <= endDate
+                )
+                .GroupBy(i => new { i.InvoiceDate.Value.Year, i.InvoiceDate.Value.Month })
+                .Select(g => new RevenueHistoryDTO
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Revenue = g.Sum(i => i.TotalAmount),
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToListAsync();
+
+            if (!historicalData.Any())
+            {
+                return new ResponseValue<RevenueForecastDTO>(
+                    null,
+                    StatusReponse.Error,
+                    "Không có đủ dữ liệu để dự báo."
+                );
+            }
+
+            // ----------------------------
+            //  Tính Hồi Quy Tuyến Tính Y = aX + b
+            // ----------------------------
+
+            int n = historicalData.Count;
+
+            // Biến x = 1,2,3... theo thứ tự tháng
+            var xValues = Enumerable.Range(1, n).Select(x => (decimal)x).ToList();
+            var yValues = historicalData.Select(h => (decimal)h.Revenue).ToList();
+
+            decimal sumX = xValues.Sum();
+            decimal sumY = yValues.Sum();
+            decimal sumXY = xValues.Zip(yValues, (x, y) => x * y).Sum();
+            decimal sumX2 = xValues.Select(x => x * x).Sum();
+
+            // Hệ số hồi quy
+            decimal a = (n * sumXY - sumX * sumY) / (n * sumX2 - (sumX * sumX));
+            decimal b = (sumY - a * sumX) / n;
+
+            // Dự báo tháng kế tiếp
+            decimal xNext = n + 1;
+            decimal predictedRevenue = a * xNext + b;
+
+            // Confidence: đơn giản hóa
+            decimal confidence = n >= 3 ? 0.85m : 0.60m;
+
+            var forecast = new RevenueForecastDTO
+            {
+                Historical = historicalData
+                    .Select(h => new RevenueHistoryItemDTO
+                    {
+                        Month = h.Month,
+                        Year = h.Year,
+                        Revenue = h.Revenue,
+                    })
+                    .ToList(),
+
+                Forecast = new RevenuePredictionDTO
+                {
+                    PredictedRevenue = predictedRevenue,
+                    Confidence = confidence,
+                    NextMonth = DateTime.UtcNow.AddMonths(1).Month,
+                    NextYear = DateTime.UtcNow.AddMonths(1).Year,
+                },
+            };
+
+            return new ResponseValue<RevenueForecastDTO>(
+                forecast,
+                StatusReponse.Success,
+                "Dự báo doanh thu bằng hồi quy tuyến tính thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi tính dự báo doanh thu");
+            return new ResponseValue<RevenueForecastDTO>(
+                null,
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi dự báo doanh thu: " + ex.Message
+            );
+        }
+    }
+
+    public async Task<ResponseValue<PrescriptionAnalyticsDTO>> GetPrescriptionAnalyticsAsync()
+    {
+        try
+        {
+            // Lấy dữ liệu 3 tháng gần nhất
+            var startDate = DateTime.UtcNow.AddMonths(-3);
+
+            // Top thuốc được kê nhiều nhất
+            var topMedicines = await _context
+                .PrescriptionDetails.Where(pd => pd.Prescription.PrescriptionDate >= startDate)
+                .GroupBy(pd => new { pd.MedicineId, pd.Medicine.MedicineName })
+                .Select(g => new TopMedicineDTO
+                {
+                    MedicineId = g.Key.MedicineId,
+                    MedicineName = g.Key.MedicineName,
+                    TotalQuantity = g.Sum(pd => pd.Quantity),
+                })
+                .OrderByDescending(x => x.TotalQuantity)
+                .Take(10)
+                .ToListAsync();
+
+            // Top bác sĩ kê đơn nhiều nhất
+            var topDoctors = await _context
+                .Prescriptions.Where(p => p.PrescriptionDate >= startDate)
+                .GroupBy(p => new
+                {
+                    p.Staff.UserId,
+                    p.Staff.FullName,
+                    p.Staff.MedicalStaff.Specialty,
+                })
+                .Select(g => new TopDoctorDTO
+                {
+                    StaffId = g.Key.UserId,
+                    FullName = g.Key.FullName,
+                    Specialty = g.Key.Specialty,
+                    PrescriptionCount = g.Count(),
+                })
+                .OrderByDescending(x => x.PrescriptionCount)
+                .Take(10)
+                .ToListAsync();
+
+            // Thuốc bán chạy nhất (từ invoice details)
+            var bestSellingMedicines = await _context
+                .InvoiceDetails.Where(id =>
+                    id.MedicineId != null
+                    && id.Invoice.Status == "Paid"
+                    && id.Invoice.InvoiceDate >= startDate
+                )
+                .GroupBy(id => new { id.MedicineId, id.Medicine.MedicineName })
+                .Select(g => new BestSellingMedicineDTO
+                {
+                    MedicineId = g.Key.MedicineId.Value,
+                    MedicineName = g.Key.MedicineName,
+                    TotalSold = g.Sum(id => id.Quantity),
+                })
+                .OrderByDescending(x => x.TotalSold)
+                .Take(10)
+                .ToListAsync();
+
+            var analytics = new PrescriptionAnalyticsDTO
+            {
+                Success = true,
+                TopMedicines = topMedicines,
+                TopDoctors = topDoctors,
+                BestSellingMedicines = bestSellingMedicines,
+            };
+
+            return new ResponseValue<PrescriptionAnalyticsDTO>(
+                analytics,
+                StatusReponse.Success,
+                "Lấy phân tích đơn thuốc thành công."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy phân tích đơn thuốc");
+            return new ResponseValue<PrescriptionAnalyticsDTO>(
+                new PrescriptionAnalyticsDTO { Success = false },
+                StatusReponse.Error,
+                "Đã xảy ra lỗi khi lấy phân tích đơn thuốc: " + ex.Message
+            );
+        }
     }
 }
 
@@ -369,4 +601,74 @@ public class RawInvoiceDetailDTO
     public decimal UnitPrice { get; set; }
     public decimal SubTotal { get; set; }
     public string Status { get; set; }
+}
+
+// DTO cho Revenue Forecast
+public class RevenueForecastDTO
+{
+    public List<RevenueHistoryItemDTO> Historical { get; set; } = new();
+    public RevenuePredictionDTO Forecast { get; set; } = new();
+}
+
+public class RevenueHistoryItemDTO
+{
+    public int Month { get; set; }
+    public int Year { get; set; }
+    public decimal Revenue { get; set; }
+}
+
+public class RevenuePredictionDTO
+{
+    public decimal PredictedRevenue { get; set; }
+    public decimal Confidence { get; set; }
+    public int NextMonth { get; set; }
+    public int NextYear { get; set; }
+}
+
+public class RevenueHistoryDTO
+{
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public decimal Revenue { get; set; }
+}
+
+// DTO cho Prescription Analytics
+public class PrescriptionAnalyticsDTO
+{
+    public bool Success { get; set; }
+    public List<TopMedicineDTO> TopMedicines { get; set; } = new();
+    public List<TopDoctorDTO> TopDoctors { get; set; } = new();
+    public List<BestSellingMedicineDTO> BestSellingMedicines { get; set; } = new();
+}
+
+public class TopMedicineDTO
+{
+    public int? MedicineId { get; set; }
+    public string MedicineName { get; set; } = string.Empty;
+    public int TotalQuantity { get; set; }
+}
+
+public class TopDoctorDTO
+{
+    public int StaffId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Specialty { get; set; } = string.Empty;
+    public int PrescriptionCount { get; set; }
+}
+
+public class BestSellingMedicineDTO
+{
+    public int MedicineId { get; set; }
+    public string MedicineName { get; set; } = string.Empty;
+    public int TotalSold { get; set; }
+}
+
+// DTO cho Combined Revenue Report
+public class CombinedRevenueReportDTO
+{
+    public decimal TotalRevenue { get; set; }
+    public List<RevenueByDateDTO> RevenueByDate { get; set; } = new();
+    public int TotalAppointmentsToday { get; set; }
+    public int CompletedAppointmentsToday { get; set; }
+    public int PendingInvoicesCount { get; set; }
 }

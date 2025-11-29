@@ -124,8 +124,230 @@ const AdminRevenueReport = () => {
         <div className="modal fade show d-block" tabIndex="-1" onClick={() => setModal({ show: false, detail: null })}>
           <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header"><h5 className="modal-title d-flex align-items-center gap-2"><FaFileInvoiceDollar className="text-primary" />Hóa Đơn Chi Tiết</h5><button type="button" className="btn-close" onClick={() => setModal({ show: false, detail: null })}></button></div>
-              <div className="modal-body">{/* Nội dung modal giữ nguyên */}</div>
+              {/* Modal Header */}
+              <div className="modal-header bg-light">
+                <h5 className="modal-title d-flex align-items-center gap-2 fw-bold text-dark">
+                  <FaFileInvoiceDollar className="text-primary" />
+                  Chi Tiết Hóa Đơn #{detail.invoiceId}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setModal({ show: false, detail: null })}
+                ></button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="modal-body">
+                {/* Thông tin chung */}
+                <div className="row mb-4">
+                  <div className="col-md-6">
+                    <div className="info-card p-3 bg-light rounded">
+                      <h6 className="fw-bold text-muted mb-3">THÔNG TIN HÓA ĐƠN</h6>
+                      <div className="info-row">
+                        <span className="label">Mã hóa đơn:</span>
+                        <span className="value text-primary fw-bold">#{detail.invoiceId}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="label">Ngày lập:</span>
+                        <span className="value">{formatDate(detail.invoiceDate)}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="label">Trạng thái:</span>
+                        <span className="value">
+                          <StatusBadge status={detail.status} />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="info-card p-3 bg-light rounded">
+                      <h6 className="fw-bold text-muted mb-3">THÔNG TIN BỆNH NHÂN</h6>
+                      <div className="info-row">
+                        <span className="label">Tên bệnh nhân:</span>
+                        <span className="value fw-bold">{detail.patientName || 'N/A'}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="label">Ngày hẹn:</span>
+                        <span className="value">{formatDate(detail.appointmentDate)}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="label">Tổng tiền:</span>
+                        <span className="value fw-bold text-success fs-5">
+                          {formatCurrency(detail.totalAmount)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chi tiết dịch vụ và thuốc */}
+                <div className="details-section">
+                  <h6 className="fw-bold text-muted mb-3">CHI TIẾT DỊCH VỤ & THUỐC</h6>
+
+                  {detail.details && detail.details.length > 0 ? (
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-hover mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th width="5%" className="text-center">STT</th>
+                            <th width="45%">Tên dịch vụ / Thuốc</th>
+                            <th width="15%" className="text-center">Số lượng</th>
+                            <th width="15%" className="text-end">Đơn giá</th>
+                            <th width="20%" className="text-end">Thành tiền</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail.details.map((item, index) => (
+                            <tr key={index} className="align-middle">
+                              <td className="text-center fw-medium text-muted">
+                                {index + 1}
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center">
+                                  {item.serviceName ? (
+                                    <>
+                                      <span className="badge bg-primary bg-opacity-10 text-primary me-2">
+                                        DV
+                                      </span>
+                                      <span className="fw-medium">
+                                        {item.serviceName}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="badge bg-success bg-opacity-10 text-success me-2">
+                                        T
+                                      </span>
+                                      <span className="fw-medium">
+                                        {item.medicineName}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="text-center">
+                                <span className="fw-semibold">{item.quantity}</span>
+                              </td>
+                              <td className="text-end">
+                                <span className="text-muted">
+                                  {formatCurrency(item.unitPrice)}
+                                </span>
+                              </td>
+                              <td className="text-end">
+                                <span className="fw-bold text-dark">
+                                  {formatCurrency(item.subTotal)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="table-light">
+                          <tr>
+                            <td colSpan="4" className="text-end fw-bold">
+                              TỔNG CỘNG:
+                            </td>
+                            <td className="text-end">
+                              <span className="fw-bold text-success fs-5">
+                                {formatCurrency(detail.totalAmount)}
+                              </span>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center p-4 text-muted">
+                      <FaFileInvoiceDollar size={48} className="mb-3 opacity-50" />
+                      <p className="mb-0 fw-medium">Không có chi tiết hóa đơn</p>
+                      <small>Hóa đơn này không có dịch vụ hoặc thuốc nào</small>
+                    </div>
+                  )}
+                </div>
+
+                {/* Phân loại tổng hợp */}
+                {detail.details && detail.details.length > 0 && (
+                  <div className="row mt-4">
+                    <div className="col-md-6">
+                      <div className="summary-card p-3 bg-light rounded">
+                        <h6 className="fw-bold text-muted mb-3">PHÂN LOẠI CHI PHÍ</h6>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span className="text-muted">Dịch vụ:</span>
+                          <span className="fw-semibold">
+                            {formatCurrency(
+                              detail.details
+                                .filter(item => item.serviceName)
+                                .reduce((sum, item) => sum + item.subTotal, 0)
+                            )}
+                          </span>
+                        </div>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span className="text-muted">Thuốc:</span>
+                          <span className="fw-semibold">
+                            {formatCurrency(
+                              detail.details
+                                .filter(item => item.medicineName)
+                                .reduce((sum, item) => sum + item.subTotal, 0)
+                            )}
+                          </span>
+                        </div>
+                        <hr />
+                        <div className="d-flex justify-content-between">
+                          <span className="fw-bold">Tổng cộng:</span>
+                          <span className="fw-bold text-success">
+                            {formatCurrency(detail.totalAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="summary-card p-3 bg-light rounded">
+                        <h6 className="fw-bold text-muted mb-3">THỐNG KÊ</h6>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span className="text-muted">Tổng số mục:</span>
+                          <span className="fw-semibold">
+                            {detail.details.length} mục
+                          </span>
+                        </div>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span className="text-muted">Dịch vụ:</span>
+                          <span className="fw-semibold">
+                            {detail.details.filter(item => item.serviceName).length} mục
+                          </span>
+                        </div>
+                        <div className="d-flex justify-content-between">
+                          <span className="text-muted">Thuốc:</span>
+                          <span className="fw-semibold">
+                            {detail.details.filter(item => item.medicineName).length} mục
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setModal({ show: false, detail: null })}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary d-flex align-items-center gap-2"
+                  onClick={() => {
+                    // Logic in hóa đơn có thể thêm sau
+                    console.log('In hóa đơn:', detail.invoiceId);
+                  }}
+                >
+                  <FaFileInvoiceDollar />
+                  In Hóa Đơn
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -170,7 +392,7 @@ const AdminRevenueReport = () => {
                 <div className="col-md-12 d-flex justify-content-end gap-2 mt-3">
                   <button type="submit" className="btn btn-primary d-flex align-items-center gap-2" disabled={loading}><BiSearch /> Lọc Dữ Liệu</button>
                   <button type="button" className="btn btn-outline-danger d-flex align-items-center gap-2" onClick={clearFilters}><BiX size={20} /> Xóa bộ lọc</button>
-                
+
                 </div>
               </div>
             </form>
