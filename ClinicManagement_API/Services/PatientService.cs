@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IPatinetService
 {
+    Task<List<PatientDTO>> GetAllPatientsAsync();
+    Task<PatientDTO?> GetPatientByIdAsync(int id);
     Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(PatientRegisterDto patientDto);
     Task<ResponseValue<AppointmentDTO>> CreateAppointmentByPatientAsync(
         AppointmentDTO request,
@@ -25,8 +27,12 @@ public class PatinetService : IPatinetService
     private readonly IRoleRepository _roleRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IUserRoleRepository _userRoleRepository;
+<<<<<<< HEAD
+    private readonly ILogger<PatinetService> _logger;
+=======
     private readonly IMedicalRecordDetailRepository _medicalRecordDetailRepository;
     private readonly SupabaseContext _context;
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
 
     public PatinetService(
         IUnitOfWork uow,
@@ -34,9 +40,13 @@ public class PatinetService : IPatinetService
         IRoleRepository roleRepository,
         IPatientRepository patientRepository,
         IUserRoleRepository userRoleRepository,
+<<<<<<< HEAD
+        ILogger<PatinetService> logger
+=======
         IMedicalRecordDetailRepository medicalRecordDetailRepository,
         IAppointmentRepository appointmentRepository,
         SupabaseContext context
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
     )
     {
         _uow = uow;
@@ -44,9 +54,60 @@ public class PatinetService : IPatinetService
         _patientRepository = patientRepository;
         _userRoleRepository = userRoleRepository;
         _roleRepository = roleRepository;
+<<<<<<< HEAD
+        _logger = logger;
+    }
+
+    public async Task<List<PatientDTO>> GetAllPatientsAsync()
+    {
+        try
+        {
+            var patients = await _patientRepository.GetAllAsync();
+
+            var patientList = patients.Select(p => new PatientDTO
+            {
+                PatientId = p.PatientId,
+                MedicalHistory = p.MedicalHistory
+            }).ToList();
+
+            return patientList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching medical record list");
+            throw;
+        }
+    }
+
+    public async Task<PatientDTO?> GetPatientByIdAsync(int id)
+    {
+        try
+        {
+            var patient = await _patientRepository.GetByIdAsync(id);
+
+            if (patient == null)
+            {
+                throw new InvalidOperationException("Bệnh nhân không tồn tại.");
+            }
+
+            var patientDto = new PatientDTO
+            {
+                PatientId = patient.PatientId,
+                MedicalHistory = patient.MedicalHistory,
+            };
+
+            return patientDto;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching patient with PatientId: {PatientId}", id);
+            throw;
+        }
+=======
         _appointmentRepository = appointmentRepository;
         _medicalRecordDetailRepository = medicalRecordDetailRepository;
         _context = context;
+>>>>>>> c1391308ff1199caa7f8bed16d892fed5a614027
     }
 
     public async Task<ResponseValue<PatientRegisterDto>> RegisterPatientAsync(

@@ -44,6 +44,13 @@ export const path = {
             MANAGEMENT: "/receptionist/appointment-management",
             CREATE: "/receptionist/appointment-create",
             UPDATE: "/receptionist/appointment-update",
+            SCHEDULE: "/receptionist/appointment-schedule",
+        },
+        MEDICALRECORD: {
+            CREATE: "/receptionist/create-medical-record",
+        },
+        USER:{
+            CREATE: "/receptionist/create-patient",
         }
     },
     USER: {
