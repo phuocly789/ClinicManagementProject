@@ -3,7 +3,7 @@ import _ from "lodash";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 
-const API_BASE_URL = 'http://clinicapi.lmp.id.vn/api';
+const API_BASE_URL = 'https://clinicapi.lmp.id.vn/api';
 NProgress.configure({ showSpinner: false });
 const instance = axios.create({
     baseURL: API_BASE_URL,

@@ -47,7 +47,7 @@ return [
     | the application so that it's available within Artisan commands.
     |
     */
-    'url' => env('APP_URL', 'http://clinic.lmp.id.vn'),
+    'url' => env('APP_URL', 'https://clinic.lmp.id.vn'),
 
     /*
     |--------------------------------------------------------------------------

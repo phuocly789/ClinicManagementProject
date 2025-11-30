@@ -79,7 +79,7 @@ builder.Services.AddCors(options =>
         "AllowAllOrigins",
         builder =>
             builder
-                .WithOrigins("http://clinic.lmp.id.vn")
+                .WithOrigins("https://clinic.lmp.id.vn")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials()
