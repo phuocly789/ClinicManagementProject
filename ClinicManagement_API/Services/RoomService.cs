@@ -10,11 +10,8 @@ public class RoomService : IRoomService
     private readonly IRoomRepository _roomRepository;
     private readonly ILogger<RoomService> _logger;
     private readonly IUnitOfWork _uow;
-    public RoomService(
-            IRoomRepository roomRepository,
-            ILogger<RoomService> logger,
-            IUnitOfWork uow
-        )
+
+    public RoomService(IRoomRepository roomRepository, ILogger<RoomService> logger, IUnitOfWork uow)
     {
         _roomRepository = roomRepository;
         _logger = logger;
@@ -27,13 +24,11 @@ public class RoomService : IRoomService
         {
             var rooms = await _roomRepository.GetAllAsync();
 
-            var rommList = rooms.Select(r => new RoomDTO
-            {
-                RoomId = r.RoomId,
-                RoomName = r.RoomName,
-            }).ToList();
+            var roomList = rooms
+                .Select(r => new RoomDTO { RoomId = r.RoomId, RoomName = r.RoomName })
+                .ToList();
 
-            return rommList;
+            return roomList;
         }
         catch (Exception ex)
         {

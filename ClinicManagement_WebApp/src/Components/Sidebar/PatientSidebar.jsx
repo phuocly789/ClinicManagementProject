@@ -17,7 +17,7 @@ const PatientSidebar = () => {
             <div className="sidebar d-flex flex-column shadow-sm">
                 <img src="/logo1.png" alt="logo" className="sidebar-logo" />
                 <h2 className="sidebar-header text-center fw-bold mb-3">
-                    Phòng Khám XYZ
+                    Phòng Khám VitaCare
                 </h2>
 
                 <div className="user-info text-center border-bottom pb-3 mb-3">

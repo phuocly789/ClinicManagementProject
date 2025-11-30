@@ -1,0 +1,68 @@
+services:
+  # 1. .NET Core 9 API
+  dotnet_api:
+    build:
+      context: .
+      dockerfile: ClinicManagement_API/Dockerfile
+    container_name: clinic_dotnet_api
+    restart: always
+    ports:
+      - "5066:8080" # Map port 5066 máy host vào 8080 container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production 
+      # Connection string .NET sẽ nằm ở đây hoặc trong appsettings.json của bạn
+
+  # 2. Laravel App (PHP-FPM)
+  laravel_app:
+    build:
+      context: ./ClinicManagement_API_Receptionist
+      dockerfile: Dockerfile
+    container_name: clinic_laravel_app
+    restart: always
+    environment:
+      APP_NAME: Laravel
+      APP_ENV: local
+      APP_KEY: base64:YARjYCl3Uh6MpwA3o9xdn3daew+62DM4bvliF03KBP0=
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: aws-1-ap-southeast-1.pooler.supabase.com
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+      DB_USERNAME: postgres.rkoffuqhgnhzkacarfgi
+      DB_PASSWORD: lmp@123
+      DB_SSLMODE: disable
+      SESSION_DRIVER: file
+      SESSION_LIFETIME: 120
+      SESSION_ENCRYPT: false
+    volumes:
+       # Mount code để dev tiện hơn (optional nếu chạy production)
+      - ./ClinicManagement_API_Receptionist:/var/www
+
+  # 3. Laravel Web Server (Nginx)
+  laravel_nginx:
+    image: nginx:alpine
+    container_name: clinic_laravel_nginx
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./ClinicManagement_API_Receptionist:/var/www
+      - ./ClinicManagement_API_Receptionist/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - laravel_app
+
+  # 4. React Frontend
+  webapp:
+    build:
+      context: ./ClinicManagement_WebApp
+      dockerfile: Dockerfile
+    container_name: clinic_webapp
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - dotnet_api
+      - laravel_nginx
+
+# Không cần khai báo services db vì bạn dùng Supabase bên ngoài

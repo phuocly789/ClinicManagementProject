@@ -20,12 +20,7 @@ namespace ClinicManagement_API.Controllers
             try
             {
                 var result = await _appointmentService.GetAllAppointmentsAsync();
-                return Ok(
-                    new
-                    {
-                        success = true,
-                        data = result
-                    });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
@@ -35,8 +30,9 @@ namespace ClinicManagement_API.Controllers
                     {
                         success = false,
                         message = "Có lỗi xảy ra khi lấy danh sách lịch hẹn.",
-                        error = ex.Message
-                    });
+                        error = ex.Message,
+                    }
+                );
             }
         }
 

@@ -17,25 +17,19 @@ import VerifyEmailPage from "./pages/auth/VerifyEmail/EmailVerification.jsx";
 import AdminSidebar from "./Components/Sidebar/AdminSidebar.jsx";
 import DoctorSidebar from "./Components/Sidebar/DoctorSidebar.jsx";
 import Home from "./pages/Home.jsx";
-import TechnicianDashboard from "./pages/Technician/TechnicianDashboard.jsx";
 import PrivateRoute from "./Components/PrivateRoute.jsx";
 import Logout from "./pages/auth/Logout.jsx";
 import AdminService from "./pages/Admin/AdminService.jsx";
 import AdminSupplier from "./pages/Admin/AdminSupplier.jsx";
 import DoctorSchedule from "./pages/Doctors/DoctorSchedule.jsx";
 import ReceptionistSidebar from "./Components/Sidebar/ReceptionistSidebar.jsx";
-import AppointmentDashboard from "./pages/Receptionist/AppointmentDashboard.jsx";
-import CreateAppointment from "./pages/Receptionist/CreateAppointment.jsx";
-import UpdateAppointment from "./pages/Receptionist/UpdateAppointment.jsx";
-import ReceptionistScheduleManagement from "./pages/Receptionist/ReceptionistScheduleManagement.jsx";
-import AppointmentManagement from "./pages/Receptionist/AppointmentManagement.jsx";
-import CreatePatient from "./pages/Receptionist/CreatePatient.jsx";
-import CreateMedicalRecord from "./pages/Receptionist/CreateMedicalRecord.jsx";
 import PatientSidebar from "./Components/Sidebar/PatientSidebar.jsx";
 import PatientProfile from "./pages/Patient/PatientProfile.jsx";
 import RedirectIfLoggedIn from "./pages/auth/RedirectIfLoggedIn.jsx";
 import PatientBooking from "./pages/Patient/PatientBooking.jsx";
 import PatientMedicalHistory from "./pages/Patient/PatientMedicalHistory.jsx";
+import ReceptionistDashboard from "./pages/Receptionist/ReceptionistDashboard.jsx";
+import ReceptionistPatent from "./pages/Receptionist/ReceptionistPatent.jsx";
 
 function App() {
   return (
@@ -59,15 +53,16 @@ function App() {
           </Route>
         </Route>
         {/* Receptionist */}
-        <Route element={<PrivateRoute allowedRoles={['Receptionist']} />}>
-          <Route path={path.RECEPTIONIST.ROOT} element={<ReceptionistSidebar />}>
-            <Route path={path.RECEPTIONIST.APPOINTMENT.MANAGEMENT} element={<AppointmentManagement />} />
-            <Route path={path.RECEPTIONIST.APPOINTMENT.CREATE} element={<CreateAppointment />} />
-            <Route path={path.RECEPTIONIST.APPOINTMENT.UPDATE} element={<UpdateAppointment />} />
-            <Route path={path.RECEPTIONIST.APPOINTMENT.SCHEDULE} element={<ReceptionistScheduleManagement />} />
-            <Route path={path.RECEPTIONIST.MEDICALRECORD.CREATE} element={<CreateMedicalRecord />} />
-            <Route path={path.RECEPTIONIST.USER.CREATE} element={<CreatePatient />} />
-          </Route>
+        <Route path={path.RECEPTIONIST.ROOT} element={<ReceptionistSidebar />}>
+          <Route index element={<ReceptionistDashboard />} />
+          <Route
+            path={path.RECEPTIONIST.DASHBOARD}
+            element={<ReceptionistDashboard />}
+          />
+          <Route
+            path={path.RECEPTIONIST.PATIENT_MANAGEMENT}
+            element={<ReceptionistPatent />}
+          />
         </Route>
         {/* Doctor */}
         <Route element={<PrivateRoute allowedRoles={['Doctor']} />}>
@@ -98,8 +93,6 @@ function App() {
           path={path.VERIFICATION_EMAIL}
           element={<VerifyEmailPage />}
         />
-        {/* Trang mặc định */}
-        <Route path="/technician" element={<TechnicianDashboard />} />
       </Routes>
     </BrowserRouter >
   );

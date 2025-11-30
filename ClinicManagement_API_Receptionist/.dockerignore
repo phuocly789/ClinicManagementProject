@@ -1,0 +1,6 @@
+vendor  # Cho Laravel
+bin
+obj
+.git
+*.log
+.env  # Không copy .env vào image
