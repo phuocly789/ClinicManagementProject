@@ -1,7 +1,7 @@
 import instance from "../axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_URL = "http://125.212.218.44:5066/api/Auth";
+const API_URL = "http://clinicapi.lmp.id.vn/api/Auth";
 
 // === HÀM CHECK TOKEN HẾT HẠN (SIÊU ỔN ĐỊNH) ===
 const isTokenExpired = () => {
