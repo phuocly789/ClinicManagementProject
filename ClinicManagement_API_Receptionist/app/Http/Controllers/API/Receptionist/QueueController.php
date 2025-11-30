@@ -1,0 +1,351 @@
+<?php
+
+namespace App\Http\Controllers\API\Receptionist;
+
+use App\Events\QueueStatusUpdated;
+use App\Http\Controllers\Controller;
+use App\Models\Appointment;
+use App\Models\MedicalRecord;
+use App\Models\Queue;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class QueueController extends Controller
+{
+    // Thêm Khách kh có lịch hẹn trước vào hàng đợi
+    public function CreateDicrectAppointment(Request $request)
+    {
+        $request->validate([
+            'PatientId' => 'required|integer|exists:Patients,PatientId',
+            'StaffId' => 'required|integer|exists:MedicalStaff,StaffId',
+            'Notes' => 'nullable|string',
+            'RoomId' => 'required|integer|exists:Rooms,RoomId'
+        ]);
+        try {
+
+            // if(!auth()->check()){
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Bạn không có quyền'
+            //     ],401);
+            // }
+            DB::beginTransaction();
+
+            $today = now('Asia/Ho_Chi_Minh')->toDateString();
+            $time = now('Asia/Ho_Chi_Minh')->format('H:i:s');
+            $CreatedBy = auth()->id();
+            // $CreatedBy = 3;
+
+            // 1. Lấy hồ sơ bệnh án của bệnh nhân RecordId
+            $record = MedicalRecord::where('PatientId', $request->input('PatientId'))->where('Status', 'Hoạt động')->first();
+            if ($record == null) {
+                $record = MedicalRecord::create([
+                    'PatientId' => $request->input('PatientId'),
+                    'RecordNumber' => 'MR-' . date('Ymd') . '-' . $request->input('PatientId'),
+                    'IssuedDate' => $today,
+                    'Status' => 'Hoạt động',
+                    'Notes' => 'Cấp hồ sơ bệnh nhân ' . $request->input('PatientId'),
+                    'CreatedBy' => $CreatedBy,
+                ]);
+            }
+            // 2. Tạo Appointment
+            $appointment = Appointment::create([
+                'PatientId' => $request->input('PatientId'),
+                'StaffId' => $request->StaffId,
+                'RecordId' => $record->RecordId,
+                'ScheduleId' => null,
+                'AppointmentDate' => $today,
+                'AppointmentTime' => $time,
+                'Status' => 'Đang chờ',
+                'CreatedBy' => $CreatedBy,
+                'Notes' => $request->Notes
+            ]);
+            // 3. Tạo ticket Number
+            $lastTicket = Queue::where('QueueDate', $today)->max('QueueNumber');
+            $newTicketNumber = $lastTicket ? $lastTicket + 1 : 1;
+
+
+
+            //5. Tạo Queue
+            $queue = Queue::create([
+                'PatientId' => $request->input('PatientId'),
+                'AppointmentId' => $appointment->AppointmentId,
+                'RecordId' => $appointment->RecordId,
+                'RoomId' => $request->RoomId,
+                'QueueDate' => $today,
+                'QueueTime' => $time,
+                'Status' => $appointment->Status,
+                'CreatedBy' => $CreatedBy,
+                'QueueNumber' => $newTicketNumber
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch hẹn được tạo thành công.',
+                'data' => [
+                    'Record' => $record,
+                    'Appointment' => $appointment,
+                    'Queue' => $queue
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tạo lịch hẹn: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function CreateQueue(Request $request)
+    {
+        $request->validate([
+            'RoomId' => 'required|integer|exists:Rooms,RoomId',
+            'AppointmentId' => 'required|integer|exists:Appointments,AppointmentId'
+        ]);
+
+        $appointmentId = $request->input('AppointmentId');
+        $roomId = $request->input('RoomId');
+        $queueDate = now('Asia/Ho_Chi_Minh')->format('Y-m-d');
+        $queueTime = now('Asia/Ho_Chi_Minh')->format('H:i:s');
+
+        //lấy patientId và recordId từ appointmentId
+        $appointment = Appointment::with('medical_record')->find($appointmentId);
+        if (!$appointment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy lịch hẹn với ID đã cho.'
+            ], 404);
+        }
+        $patientId = $appointment->PatientId;
+        $recordId = $appointment->RecordId;
+        $status = $appointment->Status;
+        $createdBy = $appointment->CreatedBy;
+        //lấy số thứ tự hàng chờ lớn nhất trong ngày và phòng
+        $lastTicket = Queue::where('QueueDate', $queueDate)->max('QueueNumber');
+        $newTicketNumber = $lastTicket ? $lastTicket + 1 : 1;
+
+
+        try {
+            DB::beginTransaction();
+            $queue = Queue::create([
+                'PatientId' => $patientId,
+                'AppointmentId' => $appointmentId,
+                'RecordId' => $recordId,
+                'QueueNumber' => $newTicketNumber,
+                'RoomId' => $roomId,
+                'QueueDate' => $queueDate,
+                'QueueTime' => $queueTime,
+                'Status' => $status,
+                'CreatedBy' => $createdBy //giả sử userId=3
+            ]);
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'QueueId' => $queue->QueueId,
+                    'PatientId' => $queue->PatientId,
+                    'AppointmentId' => $queue->AppointmentId,
+                    'RecordId' => $queue->RecordId,
+                    'QueueNumber' => $queue->QueueNumber,
+                    'RoomId' => $queue->RoomId,
+                    'QueueDate' => $queue->QueueDate,
+                    'QueueTime' => $queue->QueueTime,
+                    'Status' => $queue->Status,
+                    'CreatedBy' => $queue->CreatedBy
+                ],
+                'message' => 'Thêm hàng chờ thành công.'
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi thêm hàng chờ: ' . $e->getMessage()
+            ], 400);
+        }
+    }
+    //Lấy tất cả các queue room
+    public function GetQueueByDate()
+    {
+        $today = now('Asia/Ho_Chi_Minh')->toDateString();
+
+        $queues = Queue::with([
+            'user:UserId,FullName',
+            'room:RoomId,RoomName',
+            'appointment.medical_staff.user:UserId,FullName'
+        ])
+            ->where('QueueDate', $today)
+            ->orderBy('QueueNumber', 'asc')
+            ->get()
+            ->map(function ($queue) {
+                return [
+                    'QueueId' => $queue->QueueId,
+                    'PatientId' => $queue->PatientId,
+                    'PatientName' => optional($queue->user)->FullName,
+                    'AppointmentId' => $queue->AppointmentId,
+                    'RecordId' => $queue->RecordId,
+                    'QueueNumber' => $queue->QueueNumber,
+                    'RoomId' => $queue->RoomId,
+                    'RoomName' => optional($queue->room)->RoomName,
+                    'DoctorName' => optional($queue->appointment->medical_staff->user)->FullName,
+                    'QueueDate' => $queue->QueueDate,
+                    'QueueTime' => $queue->QueueTime,
+                    'Status' => $queue->Status,
+                    'CreatedBy' => $queue->CreatedBy,
+                ];
+            });
+        return response()->json([
+            'status' => 'success',
+            'data' => $queues,
+            'message' => 'Danh sách hàng chờ được tải thành công.'
+        ], 200);
+    }
+    //Lấy danh sách hàng chờ theo room id và ngày
+    public function GetQueueByRoomAndDate($room_id)
+    {
+        $today = now('Asia/Ho_Chi_Minh')->toDateString();
+
+        $queues = Queue::where('RoomId', $room_id)
+            ->where('QueueDate', $today)
+            ->orderBy('QueueNumber', 'asc')
+            ->get()
+            ->map(function ($queue) {
+                return [
+                    'QueueId' => $queue->QueueId,
+                    'PatientId' => $queue->PatientId,
+                    'PatientName' => $queue->user ? $queue->user->FullName : null,
+                    'AppointmentId' => $queue->AppointmentId,
+                    'RecordId' => $queue->RecordId,
+                    'QueueNumber' => $queue->QueueNumber,
+                    'RoomId' => $queue->RoomId,
+                    'RoomName' => $queue->room ? $queue->room->RoomName : null,
+                    'QueueDate' => $queue->QueueDate,
+                    'QueueTime' => $queue->QueueTime,
+                    'Status' => $queue->Status,
+                    'CreatedBy' => $queue->CreatedBy,
+                ];
+            });
+        return response()->json([
+            'status' => 'success',
+            'data' => $queues,
+            'message' => 'Danh sách hàng chờ được tải thành công.'
+        ], 200);
+    }
+    //Cập nhật trạng thái hàng chờ
+    public function UpdateQueueStatus(Request $request, $queueId)
+    {
+        $request->validate([
+            'Status' => 'required|string|in:Ordered,Waiting,InProgress,Completed,Cancelled'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Tìm và KHÓA dòng queue này lại ngay lập tức
+            $queue = Queue::where('QueueId', $queueId)->lockForUpdate()->first();
+
+            if (!$queue) {
+                return response()->json(['success' => false, 'message' => 'Hàng chờ không tồn tại.'], 404);
+            }
+
+            $appointment = Appointment::find($queue->AppointmentId);
+            if (!$appointment) {
+                return response()->json(['success' => false, 'message' => 'Lịch hẹn không tồn tại.'], 404);
+            }
+
+            $newStatus = $request->input('Status');
+            $currentStatus = $queue->Status; // Trạng thái hiện tại trong DB
+
+            // --- FIX BUG 1: TRÙNG LẶP KHI HỦY ---
+            if ($newStatus === 'Cancelled') {
+                if ($currentStatus === 'Cancelled') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Lịch khám này đã được hủy bởi người khác rồi!'
+                    ], 400);
+                }
+                if ($currentStatus === 'InProgress' || $currentStatus === 'Completed') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Không thể hủy vì bệnh nhân đang/đã khám!'
+                    ], 400);
+                }
+            }
+
+            // --- FIX BUG 2: TRÙNG LẶP KHI GỌI KHÁM ---
+            if ($newStatus === 'InProgress') {
+
+                // A. Kiểm tra xem chính bệnh nhân này có đang được khám rồi không?
+                // Nếu Tab A đã gọi rồi, Status trong DB đã là 'Đang khám'. Tab B gọi tiếp sẽ dính lỗi này.
+                if ($currentStatus === 'InProgress') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Bệnh nhân này đang được gọi khám rồi!'
+                    ], 400);
+                }
+
+                // B. Kiểm tra trạng thái không hợp lệ khác
+                if ($currentStatus === 'Cancelled' || $currentStatus === 'Completed') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Bệnh nhân này đã hủy hoặc hoàn thành khám.'
+                    ], 400);
+                }
+                // C. Kiểm tra phòng bận (Có người KHÁC đang khám trong phòng)
+                $isRoomBusy = Queue::where('RoomId', $queue->RoomId)
+                    ->where('Status', 'InProgress')
+                    ->where('QueueId', '!=', $queueId) // Loại trừ chính mình
+                    ->whereDate('QueueDate', '=', now('Asia/Ho_Chi_Minh'))
+                    ->exists();
+
+                if ($isRoomBusy) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Phòng này đang có người khám. Vui lòng đợi!'
+                    ], 400);
+                }
+            }
+
+            // --- CẬP NHẬT DỮ LIỆU ---
+            $queue->Status = $newStatus;
+            $queue->save();
+
+            $appointment->Status = $newStatus;
+            $appointment->save();
+
+            
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'QueueId' => $queue->QueueId,
+                    'Status' => $queue->Status,
+                ],
+                'message' => 'Cập nhật trạng thái thành công.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+    //Xóa hàng chờ
+    public function DeleteQueue($queueId)
+    {
+        $queue = Queue::find($queueId);
+        if (!$queue) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hàng chờ không tồn tại.'
+            ], 404);
+        }
+        $queue->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Xóa hàng chờ thành công.'
+        ], 200);
+    }
+}

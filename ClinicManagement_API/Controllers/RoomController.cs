@@ -12,6 +12,7 @@ namespace ClinicManagement_API.Controllers
     public class RoomController : ControllerBase
     {
         private readonly IRoomService _roomService;
+
         public RoomController(IRoomService roomService)
         {
             _roomService = roomService;
@@ -23,12 +24,7 @@ namespace ClinicManagement_API.Controllers
             try
             {
                 var result = await _roomService.GetAllRoomsAsync();
-                return Ok(
-                    new
-                    {
-                        success = true,
-                        data = result
-                    });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
@@ -38,8 +34,9 @@ namespace ClinicManagement_API.Controllers
                     {
                         success = false,
                         message = "Có lỗi xảy ra khi lấy danh sách phòng.",
-                        error = ex.Message
-                    });
+                        error = ex.Message,
+                    }
+                );
             }
         }
     }

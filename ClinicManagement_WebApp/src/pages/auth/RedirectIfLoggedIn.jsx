@@ -14,19 +14,18 @@ const RedirectIfLoggedIn = () => {
 
         const role = roles[0];
 
-        // Định nghĩa đích đến theo role
         const targetPath =
             role === "Admin" ? path.ADMIN.DASHBOARD :
                 role === "Doctor" ? path.DOCTOR.TODAYAPPOINTMENT :
-                    role === "Receptionist" ? path.RECEPTIONIST.APPOINTMENT.MANAGEMENT :
+                    role === "Receptionist" ? path.RECEPTIONIST.MANAGEMENT :
                         role === "Patient" ? path.PATIENT.PROFILE.MANAGEMENT :
                             path.HOME;
 
-        // CHỐNG VÒNG LẶP: chỉ redirect nếu chưa ở đúng trang
         if (location.pathname !== targetPath) {
             navigate(targetPath, { replace: true });
         }
-    }, [token, roles, navigate, location]); // THÊM location vào dependency
+    }, [token, location.pathname]); 
+
 
     // Nếu đã login → không render gì cả (đang redirect)
     if (token && roles.length > 0) {

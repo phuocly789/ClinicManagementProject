@@ -38,20 +38,11 @@ export const path = {
         REVENUE_REPORT: "/admin/revenue-report",
 
     },
-    RECEPTIONIST: {
+   RECEPTIONIST: {
         ROOT: "/receptionist",
-        APPOINTMENT: {
-            MANAGEMENT: "/receptionist/appointment-management",
-            CREATE: "/receptionist/appointment-create",
-            UPDATE: "/receptionist/appointment-update",
-            SCHEDULE: "/receptionist/appointment-schedule",
-        },
-        MEDICALRECORD: {
-            CREATE: "/receptionist/create-medical-record",
-        },
-        USER:{
-            CREATE: "/receptionist/create-patient",
-        }
+        DASHBOARD: "/receptionist/dashboard",
+        PATIENT_MANAGEMENT: "/receptionist/patient-management",
+
     },
     USER: {
         ROOT: "/user",

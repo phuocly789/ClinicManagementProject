@@ -124,7 +124,7 @@ const LoginPage = () => {
         setTimeout(() => {
           if (role === "Admin") navigate("/admin/dashboard");
           else if (role === "Doctor") navigate("/doctor/today-appointment");
-          else if (role === "Receptionist") navigate("/receptionist/appointment-management");
+          else if (role === "Receptionist") navigate("/receptionist/dashboard");
           else if (role === "Patient") navigate(path.PATIENT.PROFILE.MANAGEMENT);
           else navigate("/");
         }, 1000);

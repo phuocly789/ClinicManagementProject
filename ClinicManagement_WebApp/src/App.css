@@ -43,6 +43,36 @@
   --fc-today-bg-color: rgba(59, 113, 202, 0.07);
 }
 
+.bg-primary-soft {
+  background-color: #e3f2fd !important;
+  color: #0d6efd;
+}
+
+.bg-success-soft {
+  background-color: #d1e7dd !important;
+  color: #198754;
+}
+
+.bg-danger-soft {
+  background-color: #f8d7da !important;
+  color: #dc3545;
+}
+
+.bg-warning-soft {
+  background-color: #fff3cd !important;
+  color: #ffc107;
+}
+
+.bg-info-soft {
+  background-color: #cff4fc !important;
+  color: #0dcaf0;
+}
+
+.bg-dark-soft {
+  background-color: #e2e3e5 !important;
+  color: #212529;
+}
+
 body {
   margin: 0;
   font-family: var(--font-family);

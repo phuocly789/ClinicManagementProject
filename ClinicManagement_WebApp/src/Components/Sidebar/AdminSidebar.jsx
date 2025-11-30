@@ -4,24 +4,25 @@ import "../../App.css";
 import authService from "../../services/authService";
 
 const AdminSidebar = () => {
-   const [fullName, setFullName] = useState("");
-    
-        useEffect(() => {
-            const user = authService.getFullNameFromToken();
-            setFullName(user);
-        })
-    return (
-      <div className="d-flex" style={{ Height: "100vh" }}>
-        {/* Sidebar */}
-        <div className="sidebar d-flex flex-column shadow-sm">
-          <h2 className="sidebar-header text-center fw-bold mb-3">
-            Phòng Khám XYZ
-          </h2>
-  
-          <div className="user-info text-center border-bottom pb-3 mb-3">
-            <p className="mb-0 opacity-75">Xin chào,</p>
-            <strong>{fullName}</strong>
-          </div>
+  const [fullName, setFullName] = useState("");
+
+  useEffect(() => {
+    const user = authService.getFullNameFromToken();
+    setFullName(user);
+  })
+  return (
+    <div className="d-flex" style={{ Height: "100vh" }}>
+      {/* Sidebar */}
+      <div className="sidebar d-flex flex-column shadow-sm">
+        <img src="/logo1.png" alt="logo" className="sidebar-logo" />
+        <h2 className="sidebar-header text-center fw-bold mb-3">
+          Phòng Khám VitaCare
+        </h2>
+
+        <div className="user-info text-center border-bottom pb-3 mb-3">
+          <p className="mb-0 opacity-75">Xin chào,</p>
+          <strong>{fullName}</strong>
+        </div>
 
         <nav>
           <ul className="nav flex-column nav-list">
