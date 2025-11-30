@@ -128,7 +128,7 @@ createdb phongkham_db
 # Backend/appsettings.Development.json
 # Thay YourPassword bằng mật khẩu PostgreSQL của bạn
 "ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Port=5432;Database=phongkham_db;Username=postgres;Password=YourPassword"
+  "DefaultConnection": "Host=125.212.218.44;Port=5432;Database=phongkham_db;Username=postgres;Password=YourPassword"
 }
 
 # 3. Chạy migrations để tạo bảng
@@ -138,12 +138,12 @@ dotnet ef database update
 
 # 4. Chạy Backend (mở terminal thứ nhất)
 dotnet watch run
-# API sẽ chạy tại: https://localhost:7001
+# API sẽ chạy tại: https://125.212.218.44:7001
 
 # 5. Chạy Frontend (mở terminal thứ hai)
 cd ../Frontend
 npm install
 npm run dev
-# Frontend sẽ chạy tại: http://localhost:5173  
+# Frontend sẽ chạy tại: http://125.212.218.44:5173  
 
 

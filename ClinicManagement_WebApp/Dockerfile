@@ -9,8 +9,8 @@ COPY . .
 
 # Lưu ý: Vite cần biến môi trường lúc Build.
 # Bạn có thể set cứng ở đây hoặc truyền qua docker build args.
-# Để đơn giản, docker-compose sẽ map port 5066 ra máy host, nên localhost vẫn đúng với browser của user.
-ENV VITE_BACKEND_URL=http://localhost:5066/api
+# Để đơn giản, docker-compose sẽ map port 5066 ra máy host, nên 125.212.218.44 vẫn đúng với browser của user.
+ENV VITE_BACKEND_URL=http://125.212.218.44:5066/api
 
 RUN npm run build
 

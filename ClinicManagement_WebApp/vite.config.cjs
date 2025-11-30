@@ -8,8 +8,8 @@ export default defineConfig({
         port: 5173,
         host: '0.0.0.0',
         https: {
-            key: fs.readFileSync('./localhost-key.pem'),
-            cert: fs.readFileSync('./localhost.pem')
+            key: fs.readFileSync('./125.212.218.44-key.pem'),
+            cert: fs.readFileSync('./125.212.218.44.pem')
         },
         watch: {
             usePolling: true // Để hot reload trong Docker

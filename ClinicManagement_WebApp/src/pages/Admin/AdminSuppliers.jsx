@@ -4,7 +4,7 @@ import Pagination from "../../Components/Pagination/Pagination";
 import CustomToast from "../../Components/CustomToast/CustomToast";
 import { Filter, X, Plus } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:5066";
+const API_BASE_URL = "http://125.212.218.44:5066";
 
 // ========== StatusDropdown (Tách riêng) ==========
 const StatusDropdown = memo(({ appointmentId, currentStatus, onUpdate }) => {
@@ -251,7 +251,7 @@ const AppointmentList = memo(({
                     />
                   </td>
                   <td title={item.notes}>
-                    {item.notes?.length > 30 ? `${item.notes.substring(0,30)}...` : item.notes || "—"}
+                    {item.notes?.length > 30 ? `${item.notes.substring(0, 30)}...` : item.notes || "—"}
                   </td>
                   <td className="text-center">
                     {item.status !== "Cancelled" && item.status !== "Completed" && (
