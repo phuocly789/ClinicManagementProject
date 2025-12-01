@@ -293,6 +293,7 @@ public class PatinetService : IPatinetService
                 Status = "Ordered",
                 Notes = request.Notes,
                 CreatedAt = DateTime.Now,
+                CreatedBy = patientId,
             };
             await _appointmentRepository.AddAsync(appointment);
             await _uow.SaveChangesAsync();
