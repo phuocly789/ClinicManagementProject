@@ -7,8 +7,8 @@
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 
-Dự án xây dựng một hệ thống phần mềm dựa trên web nhằm tối ưu hóa và quản lý toàn diện quy trình hoạt động của một phòng khám dịch vụ.
-
+Dự án xây dựng một hệ thống phần mềm dựa trên web nhằm tối ưu hóa và quản lý toàn diện quy trình hoạt động của một phòng khám dịch vụ.  
+Link deploy: https://clinic.lmp.id.vn
 ## 🎯 Mục tiêu dự án
 
 Xây dựng một hệ thống phần mềm web cho phép phòng khám hoạt động hiệu quả hơn bằng cách quản lý toàn bộ quy trình khám bệnh:
