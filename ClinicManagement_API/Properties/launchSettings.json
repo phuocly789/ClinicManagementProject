@@ -6,7 +6,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger/index.html",
-      "applicationUrl": "https://clinicapi.lmp.id.vn",
+      "applicationUrl": "https://clinicapi.lmp.id.vn;http://localhost:3000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -15,7 +15,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "https://clinicapi.lmp.id.vn",
+      "applicationUrl": "https://clinicapi.lmp.id.vn;http://localhost:3000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
