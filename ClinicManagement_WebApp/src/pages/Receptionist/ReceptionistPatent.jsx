@@ -526,7 +526,7 @@ const ReceptionistPatent = () => {
             setFilteredDoctors(doctorsResponse || []);
 
             // Load online appointments
-            const appointmentsResponse = await api.getOnlineAppointments("Odered", today);
+            const appointmentsResponse = await api.getOnlineAppointments("Ordered", today);
             setOnlineAppointments(appointmentsResponse || []);
 
         } catch (error) {
@@ -964,7 +964,7 @@ const ReceptionistPatent = () => {
 
                 resetAllForms();
                 if (activeTab === 'online') {
-                    const appointmentsResponse = await api.getOnlineAppointments("Odered");
+                    const appointmentsResponse = await api.getOnlineAppointments("Ordered");
                     setOnlineAppointments(appointmentsResponse.data || []);
                 }
             } else {
@@ -1002,7 +1002,7 @@ const ReceptionistPatent = () => {
     // UI components
     const renderStatusBadge = (status) => {
         const statusConfig = {
-            "Odered": { class: "bg-warning text-dark", icon: "bi-clock" },
+            "Ordered": { class: "bg-warning text-dark", icon: "bi-clock" },
             "Waiting": { class: "bg-info text-white", icon: "bi-person-waiting" },
             "InProgress": { class: "bg-primary text-white", icon: "bi-person-check" },
             "Completed": { class: "bg-success text-white", icon: "bi-check-circle" },
