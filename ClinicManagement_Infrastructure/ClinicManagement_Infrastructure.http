@@ -1,4 +1,4 @@
-@ClinicManagement_Infrastructure_HostAddress = http://localhost:5103
+@ClinicManagement_Infrastructure_HostAddress = http://125.212.218.44:5103
 
 GET {{ClinicManagement_Infrastructure_HostAddress}}/weatherforecast/
 Accept: application/json

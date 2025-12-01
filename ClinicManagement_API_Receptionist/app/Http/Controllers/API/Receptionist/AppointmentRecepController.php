@@ -54,7 +54,7 @@ class AppointmentRecepController extends Controller
     public function UpdateAppointmentStatus(Request $request, $appointmentId)
     {
         $request->validate([
-            'Status' => 'required|string|in:Đã đặt,Đang chờ,Đang khám,Đã khám,Hủy'
+            'Status' => 'required|string|in:Ordered,Waiting,InProgress,Completed,Cancelled'
         ]);
 
         $appointment = Appointment::find($appointmentId);
@@ -83,12 +83,12 @@ class AppointmentRecepController extends Controller
     public function getOnlineAppointments(Request $request)
     {
         $request->validate([
-            'status' => 'nullable|string|in:Đã đặt,Đang chờ,Đã khám,Hủy',
+            'status' => 'nullable|string|in:Ordered,Waiting,Completed,Cancelled',
             'date' => 'nullable|date'
         ]);
 
         $today = $request->input('date', now()->format('Y-m-d'));
-        $status = $request->input('status', 'Đã đặt');
+        $status = $request->input('status', 'Ordered');
 
         $appointments = Appointment::with([
             'patient.user:UserId,FullName,Phone,Email,DateOfBirth,Gender,Address',
@@ -143,14 +143,14 @@ class AppointmentRecepController extends Controller
             // 1. Count in APPOINTMENTS (chưa tiếp nhận)
             $totalCount += Appointment::where('AppointmentDate', $date)
                 ->where('AppointmentTime', $time)
-                ->where('Status', 'Đã đặt')
+                ->where('Status', 'Ordered')
                 ->count();
 
 
             // 2. Count in QUEUE (đã tiếp nhận)
             $queueQuery = Queue::where('QueueDate', $date)
                 ->where('QueueTime', $time)
-                ->whereIn('Queues.Status', ['Đang chờ', 'Đang khám'])
+                ->whereIn('Queues.Status', ['Waiting', 'InProgress'])
                 ->join('Appointments', 'Appointments.AppointmentId', '=', 'Queues.AppointmentId');
 
             if ($roomId) $queueQuery->where('Queues.RoomId', $roomId);
@@ -202,10 +202,10 @@ class AppointmentRecepController extends Controller
 
                 $totalCount = 0;
 
-                // 1. Count APPOINTMENTS (Đã đặt)
+                // 1. Count APPOINTMENTS (Ordered)
                 $apptQuery = Appointment::where('AppointmentDate', $date)
                     ->where('AppointmentTime', $time)
-                    ->where('Status', 'Đã đặt');
+                    ->where('Status', 'Ordered');
 
                 // Appointment không có RoomId → không filter room
                 if ($staffId) {
@@ -218,7 +218,7 @@ class AppointmentRecepController extends Controller
                 // 2. Count QUEUE (Đã tiếp nhận)
                 $queueQuery = Queue::where('QueueDate', $date)
                     ->where('QueueTime', $time)
-                    ->whereIn('Queues.Status', ['Đang chờ', 'Đang khám'])
+                    ->whereIn('Queues.Status', ['Waiting', 'InProgress'])
                     ->join('Appointments', 'Appointments.AppointmentId', '=', 'Queues.AppointmentId');
 
                 if ($roomId) {

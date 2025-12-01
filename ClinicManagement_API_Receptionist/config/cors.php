@@ -1,11 +1,14 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'oauth/*','sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'oauth/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'https://clinic.lmp.id.vn',
+        'https://cliniclaravel.lmp.id.vn',
+    ],
 
     'allowed_origins_patterns' => [],
 

@@ -54,7 +54,7 @@ class PatientService
         // Tạo thời hạn mã OTP
         $code = rand(100000, 999999);
         $CodeExpired = Carbon::now('Asia/Ho_Chi_Minh')->addMinutes(5);
-        // Cập nhật 
+        // Cập nhật
         $patient->CodeExpired = $CodeExpired->toIso8601String();
         $patient->CodeId = $code;
         $patient->save();
@@ -275,7 +275,7 @@ class PatientService
             throw new  AppErrors("Không tìm thấy lịch hẹn", 400);
         }
 
-        if ($appointment->Status === 'Hủy') {
+        if ($appointment->Status === 'Cancelled') {
             throw new AppErrors("Lịch hẹn đã bị hủy trước đó", 400);
         }
         if ($appointment->Status === Appointment::STATUS_IN_PROGRESS || $appointment->Status === Appointment::STATUS_COMPLETED) {

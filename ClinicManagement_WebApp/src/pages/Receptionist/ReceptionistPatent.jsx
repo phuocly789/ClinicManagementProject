@@ -526,7 +526,7 @@ const ReceptionistPatent = () => {
             setFilteredDoctors(doctorsResponse || []);
 
             // Load online appointments
-            const appointmentsResponse = await api.getOnlineAppointments("Đã đặt", today);
+            const appointmentsResponse = await api.getOnlineAppointments("Ordered", today);
             setOnlineAppointments(appointmentsResponse || []);
 
         } catch (error) {
@@ -964,7 +964,7 @@ const ReceptionistPatent = () => {
 
                 resetAllForms();
                 if (activeTab === 'online') {
-                    const appointmentsResponse = await api.getOnlineAppointments("Đã đặt");
+                    const appointmentsResponse = await api.getOnlineAppointments("Ordered");
                     setOnlineAppointments(appointmentsResponse.data || []);
                 }
             } else {
@@ -1002,11 +1002,11 @@ const ReceptionistPatent = () => {
     // UI components
     const renderStatusBadge = (status) => {
         const statusConfig = {
-            "Đã đặt": { class: "bg-warning text-dark", icon: "bi-clock" },
-            "Đang chờ": { class: "bg-info text-white", icon: "bi-person-waiting" },
-            "Đang khám": { class: "bg-primary text-white", icon: "bi-person-check" },
-            "Đã khám": { class: "bg-success text-white", icon: "bi-check-circle" },
-            "Hủy": { class: "bg-danger text-white", icon: "bi-x-circle" }
+            "Ordered": { class: "bg-warning text-dark", icon: "bi-clock" },
+            "Waiting": { class: "bg-info text-white", icon: "bi-person-waiting" },
+            "InProgress": { class: "bg-primary text-white", icon: "bi-person-check" },
+            "Completed": { class: "bg-success text-white", icon: "bi-check-circle" },
+            "Cancelled": { class: "bg-danger text-white", icon: "bi-x-circle" }
         };
 
         const config = statusConfig[status] || { class: "bg-secondary text-white", icon: "bi-question" };
@@ -1492,10 +1492,10 @@ const ReceptionistPatent = () => {
                                                                 onChange={(e) => setFilterStatus(e.target.value)}
                                                             >
                                                                 <option value="Tất cả">Tất cả trạng thái</option>
-                                                                <option value="Đã đặt">Đã đặt</option>
-                                                                <option value="Đang chờ">Đang chờ</option>
-                                                                <option value="Đã khám">Đã khám</option>
-                                                                <option value="Hủy">Hủy</option>
+                                                                <option value="Ordered">Đã đặt</option>
+                                                                <option value="Waiting">Đang chờ</option>
+                                                                <option value="Completed">Đã khám</option>
+                                                                <option value="Cancelled">Hủy</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -1510,13 +1510,13 @@ const ReceptionistPatent = () => {
                                                                 </div>
                                                                 <div className="d-flex align-items-center bg-light rounded px-3 py-2">
                                                                     <span className="text-warning fw-bold me-1">
-                                                                        {(onlineAppointments || []).filter(a => a?.Status === "Đã đặt").length}
+                                                                        {(onlineAppointments || []).filter(a => a?.Status === "Ordered").length}
                                                                     </span>
                                                                     <span className="text-muted">Chờ tiếp nhận</span>
                                                                 </div>
                                                                 <div className="d-flex align-items-center bg-light rounded px-3 py-2">
                                                                     <span className="text-success fw-bold me-1">
-                                                                        {(onlineAppointments || []).filter(a => a?.Status === "Đang chờ").length}
+                                                                        {(onlineAppointments || []).filter(a => a?.Status === "Waiting").length}
                                                                     </span>
                                                                     <span className="text-muted">Đã tiếp nhận</span>
                                                                 </div>
@@ -1572,7 +1572,7 @@ const ReceptionistPatent = () => {
                                                                             {renderStatusBadge(appointment.Status)}
                                                                         </td>
                                                                         <td>
-                                                                            {appointment.Status === "Đã đặt" && (
+                                                                            {appointment.Status === "Ordered" && (
                                                                                 <button
                                                                                     className="btn btn-sm btn-success d-flex align-items-center"
                                                                                     onClick={() => handleReceivePatient(appointment)}
@@ -1581,7 +1581,7 @@ const ReceptionistPatent = () => {
                                                                                     Tiếp nhận
                                                                                 </button>
                                                                             )}
-                                                                            {appointment.Status === "Đang chờ" && (
+                                                                            {appointment.Status === "Waiting" && (
                                                                                 <button className="btn btn-sm btn-outline-success" disabled>
                                                                                     <i className="bi bi-check2 me-1"></i>
                                                                                     Đã tiếp nhận

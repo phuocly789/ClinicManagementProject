@@ -126,8 +126,8 @@ const Register = () => {
       setShowOtpModal(true);
       setToast({ type: "success", message: "Mã OTP đã gửi đến email!" });
     } catch (err) {
-      console.log("Lỗi OTP:", err.response?.data);
-      setToast({ type: "error", message: err.response?.data || "Gửi OTP thất bại!" });
+      console.log("Lỗi OTP:", err.response.data?.message);
+      setToast({ type: "error", message: err.response.data?.message || "Gửi OTP thất bại!" });
 
     } finally {
       setLoading(false);

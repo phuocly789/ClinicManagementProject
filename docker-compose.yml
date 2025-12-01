@@ -24,7 +24,7 @@ services:
       APP_ENV: local
       APP_KEY: base64:YARjYCl3Uh6MpwA3o9xdn3daew+62DM4bvliF03KBP0=
       APP_DEBUG: "true"
-      APP_URL: http://localhost:8000
+      APP_URL: https://clinicLaravel.lmp.id.vn
       DB_CONNECTION: pgsql
       DB_HOST: aws-1-ap-southeast-1.pooler.supabase.com
       DB_PORT: 5432

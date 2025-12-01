@@ -278,15 +278,22 @@ public class PatinetService : IPatinetService
             }
 
             using var transaction = await _uow.BeginTransactionAsync();
+            int? recordId = _medicalRecordDetailRepository
+                .GetAll()
+                .Where(mr => mr.PatientId == patientId)
+                .Select(mr => mr.RecordId)
+                .FirstOrDefault();
 
             var appointment = new Appointment
             {
                 PatientId = patientId,
+                RecordId = recordId,
                 AppointmentDate = request.AppointmentDate,
                 AppointmentTime = request.AppointmentTime,
                 Status = "Ordered",
                 Notes = request.Notes,
                 CreatedAt = DateTime.Now,
+                CreatedBy = patientId,
             };
             await _appointmentRepository.AddAsync(appointment);
             await _uow.SaveChangesAsync();

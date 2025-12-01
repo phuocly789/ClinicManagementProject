@@ -46,11 +46,11 @@ class Appointment extends Model
 	protected $primaryKey = 'AppointmentId';
 	public $incrementing = true;
 	public $timestamps = false;
-	public const STATUS_BOOKED      = 'Đã đặt';
-	public const STATUS_WAITING     = 'Đang chờ';
-	public const STATUS_IN_PROGRESS = 'Đang khám';
-	public const STATUS_COMPLETED   = 'Đã khám';
-	public const STATUS_CANCELLED   = 'Hủy';
+	public const STATUS_BOOKED      = 'Ordered';
+	public const STATUS_WAITING     = 'Waiting';
+	public const STATUS_IN_PROGRESS = 'InProgress';
+	public const STATUS_COMPLETED   = 'Completed';
+	public const STATUS_CANCELLED   = 'Cancelled';
 
 	protected $casts = [
 		'AppointmentId' => 'int',
