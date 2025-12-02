@@ -41,6 +41,9 @@ use App\Http\Controllers\API\SearchController;
 
 Route::get('/rooms', [RoomController::class, 'getAllRooms']);
 
+Route::options('/{any}', function () {
+    return response()->json([], 200);
+})->where('any', '.*');
 
 //Receptionist Routes
 Route::prefix('receptionist')->group(function () {
@@ -71,5 +74,4 @@ Route::prefix('receptionist')->group(function () {
 
     // Online appointments
     Route::get('/appointments/online', [AppointmentRecepController::class, 'getOnlineAppointments']);
-
 });
