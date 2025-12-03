@@ -43,12 +43,7 @@ const Home = () => {
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="ms-auto align-items-center">
-                            {/* Sử dụng Nav.Link as={Link} và Button */}
-                            <Nav.Item className="me-lg-2 mb-2 mb-lg-0">
-                                <Button as={Link} to={"/booking"} variant="primary" className="w-100">
-                                    Đặt Lịch Hẹn
-                                </Button>
-                            </Nav.Item>
+                          
                             <Nav.Item>
                                 <Button as={Link} to={path.LOGIN} variant="outline-secondary" className="w-100">
                                     Đăng Nhập
@@ -76,7 +71,7 @@ const Home = () => {
                         Dịch vụ y tế chất lượng cao, đội ngũ bác sĩ giàu kinh nghiệm, trang thiết bị hiện đại.
                     </p>
                     {/* Sử dụng Button as={Link} */}
-                    <Button as={Link} to={"/booking"} variant="light" size="lg">
+                    <Button as={Link} to={path.LOGIN} variant="light" size="lg">
                         Đặt Lịch Khám Ngay
                     </Button>
                 </Container>
