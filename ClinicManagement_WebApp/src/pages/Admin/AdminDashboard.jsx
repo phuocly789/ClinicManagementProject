@@ -44,86 +44,6 @@ const StatCard = ({ icon, label, value, color, trend }) => (
     </div>
 );
 
-// Component Realtime Stats - CHỈ GIỮ LẠI 4 CARD QUAN TRỌNG
-const RealtimeStats = ({ realtimeData }) => {
-    if (!realtimeData) return null;
-
-    return (
-        <div className="realtime-dashboard compact mb-3">
-            <div className="dashboard-header compact-header">
-                <h3 className="dashboard-title compact-title">
-                    <BiTrendingUp className="me-2 text-primary" />
-                    Thống Kê Hôm Nay
-                </h3>
-                <div className="last-updated compact-updated">
-                    <small className="text-muted">
-                        Cập nhật: {new Date(realtimeData.updated_at).toLocaleTimeString('vi-VN')}
-                    </small>
-                </div>
-            </div>
-
-            <div className="stats-grid compact-grid">
-                {/* Today Revenue */}
-                <div className="stat-card compact-card today-revenue">
-                    <div className="stat-icon compact-icon">
-                        <BiSolidDollarCircle className="icon" />
-                    </div>
-                    <div className="stat-content compact-content">
-                        <div className="stat-value compact-value" id="today-revenue">
-                            {new Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                                notation: 'compact',
-                                maximumFractionDigits: 0
-                            }).format(realtimeData.todayRevenue || 0)}
-                        </div>
-                        <div className="stat-label compact-label">Doanh thu</div>
-                    </div>
-                </div>
-
-                {/* Waiting Patients */}
-                <div className="stat-card compact-card waiting-patients">
-                    <div className="stat-icon compact-icon">
-                        <BiSolidUserCheck className="icon" />
-                    </div>
-                    <div className="stat-content compact-content">
-                        <div className="stat-value compact-value" id="waiting-patients">
-                            {realtimeData.waitingPatients || 0}
-                        </div>
-                        <div className="stat-label compact-label">Đang chờ</div>
-                    </div>
-                </div>
-
-                {/* Today Appointments */}
-                <div className="stat-card compact-card today-appointments">
-                    <div className="stat-icon compact-icon">
-                        <BiSolidCalendar className="icon" />
-                    </div>
-                    <div className="stat-content compact-content">
-                        <div className="stat-value compact-value" id="today-appointments">
-                            {realtimeData.todayAppointments || 0}
-                        </div>
-                        <div className="stat-label compact-label">Lượt khám</div>
-                    </div>
-                </div>
-
-                {/* Completed Appointments */}
-                <div className="stat-card compact-card completed-appointments">
-                    <div className="stat-icon compact-icon">
-                        <BiSolidUserCheck className="icon" />
-                    </div>
-                    <div className="stat-content compact-content">
-                        <div className="stat-value compact-value" id="completed-appointments">
-                            {realtimeData.completedAppointments || 0}
-                        </div>
-                        <div className="stat-label compact-label">Đã khám</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 // Component Historical Stats - BÁO CÁO LỌC THEO NGÀY (GIỮ NGUYÊN)
 const HistoricalStats = ({ stats, totalRevenue, dateRange }) => {
     if (!stats || !totalRevenue) return null;
@@ -524,8 +444,6 @@ const AdminDashboard = () => {
     );
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [isDateRangeValid, setIsDateRangeValid] = useState(true);
-    // State mới cho 2 chức năng mới
-    const [realtimeData, setRealtimeData] = useState(null);
     const [revenueForecast, setRevenueForecast] = useState(null);
     const [prescriptionAnalytics, setPrescriptionAnalytics] = useState(null);
 
@@ -556,14 +474,6 @@ const AdminDashboard = () => {
                     byDate: data.revenueByDate,
                 });
 
-                // Tạo realtimeData từ combined data (cho RealtimeStats)
-                setRealtimeData({
-                    todayRevenue: data.totalRevenue,
-                    todayAppointments: data.totalAppointmentsToday,
-                    completedAppointments: data.completedAppointmentsToday,
-                    waitingPatients: data.pendingInvoicesCount,
-                    updated_at: new Date().toISOString()
-                });
             }
 
             // Xử lý các API khác
@@ -589,30 +499,30 @@ const AdminDashboard = () => {
         }
     }, []);
 
-    useEffect(() => {
-        // Load lần đầu - sử dụng CombinedRevenue với date range mặc định
-        const loadInitial = async () => {
-            try {
-                const defaultStart = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-                const defaultEnd = new Date().toISOString().split('T')[0];
+    // useEffect(() => {
+    //     // Load lần đầu - sử dụng CombinedRevenue với date range mặc định
+    //     const loadInitial = async () => {
+    //         try {
+    //             const defaultStart = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    //             const defaultEnd = new Date().toISOString().split('T')[0];
 
-                const res = await instance.get(`Reports/CombinedRevenue?startDate=${defaultStart}&endDate=${defaultEnd}`);
-                if (res.data && res.content) {
-                    const data = res.content;
-                    setRealtimeData({
-                        todayRevenue: data.totalRevenue,
-                        todayAppointments: data.totalAppointmentsToday,
-                        completedAppointments: data.completedAppointmentsToday,
-                        waitingPatients: data.pendingInvoicesCount,
-                        updated_at: new Date().toISOString()
-                    });
-                }
-            } catch (err) {
-                console.error('Error loading initial data:', err);
-            }
-        };
-        loadInitial();
-    }, []);
+    //             const res = await instance.get(`Reports/CombinedRevenue?startDate=${defaultStart}&endDate=${defaultEnd}`);
+    //             if (res.data && res.content) {
+    //                 const data = res.content;
+    //                 setRealtimeData({
+    //                     todayRevenue: data.totalRevenue,
+    //                     todayAppointments: data.totalAppointmentsToday,
+    //                     completedAppointments: data.completedAppointmentsToday,
+    //                     waitingPatients: data.pendingInvoicesCount,
+    //                     updated_at: new Date().toISOString()
+    //                 });
+    //             }
+    //         } catch (err) {
+    //             console.error('Error loading initial data:', err);
+    //         }
+    //     };
+    //     loadInitial();
+    // }, []);
 
     //validate date range
     useEffect(() => {
@@ -713,8 +623,7 @@ const AdminDashboard = () => {
                 </div>
             ) : (
                 <div className="flex-grow-1 d-flex flex-column" style={{ gap: '1.5rem', overflowX: 'hidden' }}>
-                    {/* Realtime Stats Section - CHỈ 4 CARD QUAN TRỌNG */}
-                    <RealtimeStats realtimeData={realtimeData} />
+                
 
                     {/* Historical Stats Section - BÁO CÁO LỌC THEO NGÀY (GIỮ NGUYÊN) */}
                     <HistoricalStats
