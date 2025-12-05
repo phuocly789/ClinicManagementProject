@@ -43,7 +43,7 @@ const Home = () => {
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="ms-auto align-items-center">
-                          
+                            {/* Sử dụng Nav.Link as={Link} và Button */}
                             <Nav.Item>
                                 <Button as={Link} to={path.LOGIN} variant="outline-secondary" className="w-100">
                                     Đăng Nhập

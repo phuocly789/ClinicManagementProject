@@ -419,7 +419,7 @@ const PatientBooking = () => {
                                             Lịch hẹn của tôi
                                         </h4>
                                     </Card.Header>
-                                    <Card.Body className="p-0">
+                                    <Card.Body className="p-0 " >
                                         {loading ? (
                                             <div className="text-center py-5">
                                                 <div className="spinner-border text-primary"></div>

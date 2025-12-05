@@ -5,9 +5,10 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 
-Dự án xây dựng một hệ thống phần mềm dựa trên web nhằm tối ưu hóa và quản lý toàn diện quy trình hoạt động của một phòng khám dịch vụ.
-
+Dự án xây dựng một hệ thống phần mềm dựa trên web nhằm tối ưu hóa và quản lý toàn diện quy trình hoạt động của một phòng khám dịch vụ.  
+Link deploy: https://clinic.lmp.id.vn
 ## 🎯 Mục tiêu dự án
 
 Xây dựng một hệ thống phần mềm web cho phép phòng khám hoạt động hiệu quả hơn bằng cách quản lý toàn bộ quy trình khám bệnh:
@@ -29,11 +30,11 @@ Xây dựng một hệ thống phần mềm web cho phép phòng khám hoạt đ
 
 | Thành phần      | Công nghệ gợi ý                  |
 |-----------------|----------------------------------|
-| **Backend**     | ASP.NET Core Web API             |
-| **Frontend**    | Blazor / React / Angular / Vue / JS Thuần (dự án này dùng **React + Vite**) |
-| **Database**    | **PostgreSQL**                   |
+| **Backend**     | ASP.NET Core Web API , Laravel             |
+| **Frontend**    |  React + Vite |
+| **Database**    | PostgreSQL                   |
 | **Auth**        | JWT (JSON Web Tokens)            |
-| **Triển khai**  | Localhost hoặc Cloud (Azure, Docker tùy chọn) |
+| **Triển khai**  | Docker |
 
 ---
 
@@ -117,33 +118,19 @@ Hệ thống phân quyền chặt chẽ cho 4 vai trò:
 
 ```bash
 # 1. Clone dự án
-git clone https://github.com/username/phongkham-dichvu.git
-cd phongkham-dichvu
+git clone https://github.com/phuocly789/ClinicManagementProject.git
+cd ClinicManagementProject
 
-# 2. Cấu hình Database
-# Tạo database trong PostgreSQL
-createdb phongkham_db
+# 2. Chạy Docker
+docker-compose up -d --build
 
-# Cập nhật connection string trong file:
-# Backend/appsettings.Development.json
-# Thay YourPassword bằng mật khẩu PostgreSQL của bạn
-"ConnectionStrings": {
-  "DefaultConnection": "Host=125.212.218.44;Port=5432;Database=phongkham_db;Username=postgres;Password=YourPassword"
-}
+# 3. Backend Dotnet
+# API sẽ chạy tại: https://localhost:5066
 
-# 3. Chạy migrations để tạo bảng
-cd Backend
-dotnet ef migrations add InitialCreate
-dotnet ef database update
+# 4. Backend Laravel
+# API sẽ chạy tại: https://localhost:8000
 
-# 4. Chạy Backend (mở terminal thứ nhất)
-dotnet watch run
-# API sẽ chạy tại: https://125.212.218.44:7001
-
-# 5. Chạy Frontend (mở terminal thứ hai)
-cd ../Frontend
-npm install
-npm run dev
-# Frontend sẽ chạy tại: http://125.212.218.44:5173  
+# 5. Chạy Frontend 
+# Frontend sẽ chạy tại: http://localhost:3000  
 
 

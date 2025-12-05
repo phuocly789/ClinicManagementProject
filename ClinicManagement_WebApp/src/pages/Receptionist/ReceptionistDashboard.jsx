@@ -77,23 +77,7 @@ const ReceptionistDashboard = () => {
         fetchAllQueues();
     }, []);
 
-    useEffect(() => {
-        const unlockAudio = () => {
-            const audio = new Audio(notificationSound);
-            audio.play().catch(() => { });
-            audio.pause();
-            audio.currentTime = 0;
 
-            // Chỉ cần chạy 1 lần
-            document.removeEventListener("click", unlockAudio);
-        };
-
-        document.addEventListener("click", unlockAudio);
-
-        return () => {
-            document.removeEventListener("click", unlockAudio);
-        };
-    }, []);
 
     // Fetch rooms
     const fetchRooms = async () => {
@@ -381,14 +365,7 @@ const ReceptionistDashboard = () => {
         return filteredQueue.filter((item) => item.Status === status).length;
     };
 
-    const playNotificationSound = () => {
-        try {
-            const audio = new Audio(notificationSound);
-            audio.play().catch((err) => console.log("Audio play failed:", err));
-        } catch (error) {
-            console.log("Notification sound error:", error);
-        }
-    };
+ 
 
     // Count priority patients (first in queue)
     const priorityCount = filteredQueue.filter(
