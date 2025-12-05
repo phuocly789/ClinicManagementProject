@@ -510,8 +510,13 @@ public class ReportsService : IReportsService
 
             // Top thuốc được kê nhiều nhất
             var topMedicines = await _context
-                .PrescriptionDetails.Where(pd => pd.Prescription.PrescriptionDate >= startDate)
-                .GroupBy(pd => new { pd.MedicineId, pd.Medicine.MedicineName })
+                .PrescriptionDetails.Include(pd => pd.Medicine)
+                .Where(pd => pd.Prescription.PrescriptionDate >= startDate && pd.Medicine != null)
+                .GroupBy(pd => new
+                {
+                    pd.MedicineId,
+                    MedicineName = pd.Medicine != null ? pd.Medicine.MedicineName : "Unknown",
+                })
                 .Select(g => new TopMedicineDTO
                 {
                     MedicineId = g.Key.MedicineId,
@@ -524,12 +529,16 @@ public class ReportsService : IReportsService
 
             // Top bác sĩ kê đơn nhiều nhất
             var topDoctors = await _context
-                .Prescriptions.Where(p => p.PrescriptionDate >= startDate)
+                .Prescriptions.Include(p => p.Staff)
+                .ThenInclude(s => s.MedicalStaff)
+                .Where(p => p.PrescriptionDate >= startDate && p.Staff != null)
                 .GroupBy(p => new
                 {
                     p.Staff.UserId,
-                    p.Staff.FullName,
-                    p.Staff.MedicalStaff.Specialty,
+                    FullName = p.Staff != null ? p.Staff.FullName : "Unknown",
+                    Specialty = p.Staff.MedicalStaff != null
+                        ? p.Staff.MedicalStaff.Specialty
+                        : "Unknown",
                 })
                 .Select(g => new TopDoctorDTO
                 {
@@ -544,15 +553,23 @@ public class ReportsService : IReportsService
 
             // Thuốc bán chạy nhất (từ invoice details)
             var bestSellingMedicines = await _context
-                .InvoiceDetails.Where(id =>
+                .InvoiceDetails.Include(id => id.Medicine)
+                .Include(id => id.Invoice)
+                .Where(id =>
                     id.MedicineId != null
+                    && id.Invoice != null
                     && id.Invoice.Status == "Paid"
                     && id.Invoice.InvoiceDate >= startDate
+                    && id.Medicine != null
                 )
-                .GroupBy(id => new { id.MedicineId, id.Medicine.MedicineName })
+                .GroupBy(id => new
+                {
+                    id.MedicineId,
+                    MedicineName = id.Medicine != null ? id.Medicine.MedicineName : "Unknown",
+                })
                 .Select(g => new BestSellingMedicineDTO
                 {
-                    MedicineId = g.Key.MedicineId ?? 0,
+                    MedicineId = g.Key.MedicineId.Value,
                     MedicineName = g.Key.MedicineName,
                     TotalSold = g.Sum(id => id.Quantity),
                 })
