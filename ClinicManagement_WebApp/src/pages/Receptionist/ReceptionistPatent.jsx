@@ -68,6 +68,51 @@ const ValidationUtils = {
         if (!time) return true;
         const timeSlots = generateTimeSlots();
         return timeSlots.includes(time);
+    },
+    validateAppointmentTimeNotPast: (time, date) => {
+        if (!time || !date) return true;
+
+        const now = new Date();
+        const today = new Date().toISOString().split('T')[0];
+
+        // Nếu không phải ngày hôm nay thì luôn hợp lệ (không kiểm tra quá khứ)
+        if (date !== today) return true;
+
+        const [hours, minutes] = time.split(':').map(Number);
+        const appointmentDateTime = new Date();
+        appointmentDateTime.setHours(hours, minutes, 0, 0);
+
+        return appointmentDateTime > now;
+    },
+
+    // Thêm hàm getAvailableTimeSlots trả về cả trạng thái past
+    getAvailableTimeSlotsWithStatus: (date) => {
+        const allSlots = generateTimeSlots();
+        const now = new Date();
+        const today = new Date().toISOString().split('T')[0];
+
+        if (date !== today) {
+            return allSlots.map(time => ({
+                time,
+                isPastTime: false,
+                isFull: false,
+                available: 10
+            }));
+        }
+
+        return allSlots.map(time => {
+            const [hours, minutes] = time.split(':').map(Number);
+            const slotDateTime = new Date();
+            slotDateTime.setHours(hours, minutes, 0, 0);
+            const isPastTime = slotDateTime <= now;
+
+            return {
+                time,
+                isPastTime,
+                isFull: false, // Tạm thời để false, sẽ cập nhật khi có dữ liệu API
+                available: 10
+            };
+        });
     }
 };
 
@@ -84,7 +129,8 @@ const ErrorMessages = {
     PATIENT_REQUIRED: "Vui lòng chọn hoặc tạo bệnh nhân",
     INVALID_APPOINTMENT_TIME_SLOT: "Thời gian hẹn phải là một trong các khung giờ: 7:00, 7:30, 8:00, ..., 16:30",
     TIMESLOT_FULL: "Khung giờ này đã đầy, vui lòng chọn khung giờ khác",
-    DANGEROUS_CHARS: "Vui lòng không nhập các ký tự đặc biệt (<, >, `) để bảo mật hệ thống"
+    DANGEROUS_CHARS: "Vui lòng không nhập các ký tự đặc biệt (<, >, `) để bảo mật hệ thống",
+    PAST_APPOINTMENT_TIME: "Không thể đặt lịch trong quá khứ",
 };
 
 const generateTimeSlots = () => {
@@ -213,7 +259,9 @@ const ReceptionistPatent = () => {
             let availableSlots = allSlots;
             if (date === today) {
                 availableSlots = allSlots.filter(slot => {
-                    const slotDateTime = new Date(`${date}T${slot}`);
+                    const [hours, minutes] = slot.split(':').map(Number);
+                    const slotDateTime = new Date();
+                    slotDateTime.setHours(hours, minutes, 0, 0);
                     return slotDateTime > now;
                 });
             }
@@ -253,8 +301,8 @@ const ReceptionistPatent = () => {
     };
 
     const checkTimeSlotsBatch = async (times, date, roomId, staffId) => {
-        try {
-            const response = await instanceReceptionist.get('/api/receptionist/appointments/counts-by-timeslots', {
+        try {api
+            const response = await instanceReceptionist.get('//receptionist/appointments/counts-by-timeslots', {
                 params: {
                     date: date,
                     times: times,
@@ -297,7 +345,29 @@ const ReceptionistPatent = () => {
             });
 
             if (response && response.success === true) {
-                return response.data;
+                const data= response.data;
+
+                const today = new Date().toISOString().split('T')[0];
+                const now = new Date();
+
+                if (date === today) {
+                    const [hours, minutes] = time.split(':').map(Number);
+                    const slotDateTime = new Date();
+                    slotDateTime.setHours(hours, minutes, 0, 0);
+
+                    if (slotDateTime < now) {
+                        return {
+                            count: 0,
+                            maxCapacity: 10,
+                            available: 0,
+                            isFull: true,
+                            isPastTime: true,
+                            message: "Khung giờ này đã qua, không thể đặt"
+                        };
+                    }
+                }
+
+                return data;
             } else {
                 throw new Error(response?.message || 'Lỗi không xác định');
             }
@@ -308,40 +378,56 @@ const ReceptionistPatent = () => {
                 count: 0,
                 maxCapacity: 10,
                 available: 10,
-                isFull: false
+                isFull: false,
+                isPastTime: false
             };
         }
     };
-    // hàm loadAvailableTimeSlots để dùng API batch
     const loadAvailableTimeSlots = async (date, roomId, staffId) => {
         if (!date) {
-            setAvailableTimeSlots(generateTimeSlots().map(time => ({
-                time,
-                available: 10,
-                isFull: false
-            })));
+            const slots = ValidationUtils.getAvailableTimeSlotsWithStatus(date);
+            setAvailableTimeSlots(slots);
             return;
         }
 
         try {
             const allSlots = generateTimeSlots();
+            const now = new Date();
+            const today = new Date().toISOString().split('T')[0];
 
+            // LẤY DỮ LIỆU CAPACITY TỪ API
             const slotResults = await checkTimeSlotsBatch(allSlots, date, roomId, staffId);
 
-            const availableSlots = allSlots.map((slot, index) => ({
-                time: slot,
-                available: slotResults[index].available,
-                isFull: slotResults[index].isFull
-            }));
+            // KẾT HỢP: local check (past time) + API check (capacity)
+            const availableSlots = allSlots.map((slot, index) => {
+                // Kiểm tra local xem có phải khung giờ đã qua không
+                let isPastTime = false;
+                if (date === today) {
+                    const [hours, minutes] = slot.split(':').map(Number);
+                    const slotDateTime = new Date();
+                    slotDateTime.setHours(hours, minutes, 0, 0);
+                    isPastTime = slotDateTime <= now;
+                }
+
+                // Kết hợp: nếu là past time thì coi như full
+                const isActuallyFull = slotResults[index].isFull;
+                const isDisabled = isPastTime || isActuallyFull;
+
+                return {
+                    time: slot,
+                    available: isPastTime ? 0 : slotResults[index].available,
+                    isFull: isDisabled,
+                    isPastTime: isPastTime,
+                    isActuallyFull: isActuallyFull
+                };
+            });
 
             setAvailableTimeSlots(availableSlots);
         } catch (error) {
             console.error("Error loading available time slots:", error);
-            setAvailableTimeSlots(generateTimeSlots().map(time => ({
-                time,
-                available: 10,
-                isFull: false
-            })));
+            // Fallback: chỉ dùng local check
+            const slots = ValidationUtils.getAvailableTimeSlotsWithStatus(date);
+            setAvailableTimeSlots(slots);
         }
     };
     // Modal functions
@@ -394,6 +480,16 @@ const ReceptionistPatent = () => {
                 if (date) params.date = date;
 
                 const response = await instanceReceptionist.get('/api/receptionist/appointments/online', { params });
+
+                // DEBUG: Kiểm tra cấu trúc response
+                console.log("API Response structure:", {
+                    data: response.data,
+                    status: response.status,
+                    hasSuccess: response.data?.success,
+                    hasData: response.data?.data,
+                    isArray: Array.isArray(response.data)
+                });
+
                 return response.data;
             } catch (error) {
                 console.error("API Error - getOnlineAppointments:", error);
@@ -478,7 +574,29 @@ const ReceptionistPatent = () => {
     useEffect(() => {
         loadAllPatients();
     }, []);
+    // Thêm useEffect để validate real-time khi date hoặc time thay đổi
+    useEffect(() => {
+        if (appointmentForm.appointmentDate && appointmentForm.appointmentTime) {
+            const today = new Date().toISOString().split('T')[0];
 
+            if (appointmentForm.appointmentDate === today) {
+                const isPastTime = !ValidationUtils.validateAppointmentTimeNotPast(
+                    appointmentForm.appointmentTime,
+                    appointmentForm.appointmentDate
+                );
+
+                if (isPastTime && !errors.appointmentTime) {
+                    setErrors(prev => ({
+                        ...prev,
+                        appointmentTime: ErrorMessages.PAST_APPOINTMENT_TIME
+                    }));
+                } else if (!isPastTime && errors.appointmentTime === ErrorMessages.PAST_APPOINTMENT_TIME) {
+                    // Clear error nếu đã sửa thành khung giờ hợp lệ
+                    setErrors(prev => ({ ...prev, appointmentTime: null }));
+                }
+            }
+        }
+    }, [appointmentForm.appointmentDate, appointmentForm.appointmentTime]);
     useEffect(() => {
         if (!appointmentForm.appointmentDate || !appointmentForm.roomId || !appointmentForm.staffId) return;
 
@@ -514,7 +632,12 @@ const ReceptionistPatent = () => {
     const initializeData = async () => {
         setLoading(true);
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayFormatted = `${year}-${month}-${day}`;
+            console.log("Initializing data for date:", todayFormatted);
 
             // Load rooms
             const roomsResponse = await api.getRooms();
@@ -755,7 +878,6 @@ const ReceptionistPatent = () => {
         if (!appointmentForm.roomId) {
             newErrors.roomId = ErrorMessages.ROOM_REQUIRED;
         }
-
         if (!ValidationUtils.validateRequired(appointmentForm.appointmentDate)) {
             newErrors.appointmentDate = ErrorMessages.REQUIRED;
         } else {
@@ -764,7 +886,7 @@ const ReceptionistPatent = () => {
             today.setHours(0, 0, 0, 0);
 
             if (appointmentDate < today) {
-                newErrors.appointmentDate = ErrorMessages.FUTURE_DATE;
+                newErrors.appointmentDate = "Không thể đặt lịch cho ngày đã qua";
             }
         }
 
@@ -773,15 +895,17 @@ const ReceptionistPatent = () => {
         } else if (!ValidationUtils.validateAppointmentTimeSlot(appointmentForm.appointmentTime)) {
             newErrors.appointmentTime = ErrorMessages.INVALID_APPOINTMENT_TIME_SLOT;
         } else if (appointmentForm.appointmentDate) {
-            const appointmentDateTime = new Date(`${appointmentForm.appointmentDate}T${appointmentForm.appointmentTime}`);
-            const now = new Date();
+            // KIỂM TRA LOCAL - KHÔNG CẦN GỌI API
+            const isPastTime = !ValidationUtils.validateAppointmentTimeNotPast(
+                appointmentForm.appointmentTime,
+                appointmentForm.appointmentDate
+            );
 
-            // Nếu chọn ngày hôm nay, kiểm tra giờ không được ở quá khứ
-            const today = new Date().toISOString().split('T')[0];
-            // if (appointmentForm.appointmentDate === today && appointmentDateTime < now) {
-            //     newErrors.appointmentTime = "Giờ khám không được ở quá khứ";
-            // }
-            // Kiểm tra capacity thông qua API
+            if (isPastTime) {
+                newErrors.appointmentTime = ErrorMessages.PAST_APPOINTMENT_TIME;
+            }
+
+            // VẪN kiểm tra capacity từ API (nếu muốn)
             try {
                 const availability = await checkTimeSlotAvailability(
                     appointmentForm.appointmentTime,
@@ -795,7 +919,6 @@ const ReceptionistPatent = () => {
                 }
             } catch (error) {
                 console.error("Error validating time slot:", error);
-                // Nếu có lỗi khi check API, vẫn cho phép tiếp tục
             }
         }
 
@@ -866,6 +989,9 @@ const ReceptionistPatent = () => {
     const handleReceivePatient = (appointment) => {
         console.table("CLICKED APPOINTMENT:", appointment);
 
+        console.log("Raw AppointmentDate from API:", appointment.AppointmentDate);
+        console.log("DayOfBirth from API:", appointment.DayOfBirth);
+
         const formattedDate = formatDateForInput(appointment.AppointmentDate);
         console.log("Formatted Date:", formattedDate);
 
@@ -894,7 +1020,29 @@ const ReceptionistPatent = () => {
         }));
         setErrors({});
     };
+    // Thêm hàm debug để log date từ API
+    const debugDate = (dateString) => {
+        console.log("=== DATE DEBUG ===");
+        console.log("Input string:", dateString);
+        console.log("Type:", typeof dateString);
 
+        const dateObj = new Date(dateString);
+        console.log("Date object:", dateObj);
+        console.log("UTC ISO:", dateObj.toISOString());
+        console.log("Local string:", dateObj.toLocaleString('vi-VN'));
+        console.log("Get date parts - Year:", dateObj.getFullYear(),
+            "Month:", dateObj.getMonth() + 1,
+            "Date:", dateObj.getDate());
+        console.log("=== END DEBUG ===");
+    };
+    useEffect(() => {
+        // Debug khi onlineAppointments thay đổi
+        console.log("onlineAppointments updated:", onlineAppointments);
+        if (onlineAppointments && onlineAppointments.length > 0) {
+            console.log("First appointment date:", onlineAppointments[0].AppointmentDate);
+            debugDate(onlineAppointments[0].AppointmentDate);
+        }
+    }, [onlineAppointments]);
     const handleCreateAll = async () => {
         if (loading) return;
 
@@ -962,10 +1110,32 @@ const ReceptionistPatent = () => {
                     return slot;
                 }));
 
+                const today = new Date().toISOString().split('T')[0];
+
                 resetAllForms();
                 if (activeTab === 'online') {
-                    const appointmentsResponse = await api.getOnlineAppointments("Ordered");
-                    setOnlineAppointments(appointmentsResponse.data || []);
+                    try {
+                        // Lấy ngày HIỆN TẠI đúng format
+                        const today = new Date();
+                        const year = today.getFullYear();
+                        const month = String(today.getMonth() + 1).padStart(2, '0');
+                        const day = String(today.getDate()).padStart(2, '0');
+                        const todayFormatted = `${year}-${month}-${day}`;
+
+                        console.log("Fetching appointments for date:", todayFormatted);
+
+                        const appointmentsResponse = await api.getOnlineAppointments("Ordered", todayFormatted);
+
+                        // DEBUG: Kiểm tra dữ liệu trả về
+                        console.log("Appointments response:", appointmentsResponse);
+
+
+                        setOnlineAppointments(appointmentsResponse || []);
+
+                    } catch (error) {
+                        console.error("Error refreshing appointments:", error);
+                        setOnlineAppointments([]);
+                    }
                 }
             } else {
                 throw new Error(result.error || "Lỗi không xác định");
@@ -979,26 +1149,53 @@ const ReceptionistPatent = () => {
         }
     };
 
-    // Utility functions
     const formatDateForInput = (dateString) => {
-        if (!dateString) return new Date().toISOString().split('T')[0];
-
-        let date;
-        try {
-            date = new Date(dateString);
-            if (isNaN(date.getTime())) throw new Error("Invalid date");
-        } catch (error) {
-            if (dateString.includes('/')) {
-                const [day, month, year] = dateString.split('/');
-                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            }
-            return dateString;
+        if (!dateString) {
+            // Lấy ngày hiện tại theo múi giờ Việt Nam
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
-        // Trả về định dạng YYYY-MM-DD
-        return date.toISOString().split('T')[0];
-    };
+        try {
+            // Xử lý date string có thể là từ API
+            // Nếu dateString đã là YYYY-MM-DD thì giữ nguyên
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                return dateString;
+            }
 
+            // Xử lý date string có thể có timezone
+            let date;
+            if (dateString.includes('T')) {
+                // Nếu có timestamp, parse với múi giờ
+                date = new Date(dateString);
+            } else if (dateString.includes('/')) {
+                // Format DD/MM/YYYY
+                const [day, month, year] = dateString.split('/');
+                date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00+07:00`);
+            } else {
+                // Giả định là YYYY-MM-DD
+                date = new Date(`${dateString}T00:00:00+07:00`);
+            }
+
+            // Format thành YYYY-MM-DD theo local time (VN)
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
+        } catch (error) {
+            console.error("Error formatting date:", dateString, error);
+            // Fallback: lấy ngày hiện tại
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    };
     // UI components
     const renderStatusBadge = (status) => {
         const statusConfig = {
@@ -1195,13 +1392,13 @@ const ReceptionistPatent = () => {
                                     <div className="col-12">
                                         <label className="form-label small">Tiền sử bệnh</label>
                                         <textarea
-                                                className={`form-control form-control-sm ${errors.medicalHistory ? 'is-invalid' : ''}`}
+                                            className={`form-control form-control-sm ${errors.medicalHistory ? 'is-invalid' : ''}`}
                                             rows="2"
                                             value={patientForm.medicalHistory}
                                             onChange={(e) => setPatientForm({ ...patientForm, medicalHistory: e.target.value })}
                                             placeholder="Nhập tiền sử bệnh nếu có..."
                                         />
-                                            {renderInputError('medicalHistory')}
+                                        {renderInputError('medicalHistory')}
                                     </div>
                                 </div>
                             </div>
@@ -1247,21 +1444,60 @@ const ReceptionistPatent = () => {
                                         className={`form-control form-control-sm ${errors.appointmentTime ? 'is-invalid' : ''}`}
                                         value={appointmentForm.appointmentTime}
                                         onChange={(e) => {
-                                            setAppointmentForm({ ...appointmentForm, appointmentTime: e.target.value });
+                                            const selectedTime = e.target.value;
+                                            const today = new Date().toISOString().split('T')[0];
+
+                                            // VALIDATE LOCAL NGAY KHI CHỌN
+                                            if (appointmentForm.appointmentDate === today && selectedTime) {
+                                                const isPastTime = !ValidationUtils.validateAppointmentTimeNotPast(
+                                                    selectedTime,
+                                                    appointmentForm.appointmentDate
+                                                );
+
+                                                if (isPastTime) {
+                                                    setErrors(prev => ({
+                                                        ...prev,
+                                                        appointmentTime: ErrorMessages.PAST_APPOINTMENT_TIME
+                                                    }));
+                                                    showToastMessage('warning', 'Không thể chọn khung giờ đã qua');
+                                                    return;
+                                                }
+                                            }
+
+                                            setAppointmentForm({ ...appointmentForm, appointmentTime: selectedTime });
                                             if (errors.appointmentTime) setErrors(prev => ({ ...prev, appointmentTime: null }));
                                         }}
                                     >
                                         <option value="">Chọn giờ khám</option>
-                                        {availableTimeSlots.map((slot) => (
-                                            <option
-                                                key={slot.time}
-                                                value={slot.time}
-                                                disabled={slot.isFull}
-                                                className={slot.isFull ? 'text-danger' : ''}
-                                            >
-                                                {slot.time} {slot.isFull ? '(Đã đầy)' : `(${slot.available} chỗ trống)`}
-                                            </option>
-                                        ))}
+                                        {availableTimeSlots.map((slot) => {
+                                            let optionText = slot.time;
+                                            let isDisabled = false;
+                                            let className = '';
+
+                                            if (slot.isPastTime) {
+                                                optionText += ' (Đã qua)';
+                                                isDisabled = true;
+                                                className = 'text-danger fst-italic';
+                                            } else if (slot.isActuallyFull) {
+                                                optionText += ' (Đã đầy)';
+                                                isDisabled = true;
+                                                className = 'text-danger';
+                                            } else {
+                                                optionText += ` (${slot.available} chỗ trống)`;
+                                                className = 'text-success';
+                                            }
+
+                                            return (
+                                                <option
+                                                    key={slot.time}
+                                                    value={slot.time}
+                                                    disabled={isDisabled}
+                                                    className={className}
+                                                >
+                                                    {optionText}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
                                     <button
                                         type="button"
@@ -1288,7 +1524,11 @@ const ReceptionistPatent = () => {
                                 </div>
                                 {renderInputError('appointmentTime')}
                                 <div className="form-text">
-                                    <small>Khung giờ làm việc: 7:00 - 16:30, số chỗ trống được cập nhật từ hệ thống</small>
+                                    <small>
+                                        <i className="bi bi-info-circle me-1"></i>
+                                        Khung giờ làm việc: 7:00 - 16:30.
+                                        <span className="text-danger"> Khung giờ đã qua sẽ bị vô hiệu hóa.</span>
+                                    </small>
                                 </div>
                             </div>
 

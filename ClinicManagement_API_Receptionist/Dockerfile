@@ -25,6 +25,7 @@ COPY . .
 
 # 5. Cài đặt dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN composer update
 
 # 6. Phân quyền ban đầu (để build image không lỗi)
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache

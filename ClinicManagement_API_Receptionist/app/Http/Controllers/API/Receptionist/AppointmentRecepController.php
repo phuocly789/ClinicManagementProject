@@ -106,11 +106,13 @@ class AppointmentRecepController extends Controller
                     'PatientName' => $appointment->patient->user->FullName,
                     'Phone' => $appointment->patient->user->Phone,
                     'Email' => $appointment->patient->user->Email,
-                    'DayOfBirth' => $appointment->patient->user->DateOfBirth,
+                    'DayOfBirth' => $appointment->patient->user->DateOfBirth ?
+                        $appointment->patient->user->DateOfBirth->format('Y-m-d') : null,
                     'Gender' => $appointment->patient->user->Gender,
                     'Address' => $appointment->patient->user->Address,
                     'DoctorName' => $appointment->medical_staff->user->FullName ?? 'Chưa phân công',
-                    'AppointmentDate' => ($appointment->AppointmentDate),
+                    'AppointmentDate' => $appointment->AppointmentDate ?
+                        $appointment->AppointmentDate->format('Y-m-d') : null,
                     'AppointmentTime' => substr($appointment->AppointmentTime, 0, 5),
                     'Status' => $appointment->Status,
                     'Notes' => $appointment->Notes

@@ -77,23 +77,7 @@ const ReceptionistDashboard = () => {
         fetchAllQueues();
     }, []);
 
-    useEffect(() => {
-        const unlockAudio = () => {
-            const audio = new Audio(notificationSound);
-            audio.play().catch(() => { });
-            audio.pause();
-            audio.currentTime = 0;
 
-            // Chỉ cần chạy 1 lần
-            document.removeEventListener("click", unlockAudio);
-        };
-
-        document.addEventListener("click", unlockAudio);
-
-        return () => {
-            document.removeEventListener("click", unlockAudio);
-        };
-    }, []);
 
     // Fetch rooms
     const fetchRooms = async () => {
