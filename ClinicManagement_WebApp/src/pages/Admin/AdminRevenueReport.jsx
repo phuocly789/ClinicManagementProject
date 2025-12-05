@@ -362,9 +362,7 @@ const AdminRevenueReport = () => {
 
         <header className="d-flex justify-content-between align-items-center flex-shrink-0">
           <h1 className="h4 mb-0">Báo Cáo Doanh Thu</h1>
-          <div className="d-flex gap-2">
-            <button type="button" className="btn btn-outline-secondary d-flex align-items-center gap-2" onClick={exportToCsv}><BiExport /> Xuất CSV</button>
-          </div>
+   
         </header>
 
         <div className="card shadow-sm border-0 flex-shrink-0">
