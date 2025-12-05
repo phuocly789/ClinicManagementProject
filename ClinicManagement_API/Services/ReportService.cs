@@ -552,7 +552,7 @@ public class ReportsService : IReportsService
                 .GroupBy(id => new { id.MedicineId, id.Medicine.MedicineName })
                 .Select(g => new BestSellingMedicineDTO
                 {
-                    MedicineId = g.Key.MedicineId.Value,
+                    MedicineId = g.Key.MedicineId ?? 0,
                     MedicineName = g.Key.MedicineName,
                     TotalSold = g.Sum(id => id.Quantity),
                 })
