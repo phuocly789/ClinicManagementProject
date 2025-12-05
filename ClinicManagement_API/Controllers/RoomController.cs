@@ -18,12 +18,17 @@ namespace ClinicManagement_API.Controllers
             _roomService = roomService;
         }
 
-        [HttpGet]
+        
+        [HttpGet("GetAllRooms")]
         public async Task<IActionResult> GetAllRoomsAsync()
         {
             try
             {
                 var result = await _roomService.GetAllRoomsAsync();
+
+                if (result == null)
+                    throw new Exception("Service trả về null");
+
                 return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
