@@ -38,7 +38,8 @@ const AdminUserManagement = () => {
     { roleId: 5, roleName: 'Technician' },
     { roleId: 6, roleName: 'Patient' }
   ]);
-
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, pageSize: 10 });
   const [filters, setFilters] = useState({ search: '', gender: '', role: '', status: '' });
   const [debouncedSearchTerm] = useDebounce(filters.search, 500);
@@ -56,6 +57,67 @@ const AdminUserManagement = () => {
     }, {});
   }, [roles]);
 
+  const validateForm = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^(0|\+84)(\d{9,10})$/;
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    const licenseRegex = /^[A-Z0-9]{6,15}$/;
+
+    // Required fields validation
+    if (!formData.username?.trim()) newErrors.username = 'Tên đăng nhập là bắt buộc';
+    else if (!usernameRegex.test(formData.username)) newErrors.username = 'Tên đăng nhập 3-20 ký tự, chỉ chữ, số và gạch dưới';
+
+    if (!formData.fullName?.trim()) newErrors.fullName = 'Họ tên là bắt buộc';
+    else if (formData.fullName.length > 100) newErrors.fullName = 'Họ tên không quá 100 ký tự';
+
+    if (!formData.email?.trim()) newErrors.email = 'Email là bắt buộc';
+    else if (!emailRegex.test(formData.email)) newErrors.email = 'Email không hợp lệ';
+    else if (formData.email.length > 100) newErrors.email = 'Email quá dài';
+
+    if (!formData.phone?.trim()) newErrors.phone = 'Số điện thoại là bắt buộc';
+    else if (!phoneRegex.test(formData.phone)) newErrors.phone = 'Số điện thoại không hợp lệ (VD: 0912345678 hoặc +84912345678)';
+
+    if (!formData.gender) newErrors.gender = 'Giới tính là bắt buộc';
+
+    if (!formData.roleId) newErrors.roleId = 'Vai trò là bắt buộc';
+
+    // Date validation
+    if (formData.dateOfBirth) {
+      const dob = dayjs(formData.dateOfBirth);
+      const minDate = dayjs().subtract(100, 'years');
+      const maxDate = dayjs().subtract(18, 'years'); // Ít nhất 18 tuổi cho nhân viên
+
+      if (dob.isAfter(dayjs())) newErrors.dateOfBirth = 'Ngày sinh không thể ở tương lai';
+      else if (dob.isBefore(minDate)) newErrors.dateOfBirth = 'Ngày sinh không hợp lệ';
+      else if (modal.type === 'add' && dob.isAfter(maxDate)) {
+        newErrors.dateOfBirth = 'Nhân viên phải từ 18 tuổi trở lên';
+      }
+    }
+
+    // Doctor-specific validations
+    const selectedRole = roles.find(r => r.roleId === parseInt(formData.roleId));
+    if (selectedRole?.roleName === 'Doctor') {
+      if (!formData.specialty?.trim()) newErrors.specialty = 'Chuyên khoa là bắt buộc cho bác sĩ';
+      else if (formData.specialty.length > 100) newErrors.specialty = 'Chuyên khoa quá dài';
+
+      if (!formData.licenseNumber?.trim()) newErrors.licenseNumber = 'Số giấy phép là bắt buộc cho bác sĩ';
+      else if (!licenseRegex.test(formData.licenseNumber)) newErrors.licenseNumber = 'Số giấy phép không hợp lệ (6-15 ký tự, chữ in hoa và số)';
+    }
+
+    // Address validation
+    if (formData.address && formData.address.length > 200) {
+      newErrors.address = 'Địa chỉ không quá 200 ký tự';
+    }
+
+    // Bio validation
+    if (formData.bio && formData.bio.length > 500) {
+      newErrors.bio = 'Tiểu sử không quá 500 ký tự';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const apiFilters = useMemo(() => ({
     search: debouncedSearchTerm,
@@ -112,7 +174,11 @@ const AdminUserManagement = () => {
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCloseModal = () => setModal({ type: null, user: null });
+  const handleCloseModal = () => {
+    setModal({ type: null, user: null });
+    setFormData(initialFormState);   // 🔥 reset dữ liệu form
+    setErrors({});                   // 🔥 reset lỗi validate
+  };
 
   const handleOpenModal = (type, user = null) => {
     setModal({ type, user });
@@ -167,6 +233,11 @@ const AdminUserManagement = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      setToast({ type: 'error', message: 'Vui lòng kiểm tra lại thông tin!' });
+      return; // ❌ dừng lại, không call API
+    }
     setLoading(true);
 
     const { type, user } = modal;
@@ -269,14 +340,19 @@ const AdminUserManagement = () => {
           <form onSubmit={handleFormSubmit}>
             <div className="row g-3">
               <div className="col-md-6 mb-3"><label className="form-label">Tên đăng nhập</label><input type="text" name="username" value={formData.username || ''} onChange={handleFormChange} className="form-control" required disabled={isEditing} /></div>
-              <div className="col-md-6 mb-3"><label className="form-label">Họ tên</label><input type="text" name="fullName" value={formData.fullName || ''} onChange={handleFormChange} className="form-control" required /></div>
+              <div className="col-md-6 mb-3"><label className="form-label">Họ tên</label><input type="text" name="fullName" value={formData.fullName || ''} onChange={handleFormChange} className="form-control" required />{errors.fullName && <div className="text-danger small">{errors.fullName}</div>}
+              </div>
               {/* Mật khẩu mặc định là SĐT, không cần input khi thêm */}
               {/* {!isEditing && <div className="col-12 mb-3"><label className="form-label">Mật khẩu</label><input type="password" name="Password" value={formData.Password || ''} onChange={handleFormChange} className="form-control" required /></div>} */}
-              <div className="col-md-6 mb-3"><label className="form-label">Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleFormChange} className="form-control" required /></div>
-              <div className="col-md-6 mb-3"><label className="form-label">Số điện thoại</label><input type="tel" name="phone" value={formData.phone || ''} onChange={handleFormChange} className="form-control" required /></div>
-              <div className="col-md-6 mb-3"><label className="form-label">Ngày sinh</label><input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleFormChange} className="form-control" /></div>
+              <div className="col-md-6 mb-3"><label className="form-label">Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleFormChange} className="form-control" required /> {errors.email && <div className="text-danger small">{errors.email}</div>}
+              </div>
+              <div className="col-md-6 mb-3"><label className="form-label">Số điện thoại</label><input type="tel" name="phone" value={formData.phone || ''} onChange={handleFormChange} className="form-control" required />{errors.phone && <div className="text-danger small">{errors.phone}</div>}
+              </div>
+              <div className="col-md-6 mb-3"><label className="form-label">Ngày sinh</label><input type="date" name="dateOfBirth" value={formData.dateOfBirth || ''} onChange={handleFormChange} className="form-control" />{errors.dateOfBirth && <div className="text-danger small">{errors.dateOfBirth}</div>}
+              </div>
               <div className="col-md-6 mb-3"><label className="form-label">Giới tính</label><select name="gender" value={formData.gender || ''} onChange={handleFormChange} className="form-select" required><option value="">Chọn giới tính</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
-              <div className="col-12 mb-3"><label className="form-label">Địa chỉ</label><input type="text" name="address" value={formData.address || ''} onChange={handleFormChange} className="form-control" /></div>
+              <div className="col-12 mb-3"><label className="form-label">Địa chỉ</label><input type="text" name="address" value={formData.address || ''} onChange={handleFormChange} className="form-control" />{errors.address && <div className="text-danger small">{errors.address}</div>}
+              </div>
 
               <div className="col-12 mb-3"><label className="form-label">Vai trò</label>
                 <select name="roleId" value={formData.roleId || ''} onChange={handleFormChange} className="form-select" required>
@@ -417,10 +493,10 @@ const AdminUserManagement = () => {
                         <div className="d-flex gap-2 justify-content-center">
                           <button className="btn btn-lg btn-light" title="Chi tiết" onClick={() => handleOpenModal('detail', user)}><BiShow /></button>
                           <button className="btn btn-lg btn-light" title="Sửa" onClick={() => handleOpenModal('edit', user)}><BiPencil /></button>
-                          <button className={`btn btn-lg btn-light text-${user.isActive ? 'warning' : 'success'}`} title={user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'} onClick={() => handleOpenModal('status', user)}>
+                          <button className={`btn btn-lg btn-light text-${user.isActive ? 'warning' : 'success'}`} title={user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'} disabled={user.roles[0] === "Admin"} onClick={() => handleOpenModal('status', user)}>
                             {user.isActive ? <BiLock /> : <BiLockOpen />}
                           </button>
-                          <button className="btn btn-lg btn-light text-danger" title="Xóa" onClick={() => handleOpenModal('delete', user)}><BiTrash /></button>
+                          <button className="btn btn-lg btn-light text-danger" title="Xóa" onClick={() => handleOpenModal('delete', user)} disabled={user.roles[0] === "Admin"}><BiTrash /></button>
                         </div>
                       </td>
                     </tr>

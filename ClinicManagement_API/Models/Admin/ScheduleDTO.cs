@@ -24,6 +24,7 @@ public class ScheduleForMedicalStaffResponse
     public string StaffName { get; set; }
     public string Role { get; set; }
     public int? RoomId { get; set; }
+    public string RoomName { get; set; }
     public string WorkDate { get; set; } // Format: "YYYY-MM-DD"
     public string StartTime { get; set; } // Format: "HH:mm:ss"
     public string EndTime { get; set; } // Format: "HH:mm:ss"

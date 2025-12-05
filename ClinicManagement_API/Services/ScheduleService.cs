@@ -348,7 +348,16 @@ public class ScheduleService : IScheduleService
                     on schedule.StaffId equals user.UserId
                     into staffUsers
                 from user in staffUsers.DefaultIfEmpty()
-                select new { schedule, user };
+                join room in _roomRepository.GetAll()
+                    on schedule.RoomId equals room.RoomId
+                    into scheduleRooms
+                from room in scheduleRooms.DefaultIfEmpty()
+                select new
+                {
+                    schedule,
+                    user,
+                    room,
+                };
 
             var totalItems = await query.CountAsync();
 
@@ -358,9 +367,18 @@ public class ScheduleService : IScheduleService
                 {
                     ScheduleId = q.schedule.ScheduleId,
                     StaffId = q.schedule.StaffId,
+
                     StaffName = q.user != null ? q.user.FullName : "(Không xác định)",
-                    Role = q.user.UserRoles.Select(r => r.Role.RoleName).FirstOrDefault(),
+
+                    Role =
+                        q.user != null && q.user.UserRoles.Any()
+                            ? q.user.UserRoles.Select(r => r.Role.RoleName).FirstOrDefault()
+                            : null,
+
                     RoomId = q.schedule.RoomId,
+
+                    RoomName = q.room != null ? q.room.RoomName : "(Không có phòng)",
+
                     WorkDate = q.schedule.WorkDate.ToString("yyyy-MM-dd"),
                     StartTime = q.schedule.StartTime.ToString("HH:mm:ss"),
                     EndTime = q.schedule.EndTime.ToString("HH:mm:ss"),

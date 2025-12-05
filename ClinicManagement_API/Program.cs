@@ -79,7 +79,11 @@ builder.Services.AddCors(options =>
         "AllowAllOrigins",
         builder =>
             builder
-                .WithOrigins("https://clinic.lmp.id.vn", "http://localhost:3000")
+                .WithOrigins(
+                    "https://clinic.lmp.id.vn",
+                    "http://localhost:3000",
+                    "http://localhost:5173"
+                )
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials()
@@ -104,6 +108,7 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IQueueService, QueueService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddSignalR();
 
 //cài đặt jwt
@@ -157,7 +162,7 @@ builder.Services.AddScoped<JwtAuthService>();
 var app = builder.Build();
 
 app.UseCors("AllowAllOrigins");
-app.UseMiddleware<CacheMiddleware>();
+// app.UseMiddleware<CacheMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

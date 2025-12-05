@@ -33,7 +33,7 @@ public class RoomService : IRoomService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching room list");
-            throw;
+            return null;
         }
     }
 }

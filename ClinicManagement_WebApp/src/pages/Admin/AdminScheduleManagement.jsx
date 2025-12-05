@@ -35,28 +35,24 @@ const AdminScheduleManagement = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [scheduleFormData, setScheduleFormData] = useState(initialFormState);
 
-    // const fetchRooms = useCallback(async () => {
-    //     try {
-    //         const response = await instance.get('Room/GetAllRoomsAsync');
-    //         const fetchedRooms = response.content.items || [];
-    //         setRoomList(fetchedRooms);
-    //     } catch (error) {
-    //         setToast({ type: 'error', message: error.message || 'Lỗi kết nối máy chủ.' })
-    //     }
-    // }, []);
-
-    // useEffect(() => {
-    //     fetchRooms();
-    // }, [fetchRooms]);
-    useEffect(() => {
-        setRoomList([
-            { roomId: 1, roomName: "Phòng 1" },
-            { roomId: 2, roomName: "Phòng 2" },
-            { roomId: 3, roomName: "Phòng 3" },
-            { roomId: 4, roomName: "Phòng 4" }
-        ]);
+    const fetchRooms = useCallback(async () => {
+        try {
+            const response = await instance.get('Room/GetAllRooms');
+            console.log("room ", response);
+            const fetchedRooms = response.data || [];
+            console.log("fetchedRooms ", fetchedRooms);
+            setRoomList(fetchedRooms);
+        } catch (error) {
+            setToast({ type: 'error', message: error.message || 'Lỗi kết nối máy chủ.' })
+        }
     }, []);
 
+    useEffect(() => {
+        fetchRooms();
+    }, [fetchRooms]);
+   
+   
+    
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -96,8 +92,6 @@ const AdminScheduleManagement = () => {
                 return 'Nurse';
             case 'Lễ tân':
                 return 'Receptionist';
-            case 'Kĩ thuật viên':
-                return 'Technician';
             default:
                 return Role;
         }
@@ -194,7 +188,7 @@ const AdminScheduleManagement = () => {
 
     const renderEventContent = (eventInfo) => {
         const { Role } = eventInfo.event.extendedProps;
-        const roleIcons = { 'Bác sĩ': <FaUserMd />, 'Y tá': <FaUserNurse />, 'Kĩ thuật viên': <FaUserTie />, 'Lễ tân': <FaUserPlus /> };
+        const roleIcons = { 'Bác sĩ': <FaUserMd />, 'Y tá': <FaUserNurse />, 'Lễ tân': <FaUserPlus /> };
         return (
             <div className="event-main-content w-100">
                 <div className="event-icon">{roleIcons[Role] || <FaUserTie />}</div>
@@ -229,7 +223,7 @@ const AdminScheduleManagement = () => {
                                 </select>
 
                                 <div className="mb-3"><label className="form-label">Ngày làm</label><input type="date" name="workDate" value={scheduleFormData.workDate} onChange={handleFormChange} className="form-control" required /></div>
-                                <div className="mb-3"><label className="form-label">Phòng</label><select name="roomId" value={scheduleFormData.roomId} onChange={handleFormChange} className="form-select" required disabled={!!selectedEvent}><option value="">-- Chọn phòng --</option>{roomList.map(room => <option key={room.roomId} value={room.roomId}>{room.roomName}</option>)}</select></div>
+                                <div className="mb-3"><label className="form-label">Phòng</label><select name="roomId" value={scheduleFormData.roomId} onChange={handleFormChange} className="form-select" required ><option value="">-- Chọn phòng --</option>{roomList.map(room => <option key={room.roomId} value={room.roomId}>{room.roomName}</option>)}</select></div>
                                 <div className="row mb-3">
                                     <div className="col-md-6"><label className="form-label">Bắt đầu</label><input type="time" name="startTime" value={scheduleFormData.startTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
                                     <div className="col-md-6"><label className="form-label">Kết thúc</label><input type="time" name="endTime" value={scheduleFormData.endTime} onChange={handleFormChange} className="form-control" step="1" required /></div>
@@ -288,7 +282,7 @@ const AdminScheduleManagement = () => {
                     <div className="d-flex align-items-center gap-3">
                         <div className="legend d-flex align-items-center gap-2">
                             <span className="badge bg-doctor">Bác sĩ</span><span className="badge bg-nurse">Y tá</span>
-                            <span className="badge bg-receptionist">Lễ tân</span><span className="badge bg-technician">Kĩ thuật viên</span>
+                            <span className="badge bg-receptionist">Lễ tân</span>
                         </div>
                         <button className="btn btn-primary d-flex align-items-center gap-2" onClick={handleOpenAddModal}>
                             <BiCalendarPlus /> Thêm Lịch Mới

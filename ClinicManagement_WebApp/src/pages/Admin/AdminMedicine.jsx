@@ -55,6 +55,59 @@ const units = [
   "Miếng dán",
   "Bơm tiêm định liều"
 ]
+// Thêm sau các import
+const validationRules = {
+  medicineName: {
+    required: true,
+    minLength: 2,
+    maxLength: 200,
+    regex: /^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s\/\-.,()]+$/,
+    message: {
+      required: 'Tên thuốc là bắt buộc',
+      minLength: 'Tên thuốc phải có ít nhất 2 ký tự',
+      maxLength: 'Tên thuốc không quá 200 ký tự',
+      regex: 'Tên thuốc chỉ được chứa chữ cái, số, dấu cách và các ký tự: / - . , ( )'
+    }
+  },
+  medicineType: {
+    required: true,
+    message: {
+      required: 'Loại thuốc là bắt buộc'
+    }
+  },
+  unit: {
+    required: true,
+    message: {
+      required: 'Đơn vị là bắt buộc'
+    }
+  },
+  price: {
+    required: true,
+    min: 100,
+    max: 100000000,
+    message: {
+      required: 'Giá bán là bắt buộc',
+      min: 'Giá bán tối thiểu là 100 VNĐ',
+      max: 'Giá bán tối đa là 100,000,000 VNĐ'
+    }
+  },
+  stockQuantity: {
+    required: true,
+    min: 0,
+    max: 1000000,
+    message: {
+      required: 'Số lượng tồn kho là bắt buộc',
+      min: 'Số lượng tồn kho không thể âm',
+      max: 'Số lượng tồn kho tối đa là 1,000,000'
+    }
+  },
+  description: {
+    maxLength: 1000,
+    message: {
+      maxLength: 'Mô tả không quá 1000 ký tự'
+    }
+  }
+};
 
 
 // --- Helper Functions & Components (Không đổi) ---
@@ -132,13 +185,108 @@ const MedicineList = memo(({ medicines, isLoading, handleShowDeleteModal, handle
 const MedicineFormModal = memo(({ show, onHide, isEditMode, medicine, onSubmit, isLoading }) => {
   const [errors, setErrors] = useState({});
   const formRef = useRef(null);
-
+  const [touched, setTouched] = useState({});
+  const shouldShowError = (field) => {
+    return touched[field] && errors[field];
+  };
   useEffect(() => {
     // Xóa lỗi khi modal được mở
     if (show) {
       setErrors({});
     }
   }, [show]);
+
+  const validateField = (name, value) => {
+    const rules = validationRules[name];
+    if (!rules) return '';
+
+    let error = '';
+
+    // Check required
+    if (rules.required && (!value || value.toString().trim() === '')) {
+      error = rules.message.required;
+    }
+    // Check min length
+    else if (rules.minLength && value && value.toString().length < rules.minLength) {
+      error = rules.message.minLength;
+    }
+    // Check max length
+    else if (rules.maxLength && value && value.toString().length > rules.maxLength) {
+      error = rules.message.maxLength;
+    }
+    // Check min value
+    else if (rules.min !== undefined && value !== null && value !== undefined && Number(value) < rules.min) {
+      error = rules.message.min;
+    }
+    // Check max value
+    else if (rules.max !== undefined && value !== null && value !== undefined && Number(value) > rules.max) {
+      error = rules.message.max;
+    }
+    // Check regex
+    else if (rules.regex && value && !rules.regex.test(value.toString())) {
+      error = rules.message.regex;
+    }
+
+    return error;
+  };
+
+  // Validate toàn bộ form
+  const validateForm = (formData) => {
+    const newErrors = {};
+
+    // Validate từng field
+    Object.keys(validationRules).forEach(fieldName => {
+      const value = formData.get(fieldName);
+      const error = validateField(fieldName, value);
+      if (error) {
+        newErrors[fieldName] = error;
+      }
+    });
+
+    // Validate riêng cho giá (kiểm tra số hợp lệ)
+    const price = formData.get('price');
+    if (price && (isNaN(Number(price)) || !isFinite(Number(price)))) {
+      newErrors.price = 'Giá bán phải là số hợp lệ';
+    }
+
+    // Validate riêng cho số lượng
+    const stock = formData.get('stockQuantity');
+    if (stock && (isNaN(Number(stock)) || !isFinite(Number(stock)))) {
+      newErrors.stockQuantity = 'Số lượng tồn kho phải là số hợp lệ';
+    }
+
+    // Validate số nguyên cho stock
+    if (stock && !Number.isInteger(Number(stock))) {
+      newErrors.stockQuantity = 'Số lượng tồn kho phải là số nguyên';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Xóa lỗi khi người dùng bắt đầu nhập
+    if (errors[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -162,16 +310,130 @@ const MedicineFormModal = memo(({ show, onHide, isEditMode, medicine, onSubmit, 
               </div>
               <div className="modal-body">
                 <div className="row">
-                  <div className="col-md-6 mb-3"><label className="form-label">Tên Thuốc</label><input type="text" name="medicineName" defaultValue={isEditMode ? medicine?.medicineName : ''} className={`form-control ${errors.medicineName ? 'is-invalid' : ''}`} placeholder="Nhập tên thuốc" required /><div className="invalid-feedback">{errors.medicineName}</div></div>
-                  <div className="col-md-6 mb-3"><label className="form-label">Loại Thuốc</label><select name="medicineType" defaultValue={isEditMode ? medicine?.medicineType : ''} className={`form-select ${errors.medicineType ? 'is-invalid' : ''}`} required><option value="" disabled>Chọn loại thuốc</option>{medicineTypes.map(type => <option key={type} value={type}>{type}</option>)}</select><div className="invalid-feedback">{errors.medicineType}</div></div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Tên Thuốc <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      name="medicineName"
+                      defaultValue={isEditMode ? medicine?.medicineName : ''}
+                      className={`form-control ${shouldShowError('medicineName') ? 'is-invalid' : ''}`}
+                      placeholder="Nhập tên thuốc"
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      required
+                    />
+                    {shouldShowError('medicineName') && (
+                      <div className="invalid-feedback d-block">{errors.medicineName}</div>
+                    )}
+                    <div className="form-text">Tối thiểu 2 ký tự, tối đa 200 ký tự</div>
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Loại Thuốc <span className="text-danger">*</span></label>
+                    <select
+                      name="medicineType"
+                      defaultValue={isEditMode ? medicine?.medicineType : ''}
+                      className={`form-select ${shouldShowError('medicineType') ? 'is-invalid' : ''}`}
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="" disabled>Chọn loại thuốc</option>
+                      {medicineTypes.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    {shouldShowError('medicineType') && (
+                      <div className="invalid-feedback d-block">{errors.medicineType}</div>
+                    )}
+                  </div>
                 </div>
+
                 <div className="row">
-                  <div className="col-md-6 mb-3"><label className="form-label">Đơn Vị</label><select name="unit" defaultValue={isEditMode ? medicine?.unit : ''} className={`form-select ${errors.unit ? 'is-invalid' : ''}`} required><option value="" disabled>Chọn đơn vị</option>{units.map(unit => <option key={unit} value={unit}>{unit}</option>)}</select><div className="invalid-feedback">{errors.unit}</div></div>
-                  <div className="col-md-6 mb-3"><label className="form-label">Giá Bán</label><input type="number" name="price" defaultValue={isEditMode ? medicine?.price : ''} step="100" className={`form-control ${errors.price ? 'is-invalid' : ''}`} placeholder="Nhập giá bán" required /><div className="invalid-feedback">{errors.price}</div></div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Đơn Vị <span className="text-danger">*</span></label>
+                    <select
+                      name="unit"
+                      defaultValue={isEditMode ? medicine?.unit : ''}
+                      className={`form-select ${shouldShowError('unit') ? 'is-invalid' : ''}`}
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="" disabled>Chọn đơn vị</option>
+                      {units.map(unit => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                    {shouldShowError('unit') && (
+                      <div className="invalid-feedback d-block">{errors.unit}</div>
+                    )}
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Giá Bán (VNĐ) <span className="text-danger">*</span></label>
+                    <div className="input-group">
+                      <input
+                        type="number"
+                        name="price"
+                        defaultValue={isEditMode ? medicine?.price : ''}
+                        step="100"
+                        min="100"
+                        max="100000000"
+                        className={`form-control ${shouldShowError('price') ? 'is-invalid' : ''}`}
+                        placeholder="Nhập giá bán"
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        required
+                      />
+                      <span className="input-group-text">VNĐ</span>
+                    </div>
+                    {shouldShowError('price') && (
+                      <div className="invalid-feedback d-block">{errors.price}</div>
+                    )}
+                    <div className="form-text">Từ 100 đến 100,000,000 VNĐ</div>
+                  </div>
                 </div>
+
                 <div className="row">
-                  <div className="col-md-6 mb-3"><label className="form-label">Tồn Kho</label><input type="number" name="stockQuantity" defaultValue={isEditMode ? medicine?.stockQuantity : ''} className={`form-control ${errors.stockQuantity ? 'is-invalid' : ''}`} placeholder="Nhập số lượng tồn kho" required /><div className="invalid-feedback">{errors.stockQuantity}</div></div>
-                  <div className="col-md-6 mb-3"><label className="form-label">Mô Tả</label><textarea name="description" defaultValue={isEditMode ? medicine?.description : ''} className={`form-control ${errors.description ? 'is-invalid' : ''}`} placeholder="Nhập mô tả" rows="3" ></textarea><div className="invalid-feedback">{errors.description}</div></div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Tồn Kho <span className="text-danger">*</span></label>
+                    <input
+                      type="number"
+                      name="stockQuantity"
+                      defaultValue={isEditMode ? medicine?.stockQuantity : ''}
+                      min="0"
+                      max="1000000"
+                      step="1"
+                      className={`form-control ${shouldShowError('stockQuantity') ? 'is-invalid' : ''}`}
+                      placeholder="Nhập số lượng tồn kho"
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      required
+                    />
+                    {shouldShowError('stockQuantity') && (
+                      <div className="invalid-feedback d-block">{errors.stockQuantity}</div>
+                    )}
+                    <div className="form-text">Từ 0 đến 1,000,000 (số nguyên)</div>
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Mô Tả</label>
+                    <textarea
+                      name="description"
+                      defaultValue={isEditMode ? medicine?.description : ''}
+                      className={`form-control ${shouldShowError('description') ? 'is-invalid' : ''}`}
+                      placeholder="Nhập mô tả"
+                      rows="3"
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      maxLength="1000"
+                    ></textarea>
+                    {shouldShowError('description') && (
+                      <div className="invalid-feedback d-block">{errors.description}</div>
+                    )}
+                    <div className="form-text">Tối đa 1000 ký tự</div>
+                  </div>
                 </div>
               </div>
               <div className="modal-footer">
