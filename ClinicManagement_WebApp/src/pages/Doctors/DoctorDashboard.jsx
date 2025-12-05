@@ -292,20 +292,7 @@ const ExaminationForm = memo(({
 
         {/* Action Buttons */}
         <div className="d-flex gap-3 justify-content-end pt-4 border-top">
-          <button
-            className="btn btn-lg btn-outline-secondary"
-            onClick={() => onSubmit(false)}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" />
-                Đang xử lý...
-              </>
-            ) : (
-              'Lưu tạm'
-            )}
-          </button>
+         
           <button
             className="btn btn-lg btn-success"
             onClick={() => onSubmit(true)}
@@ -980,6 +967,7 @@ const DoctorDashboard = () => {
         onCancel={() => setConfirm({ show: false, isComplete: false })}
         confirmText="Xác nhận"
         isProcessing={isProcessing}
+       
       />
 
       <style jsx>{`
