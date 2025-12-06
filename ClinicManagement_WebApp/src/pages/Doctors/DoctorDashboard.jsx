@@ -965,7 +965,7 @@ const DoctorDashboard = () => {
         }
         onConfirm={processExaminationSubmit}
         onCancel={() => setConfirm({ show: false, isComplete: false })}
-        confirmText="Xác nhận"
+        buttonLabel="Xác nhận"
         isProcessing={isProcessing}
        
       />

@@ -7,7 +7,6 @@ export default function ConfirmDeleteModal({
   buttonLabel = "Xóa",
   onConfirm,
   onCancel,
-  confirmText ="Hủy"
 }) {
   if (!isOpen) return null;
 
@@ -27,7 +26,7 @@ export default function ConfirmDeleteModal({
               className="btn btn-secondary"
               onClick={onCancel}
             >
-              {confirmText}
+              Hủy
             </button>
             <button
               type="button"
