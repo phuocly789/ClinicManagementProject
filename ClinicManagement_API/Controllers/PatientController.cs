@@ -11,6 +11,7 @@ namespace ClinicManagement_API.Controllers
     public class PatientController : ControllerBase
     {
         private readonly IPatinetService _patinetService;
+
         public PatientController(IPatinetService patinetService)
         {
             _patinetService = patinetService;
@@ -22,12 +23,7 @@ namespace ClinicManagement_API.Controllers
             try
             {
                 var result = await _patinetService.GetAllPatientsAsync();
-                return Ok(
-                    new
-                    {
-                        success = true,
-                        data = result
-                    });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
@@ -37,8 +33,9 @@ namespace ClinicManagement_API.Controllers
                     {
                         success = false,
                         message = "Có lỗi xảy ra khi lấy danh sách bệnh nhân.",
-                        error = ex.Message
-                    });
+                        error = ex.Message,
+                    }
+                );
             }
         }
 

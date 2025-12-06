@@ -35,7 +35,6 @@ const AdminUserManagement = () => {
     { roleId: 2, roleName: 'Receptionist' },
     { roleId: 3, roleName: 'Doctor' },
     { roleId: 4, roleName: 'Nurse' },
-    { roleId: 5, roleName: 'Technician' },
     { roleId: 6, roleName: 'Patient' }
   ]);
   const [errors, setErrors] = useState({});
@@ -458,7 +457,7 @@ const AdminUserManagement = () => {
           <div className="card-body p-4">
             <div className="row g-3">
               <div className="col-md-6"><input type="text" name="search" className="form-control" placeholder="Tìm theo tên, email..." value={filters.search} onChange={handleFilterChange} /></div>
-              <div className="col-md-3"><select name="role" className="form-select" value={filters.role} onChange={handleFilterChange}><option value="">Tất cả vai trò</option>{roles.map(r => <option key={r.RoleId} value={r.RoleName}>{r.RoleName}</option>)}</select></div>
+              <div className="col-md-3"><select name="role" className="form-select" value={filters.role} onChange={handleFilterChange}><option value="">Tất cả vai trò</option>{roles.map(r => <option key={r.roleId} value={r.noleName}>{r.roleName}</option>)}</select></div>
               {/* Các filter khác có thể thêm ở đây nếu API hỗ trợ */}
             </div>
           </div>

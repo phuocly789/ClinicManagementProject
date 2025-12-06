@@ -411,7 +411,7 @@ namespace ClinicManagement_API.Controllers
             var username = usernameClaim.Value;
 
             var result = await _userService.DeactivateAccountAsync(username);
-            
+
             return Ok("Tài khoản đã bị vô hiệu hóa thành công.");
         }
     }
