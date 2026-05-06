@@ -7,9 +7,8 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'https://clinicmanagementproject.onrender.com',
-        // nếu có base domain
         'https://clinic-management-project-mu.vercel.app',
+        // nếu có base domain
         // môi trường dev (nếu build từ local)
         'http://localhost:5173',
     ],
