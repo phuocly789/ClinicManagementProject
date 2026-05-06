@@ -1,7 +1,7 @@
 import * as signalR from "@microsoft/signalr";
 
 const token = localStorage.getItem("token");
-const queueConnection = new signalR.HubConnectionBuilder().withUrl("http://clinicapi.lmp.id.vn/queueHub",{
+const queueConnection = new signalR.HubConnectionBuilder().withUrl("http://clinicmanagementproject-1.onrender.com/queueHub",{
    
     accessTokenFactory: () => token,
 }) // đổi khi deploy
