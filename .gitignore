@@ -1,6 +1,9 @@
 # Windows system files
 desktop.ini
 clearDesktop.txt
-**/obj/
-**/bin/
+ClinicManagement_API_Receptionist/
+ClinicManagement_WebApp/
+.vscode/
+bin/
+obj/
 

@@ -8,7 +8,7 @@ return [
 
     'allowed_origins' => [
         'https://clinic.lmp.id.vn',
-        'https://cliniclaravel.lmp.id.vn',
+        'https://clinicmanagementproject.onrender.com',
         // nếu có base domain
         'https://www.clinic.lmp.id.vn',
         // môi trường dev (nếu build từ local)
