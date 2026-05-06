@@ -80,7 +80,7 @@ builder.Services.AddCors(options =>
         builder =>
             builder
                 .WithOrigins(
-                    "http://clinic-management-project-mu.vercel.app",
+                    "https://clinic-management-project-mu.vercel.app",
                     "http://localhost:3000",
                     "http://localhost:5173"
                 )

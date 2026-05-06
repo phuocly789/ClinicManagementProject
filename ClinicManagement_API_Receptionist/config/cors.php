@@ -9,7 +9,7 @@ return [
     'allowed_origins' => [
         'https://cliniclaravel.lmp.id.vn',
         // nếu có base domain
-        'http://clinic-management-project-mu.vercel.app',
+        'https://clinic-management-project-mu.vercel.app',
         // môi trường dev (nếu build từ local)
         'http://localhost:5173',
     ],
