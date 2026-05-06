@@ -73,19 +73,29 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 //add service cors
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy(
+//         "AllowAllOrigins",
+//         builder =>
+//             builder
+//                 .WithOrigins("https://clinic-management-project-mu.vercel.app")
+//                 .AllowAnyMethod()
+//                 .AllowAnyHeader()
+//                 .AllowCredentials()
+//     );
+// });
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
         "AllowAllOrigins",
-        builder =>
-            builder
-                .WithOrigins(
-                    "https://clinic-management-project-mu.vercel.app"
-                )
+        policy =>
+            policy
+                .AllowAnyOrigin() // Cho phép tất cả
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowCredentials()
     );
+    // Lưu ý: Khi dùng AllowAnyOrigin thì phải xóa .AllowCredentials()
 });
 
 // Đăng ký các dịch vụ khác (nếu có)
