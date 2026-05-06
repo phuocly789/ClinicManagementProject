@@ -1,4 +1,4 @@
-@ClinicManagement_API_HostAddress = http://clinicapi.lmp.id.vn
+@ClinicManagement_API_HostAddress = http://clinicmanagementproject-1.onrender.com
 
 GET {{ClinicManagement_API_HostAddress}}/weatherforecast/
 Accept: application/json

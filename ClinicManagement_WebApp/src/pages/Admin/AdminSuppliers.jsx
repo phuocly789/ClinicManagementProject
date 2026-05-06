@@ -4,7 +4,7 @@ import Pagination from "../../Components/Pagination/Pagination";
 import CustomToast from "../../Components/CustomToast/CustomToast";
 import { Filter, X, Plus } from "lucide-react";
 
-const API_BASE_URL = "http://clinicapi.lmp.id.vn";
+const API_BASE_URL = "http://clinicmanagementproject-1.onrender.com";
 
 // ========== StatusDropdown (Tách riêng) ==========
 const StatusDropdown = memo(({ appointmentId, currentStatus, onUpdate }) => {
