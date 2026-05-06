@@ -161,15 +161,22 @@ builder.Services.AddScoped<JwtAuthService>();
 
 var app = builder.Build();
 
+// 1. Phải có UseRouting trước UseCors
+app.UseRouting();
+
+// 2. UseCors phải nằm sau UseRouting và TRƯỚC Authentication/Authorization
 app.UseCors("AllowAllOrigins");
-// app.UseMiddleware<CacheMiddleware>();
+
+// 3. Các middleware khác
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 4. Map các endpoint
 app.MapControllers();
 app.MapHub<QueueHub>("/queueHub");
 
-//use swagger
+// Swagger (nên để trước app.Run)
 app.UseSwagger();
 app.UseSwaggerUI();
 
