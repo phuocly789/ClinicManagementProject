@@ -40,5 +40,4 @@ RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # 8. Chạy
-ENTRYPOINT ["entrypoint.sh"]
-CMD ["php-fpm"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
